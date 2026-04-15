@@ -11,3 +11,32 @@ generator client {
 datasource db {
   provider = "sqlite"
 }
+
+model Profile {
+  id             Int      @id @default(1)
+  heightCm       Float
+  weightKg       Float
+  goalWeightKg   Float?
+  age            Int
+  sex            String
+  activityLevel  String
+  goal           String   @default("cut")
+  kcalTarget     Int
+  proteinG       Int
+  carbG          Int
+  fatG           Int
+  waterMlTarget  Int
+  lastMacroWeightKg Float?
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
+}
+
+model WeightEntry {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @unique
+  kg        Float
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
