@@ -13,7 +13,7 @@ function fmtDelta(kg: number | null) {
   return `${sign}${kg.toFixed(2)} kg`;
 }
 function fmtDate(d: Date | null) {
-  return d ? d.toISOString().slice(0, 10) : "—";
+  return d ? d.toLocaleDateString("de-DE") : "—";
 }
 
 export default async function WeightPage() {
@@ -28,33 +28,33 @@ export default async function WeightPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">Weight</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Gewicht</h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-          Weigh in daily (morning, post-bathroom, pre-food). Track the 7-day
-          average, not the daily number.
+          Täglich wiegen (morgens, nach dem WC, vor Essen/Trinken). Achte auf
+          den 7-Tage-Schnitt, nicht den Tageswert.
         </p>
       </header>
 
       {!profile && (
         <div className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
-          Set your <Link href="/profile" className="underline">profile</Link>{" "}
-          first (including goal weight) to see projections.
+          Zuerst <Link href="/profile" className="underline">Profil</Link>{" "}
+          ausfüllen (inkl. Zielgewicht), um Prognosen zu sehen.
         </div>
       )}
 
       {profile && !profile.goalWeightKg && (
         <div className="rounded-xl border border-dashed border-amber-400 p-4 text-sm">
-          Add a goal weight on your{" "}
-          <Link href="/profile" className="underline">profile</Link> to see an
-          ETA.
+          Zielgewicht im{" "}
+          <Link href="/profile" className="underline">Profil</Link> hinterlegen,
+          um die Ankunft zu berechnen.
         </div>
       )}
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Latest" value={fmtKg(stats.latestKg)} sub={fmtDate(stats.latestDate)} />
-        <Stat label="7-day avg" value={fmtKg(stats.rollingAvg7)} />
+        <Stat label="Letzter Wert" value={fmtKg(stats.latestKg)} sub={fmtDate(stats.latestDate)} />
+        <Stat label="7-Tage-Schnitt" value={fmtKg(stats.rollingAvg7)} />
         <Stat
-          label="Weekly Δ"
+          label="Wöchentliche Δ"
           value={fmtDelta(stats.weeklyDeltaKg)}
           tone={
             stats.weeklyDeltaKg == null
@@ -65,13 +65,13 @@ export default async function WeightPage() {
           }
         />
         <Stat
-          label="ETA to goal"
+          label="Ankunft am Ziel"
           value={
             stats.etaWeeks != null
-              ? `${stats.etaWeeks} weeks`
+              ? `${stats.etaWeeks} Wochen`
               : profile?.goalWeightKg == null
                 ? "—"
-                : "at goal"
+                : "am Ziel"
           }
           sub={fmtDate(stats.etaDate)}
         />
@@ -80,35 +80,35 @@ export default async function WeightPage() {
       {stats.needsMacroRefresh && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-400 bg-amber-50 p-4 text-sm dark:bg-amber-950/30">
           <div>
-            You&apos;ve dropped ≥ 2 kg since your macros were last calculated.
-            BMR has shifted — recalculate to stay on track.
+            Du hast seit der letzten Makro-Berechnung ≥ 2 kg abgenommen.
+            Der Grundumsatz hat sich verändert — bitte neu berechnen.
           </div>
           <RefreshMacrosButton highlight />
         </div>
       )}
 
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-zinc-500">Log a weigh-in</h2>
+        <h2 className="text-sm font-medium text-zinc-500">Wiegen eintragen</h2>
         <WeightForm defaultKg={stats.latestKg ?? profile?.weightKg} />
       </section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-zinc-500">History</h2>
+          <h2 className="text-sm font-medium text-zinc-500">Verlauf</h2>
           {!stats.needsMacroRefresh && entries.length > 0 && (
             <RefreshMacrosButton />
           )}
         </div>
         {entries.length === 0 ? (
-          <p className="text-sm text-zinc-500">No entries yet.</p>
+          <p className="text-sm text-zinc-500">Noch keine Einträge.</p>
         ) : (
           <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
             <table className="w-full text-sm">
               <thead className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
                 <tr>
-                  <th className="px-3 py-2">Date</th>
-                  <th className="px-3 py-2">Weight</th>
-                  <th className="px-3 py-2">Note</th>
+                  <th className="px-3 py-2">Datum</th>
+                  <th className="px-3 py-2">Gewicht</th>
+                  <th className="px-3 py-2">Notiz</th>
                 </tr>
               </thead>
               <tbody>

@@ -17,7 +17,7 @@ export function RefreshMacrosButton({ highlight }: { highlight?: boolean }) {
           : "border border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900")
       }
     >
-      {pending ? "Refreshing..." : "Recalculate macros from 7-day avg"}
+      {pending ? "Neu berechnen..." : "Makros aus 7-Tage-Schnitt neu berechnen"}
     </button>
   );
 }

@@ -49,7 +49,7 @@ export function WaterRing({
         className="fill-zinc-500"
         fontSize={size * 0.09}
       >
-        of {(targetMl / 1000).toFixed(1)}L
+von {(targetMl / 1000).toFixed(1)}L
       </text>
     </svg>
   );

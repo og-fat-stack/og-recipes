@@ -13,7 +13,7 @@ export function WeightForm({ defaultKg }: { defaultKg?: number }) {
   return (
     <form action={action} className="flex flex-wrap items-end gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-600 dark:text-zinc-400">Weight (kg)</span>
+        <span className="text-zinc-600 dark:text-zinc-400">Gewicht (kg)</span>
         <input
           name="kg"
           type="number"
@@ -24,7 +24,7 @@ export function WeightForm({ defaultKg }: { defaultKg?: number }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-600 dark:text-zinc-400">Date</span>
+        <span className="text-zinc-600 dark:text-zinc-400">Datum</span>
         <input
           name="date"
           type="date"
@@ -33,7 +33,7 @@ export function WeightForm({ defaultKg }: { defaultKg?: number }) {
         />
       </label>
       <label className="flex flex-1 flex-col gap-1 text-sm">
-        <span className="text-zinc-600 dark:text-zinc-400">Note</span>
+        <span className="text-zinc-600 dark:text-zinc-400">Notiz</span>
         <input
           name="note"
           type="text"
@@ -46,7 +46,7 @@ export function WeightForm({ defaultKg }: { defaultKg?: number }) {
         disabled={pending}
         className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
       >
-        {pending ? "Logging..." : "Log"}
+        {pending ? "Speichern..." : "Eintragen"}
       </button>
       {state.error && (
         <p className="w-full text-sm text-red-600 dark:text-red-400">

@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TABS = [
-  { href: "/", label: "Home" },
+  { href: "/", label: "Start" },
   { href: "/plan", label: "Plan" },
-  { href: "/cook", label: "Cook" },
-  { href: "/water", label: "Water" },
-  { href: "/history", label: "History" },
-  { href: "/profile", label: "Profile" },
+  { href: "/cook", label: "Kochen" },
+  { href: "/recipes", label: "Rezepte" },
+  { href: "/water", label: "Wasser" },
+  { href: "/weight", label: "Gewicht" },
+  { href: "/history", label: "Verlauf" },
+  { href: "/profile", label: "Profil" },
 ] as const;
 
 export function NavBar() {

@@ -5,11 +5,11 @@ import { saveProfile, type SaveProfileState } from "./actions";
 import type { Profile } from "../../lib/generated/prisma/client";
 
 const ACTIVITY_OPTIONS = [
-  { value: "sedentary", label: "Sedentary (desk, little exercise)" },
-  { value: "light", label: "Light (1-3x/week)" },
-  { value: "moderate", label: "Moderate (3-5x/week)" },
-  { value: "active", label: "Active (6-7x/week)" },
-  { value: "very_active", label: "Very active (2x/day)" },
+  { value: "sedentary", label: "Sitzend (Schreibtisch, wenig Bewegung)" },
+  { value: "light", label: "Leicht (1–3×/Woche)" },
+  { value: "moderate", label: "Moderat (3–5×/Woche)" },
+  { value: "active", label: "Aktiv (6–7×/Woche)" },
+  { value: "very_active", label: "Sehr aktiv (2×/Tag)" },
 ] as const;
 
 export function ProfileForm({ profile }: { profile: Profile | null }) {
@@ -22,7 +22,7 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
     <form action={formAction} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
-          label="Height (cm)"
+          label="Größe (cm)"
           name="heightCm"
           type="number"
           step="0.5"
@@ -30,7 +30,7 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
           required
         />
         <Field
-          label="Weight (kg)"
+          label="Gewicht (kg)"
           name="weightKg"
           type="number"
           step="0.1"
@@ -38,42 +38,42 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
           required
         />
         <Field
-          label="Goal weight (kg)"
+          label="Zielgewicht (kg)"
           name="goalWeightKg"
           type="number"
           step="0.1"
           defaultValue={profile?.goalWeightKg ?? ""}
         />
         <Field
-          label="Age"
+          label="Alter"
           name="age"
           type="number"
           defaultValue={profile?.age ?? ""}
           required
         />
         <Select
-          label="Sex"
+          label="Geschlecht"
           name="sex"
           defaultValue={profile?.sex ?? "male"}
           options={[
-            { value: "male", label: "Male" },
-            { value: "female", label: "Female" },
+            { value: "male", label: "Männlich" },
+            { value: "female", label: "Weiblich" },
           ]}
         />
         <Select
-          label="Activity level"
+          label="Aktivitätslevel"
           name="activityLevel"
           defaultValue={profile?.activityLevel ?? "light"}
           options={ACTIVITY_OPTIONS}
         />
         <Select
-          label="Goal"
+          label="Ziel"
           name="goal"
           defaultValue={profile?.goal ?? "cut"}
           options={[
-            { value: "cut", label: "Cut (lose weight)" },
-            { value: "maintain", label: "Maintain" },
-            { value: "gain", label: "Gain" },
+            { value: "cut", label: "Abnehmen" },
+            { value: "maintain", label: "Halten" },
+            { value: "gain", label: "Aufbauen" },
           ]}
         />
       </div>
@@ -83,7 +83,7 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
       )}
       {state.ok && (
         <p className="text-sm text-emerald-600 dark:text-emerald-400">
-          Saved.
+          Gespeichert.
         </p>
       )}
 
@@ -92,7 +92,7 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
         disabled={pending}
         className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
       >
-        {pending ? "Saving..." : "Save profile"}
+        {pending ? "Speichern..." : "Profil speichern"}
       </button>
     </form>
   );

@@ -6,10 +6,10 @@ import { WaterControls } from "./WaterControls";
 import { DeleteEntryButton } from "./DeleteEntryButton";
 
 function fmtTime(d: Date) {
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 }
 function fmtDate(d: Date) {
-  return d.toISOString().slice(5, 10);
+  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
 }
 
 export default async function WaterPage() {
@@ -26,15 +26,15 @@ export default async function WaterPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">Water</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Wasser</h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-          Daily target{" "}
+          Tagesziel{" "}
           <span className="font-medium">{(target / 1000).toFixed(1)} L</span>
           {!profile && (
             <>
               {" "}
-              — set your <Link href="/profile" className="underline">profile</Link>{" "}
-              to personalize.
+              — <Link href="/profile" className="underline">Profil</Link>{" "}
+              ausfüllen, um es zu personalisieren.
             </>
           )}
         </p>
@@ -44,12 +44,12 @@ export default async function WaterPage() {
         <WaterRing totalMl={total} targetMl={target} />
         <div className="flex-1 space-y-3 sm:pl-6">
           <div>
-            <div className="text-sm text-zinc-500">Today</div>
+            <div className="text-sm text-zinc-500">Heute</div>
             <div className="text-3xl font-semibold">
               {total} <span className="text-base font-normal text-zinc-500">ml</span>
             </div>
             <div className="text-sm text-zinc-500">
-              {Math.max(0, target - total)} ml to go
+              Noch {Math.max(0, target - total)} ml
             </div>
           </div>
           <WaterControls />
@@ -57,9 +57,9 @@ export default async function WaterPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-zinc-500">Today&apos;s entries</h2>
+        <h2 className="text-sm font-medium text-zinc-500">Heutige Einträge</h2>
         {entries.length === 0 ? (
-          <p className="text-sm text-zinc-500">Nothing logged yet today.</p>
+          <p className="text-sm text-zinc-500">Heute noch nichts eingetragen.</p>
         ) : (
           <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
             {entries.map((e) => (
@@ -79,7 +79,7 @@ export default async function WaterPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-zinc-500">Last 14 days</h2>
+        <h2 className="text-sm font-medium text-zinc-500">Letzte 14 Tage</h2>
         <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex items-end gap-1 h-32">
             {recent.map((r) => {
@@ -94,9 +94,7 @@ export default async function WaterPage() {
                   <div
                     className={
                       "w-full rounded-t " +
-                      (hit
-                        ? "bg-sky-500"
-                        : "bg-sky-300 dark:bg-sky-900")
+                      (hit ? "bg-sky-500" : "bg-sky-300 dark:bg-sky-900")
                     }
                     style={{ height: `${Math.max(h, 2)}%` }}
                   />

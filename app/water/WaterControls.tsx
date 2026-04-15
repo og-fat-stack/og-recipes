@@ -57,7 +57,7 @@ export function WaterControls({ compact = false }: { compact?: boolean }) {
             onClick={() => start(() => undoLastWater().then(() => {}))}
             className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
           >
-            Undo last
+            Letztes rückgängig
           </button>
         )}
       </div>
@@ -67,13 +67,13 @@ export function WaterControls({ compact = false }: { compact?: boolean }) {
           role="status"
           className="pointer-events-auto fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-zinc-900 px-4 py-2 text-sm text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900"
         >
-          <span>+{toast.ml} ml logged</span>
+          <span>+{toast.ml} ml eingetragen</span>
           <button
             type="button"
             onClick={undo}
             className="font-semibold text-sky-300 hover:text-sky-200 dark:text-sky-600 dark:hover:text-sky-700"
           >
-            Undo
+            Rückgängig
           </button>
         </div>
       )}

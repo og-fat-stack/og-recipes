@@ -8,7 +8,7 @@ export function DeleteEntryButton({ id }: { id: number }) {
   return (
     <button
       type="button"
-      aria-label="Delete entry"
+      aria-label="Eintrag löschen"
       disabled={pending}
       onClick={() => start(() => deleteWaterEntry(id).then(() => {}))}
       className="rounded-full px-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/30"

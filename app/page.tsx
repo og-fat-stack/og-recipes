@@ -4,14 +4,21 @@ import { getWeightStats } from "../lib/weight";
 import { getTodayTotal } from "../lib/water";
 import { WaterRing } from "../components/WaterRing";
 import { WaterControls } from "./water/WaterControls";
+import { getRecipes } from "../lib/recipe";
 
 function fmtKg(kg: number | null) {
   return kg == null ? "—" : `${kg.toFixed(1)} kg`;
 }
 
+const GOAL_LABELS: Record<string, string> = {
+  cut: "Abnehmen",
+  maintain: "Halten",
+  gain: "Aufbauen",
+};
+
 export default async function Home() {
   const profile = await getProfile();
-  const [stats, waterToday] = profile
+  const [stats, waterToday, recipes] = profile
     ? await Promise.all([
         getWeightStats(
           profile.goalWeightKg ?? null,
@@ -19,49 +26,53 @@ export default async function Home() {
           profile.lastMacroWeightKg ?? null,
         ),
         getTodayTotal(),
+        getRecipes(),
       ])
-    : [null, 0];
+    : [null, 0, []];
 
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">Home</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Start</h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-          Personal cooking + weight-loss dashboard.
+          Dein persönliches Koch- und Abnehm-Dashboard.
         </p>
       </header>
 
       {!profile ? (
         <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-6 text-center dark:border-zinc-700 dark:bg-zinc-900">
           <p className="text-zinc-600 dark:text-zinc-400">
-            Set up your profile to compute daily targets.
+            Lege dein Profil an, um deine Tagesziele zu berechnen.
           </p>
           <Link
             href="/profile"
             className="mt-3 inline-block rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
           >
-            Go to profile
+            Zum Profil
           </Link>
         </div>
       ) : (
         <>
           <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card
-              title="Daily calories"
+              title="Tageskalorien"
               value={`${profile.kcalTarget}`}
               sub="kcal"
             />
             <Card
-              title="Macros"
-              value={`${profile.proteinG}P · ${profile.carbG}C · ${profile.fatG}F`}
+              title="Makros"
+              value={`${profile.proteinG}E · ${profile.carbG}K · ${profile.fatG}F`}
               sub="g"
             />
             <Card
-              title="Water"
+              title="Wasser"
               value={`${profile.waterMlTarget}`}
               sub="ml"
             />
-            <Card title="Goal" value={profile.goal} />
+            <Card
+              title="Ziel"
+              value={GOAL_LABELS[profile.goal] ?? profile.goal}
+            />
           </section>
 
           <section className="flex flex-col items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:flex-row sm:items-center">
@@ -73,16 +84,16 @@ export default async function Home() {
             />
             <div className="flex-1 space-y-2 text-center sm:text-left">
               <div className="flex items-center justify-between gap-2">
-                <h2 className="font-medium">Water today</h2>
+                <h2 className="font-medium">Wasser heute</h2>
                 <Link
                   href="/water"
                   className="text-sm text-zinc-500 hover:underline"
                 >
-                  Open →
+                  Öffnen →
                 </Link>
               </div>
               <div className="text-sm text-zinc-500">
-                {Math.max(0, profile.waterMlTarget - waterToday)} ml to go
+                Noch {Math.max(0, profile.waterMlTarget - waterToday)} ml
               </div>
               <WaterControls compact />
             </div>
@@ -90,18 +101,21 @@ export default async function Home() {
 
           <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
             <div className="flex items-center justify-between">
-              <h2 className="font-medium">Weight progress</h2>
+              <h2 className="font-medium">Gewichtsverlauf</h2>
               <Link
                 href="/weight"
                 className="text-sm text-zinc-500 hover:underline"
               >
-                Open →
+                Öffnen →
               </Link>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <MiniStat label="7-day avg" value={fmtKg(stats?.rollingAvg7 ?? null)} />
               <MiniStat
-                label="Weekly Δ"
+                label="7-Tage-Schnitt"
+                value={fmtKg(stats?.rollingAvg7 ?? null)}
+              />
+              <MiniStat
+                label="Wöchentliche Δ"
                 value={
                   stats?.weeklyDeltaKg == null
                     ? "—"
@@ -109,26 +123,75 @@ export default async function Home() {
                 }
               />
               <MiniStat
-                label="Goal"
+                label="Zielgewicht"
                 value={fmtKg(profile.goalWeightKg ?? null)}
               />
               <MiniStat
-                label="ETA"
+                label="Ankunft"
                 value={
-                  stats?.etaWeeks != null
-                    ? `${stats.etaWeeks} wk`
-                    : "—"
+                  stats?.etaWeeks != null ? `${stats.etaWeeks} Wo` : "—"
                 }
               />
             </div>
             {stats?.needsMacroRefresh && (
               <p className="mt-3 text-sm text-amber-600 dark:text-amber-400">
-                Down ≥ 2 kg since last macro calc — recalculate on the{" "}
+                Über 2 kg abgenommen seit der letzten Makro-Berechnung — neu
+                berechnen auf der{" "}
                 <Link href="/weight" className="underline">
-                  weight page
+                  Gewichtsseite
                 </Link>
                 .
               </p>
+            )}
+          </section>
+
+          <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex items-center justify-between">
+              <h2 className="font-medium">
+                Rezepte{" "}
+                <span className="text-sm font-normal text-zinc-500">
+                  ({recipes.length})
+                </span>
+              </h2>
+              <div className="flex items-center gap-3 text-sm">
+                <Link
+                  href="/recipes/new"
+                  className="text-zinc-500 hover:underline"
+                >
+                  + Neu
+                </Link>
+                <Link
+                  href="/recipes"
+                  className="text-zinc-500 hover:underline"
+                >
+                  Alle →
+                </Link>
+              </div>
+            </div>
+            {recipes.length === 0 ? (
+              <p className="mt-3 text-sm text-zinc-500">
+                Noch keine Rezepte. Füge eins hinzu oder starte{" "}
+                <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">
+                  npm run db:seed
+                </code>
+                .
+              </p>
+            ) : (
+              <ul className="mt-3 divide-y divide-zinc-200 dark:divide-zinc-800">
+                {recipes.slice(0, 4).map((r) => (
+                  <li key={r.id}>
+                    <Link
+                      href={`/recipes/${r.id}`}
+                      className="flex items-center justify-between py-2 text-sm hover:underline"
+                    >
+                      <span>{r.title}</span>
+                      <span className="text-xs text-zinc-500">
+                        {r.kcalPerPortion} kcal · {r.cuisine}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             )}
           </section>
         </>
