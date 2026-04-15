@@ -13,12 +13,20 @@ export default async function RecipesPage() {
             Dein persönliches Kochbuch. Meal-Prep-tauglich und makro-getrackt.
           </p>
         </div>
-        <Link
-          href="/recipes/new"
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-        >
-          + Neues Rezept
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/recipes/generate"
+            className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+          >
+            ✨ Mit KI
+          </Link>
+          <Link
+            href="/recipes/new"
+            className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+          >
+            + Neues Rezept
+          </Link>
+        </div>
       </header>
 
       {recipes.length === 0 ? (

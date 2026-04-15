@@ -155,6 +155,12 @@ export default async function Home() {
               </h2>
               <div className="flex items-center gap-3 text-sm">
                 <Link
+                  href="/recipes/generate"
+                  className="text-emerald-600 hover:underline dark:text-emerald-400"
+                >
+                  ✨ KI
+                </Link>
+                <Link
                   href="/recipes/new"
                   className="text-zinc-500 hover:underline"
                 >
