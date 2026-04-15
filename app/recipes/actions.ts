@@ -53,6 +53,8 @@ export async function createRecipe(
 }
 
 export async function deleteRecipe(id: number): Promise<void> {
-  await db.recipe.delete({ where: { id } }).catch(() => {});
+  await db.recipe.delete({ where: { id } });
   revalidatePath("/recipes");
+  revalidatePath("/plan");
+  revalidatePath("/");
 }

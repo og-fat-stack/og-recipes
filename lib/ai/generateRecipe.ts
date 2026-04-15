@@ -81,8 +81,8 @@ export async function generateRecipeDraft({
   profile,
 }: GenerateArgs): Promise<RecipeDraft> {
   const profileContext = profile
-    ? `Nutzerprofil: Tagesziel ${profile.kcalTarget} kcal, ${profile.proteinG} g Eiweiß, ${profile.carbG} g KH, ${profile.fatG} g Fett. Ziel: ${profile.goal}. Plane jede Portion so, dass sie ca. 1/2 eines Tages-Makros deckt (er isst 2 Mahlzeiten pro Tag).`
-    : `Nutzerprofil: nicht gesetzt. Plane eine eiweißreiche, moderat kalorische Portion (~500–650 kcal, 40+ g Eiweiß).`;
+    ? `Nutzerprofil: Tagesziel ${profile.kcalTarget} kcal, ${profile.proteinG} g Eiweiß, ${profile.carbG} g KH, ${profile.fatG} g Fett. Ziel: ${profile.goal}. Plane jede Portion so, dass sie ca. 1/3 eines Tages-Makros deckt (er isst 3 Mahlzeiten pro Tag). Achte auf günstige Zutaten (Linsen, Eier, Quark, Hähnchenschenkel, Haferflocken) — der Nutzer achtet aufs Budget.`
+    : `Nutzerprofil: nicht gesetzt. Plane eine eiweißreiche, moderat kalorische Portion (~400–550 kcal, 30+ g Eiweiß) mit günstigen Zutaten.`;
 
   const msg = await callClaude({
     model: "smart",

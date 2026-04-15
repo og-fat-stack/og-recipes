@@ -32,7 +32,7 @@ model Profile {
 }
 
 model Recipe {
-  id               Int      @id @default(autoincrement())
+  id               Int            @id @default(autoincrement())
   title            String
   cuisine          String
   portions         Int
@@ -40,13 +40,49 @@ model Recipe {
   proteinG         Int
   carbG            Int
   fatG             Int
-  batchStorageDays Int      @default(4)
+  batchStorageDays Int            @default(4)
   ingredients      Json
   steps            Json
   techniques       Json
   notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  plannedMeals     PlannedMeal[]
+  cookSessions     CookSession[]
+}
+
+model MealPlan {
+  id        Int           @id @default(autoincrement())
+  weekStart DateTime      @unique
+  notes     String?
+  createdAt DateTime      @default(now())
+  meals     PlannedMeal[]
+}
+
+model PlannedMeal {
+  id                Int      @id @default(autoincrement())
+  plan              MealPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planId            Int
+  day               Int
+  slot              String
+  recipe            Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId          Int
+  portionsFromBatch Float    @default(1)
+  locked            Boolean  @default(false)
+
+  @@unique([planId, day, slot])
+  @@index([recipeId])
+}
+
+model CookSession {
+  id           Int      @id @default(autoincrement())
+  date         DateTime
+  recipe       Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId     Int
+  portionsMade Int
+  createdAt    DateTime @default(now())
+
+  @@index([date])
 }
 
 model WaterEntry {

@@ -89,31 +89,7 @@ Derived, no new AI call.
 
 ---
 
-## Step 7 — Guided cook mode
-
-Where the learning happens.
-
-- `/cook/[recipeId]` full-screen stepper: one step per screen, built-in timers parsed from step text ("simmer 10 min"), "Tip" button per step → `POST /api/cook/tip` (Claude, cached system prompt + recipe context, step index as variable).
-- "I'm out of X" button → `POST /api/cook/adapt` returns substitution.
-- On finish → creates `CookSession` row.
-
-**Done when:** you cook a batch from your phone/laptop, on-demand Claude tips, and session is logged.
-
----
-
-## Step 8 — Post-cook reflection
-
-Closes the learning loop.
-
-- `Reflection` model: `cookSessionId`, `wentWell`, `wentWrong`, `rating 1–5`, `claudeNotes` (structured: `{ techniqueTakeaways[], nextTimeTry[] }`).
-- After cook finish → reflection form. On submit: `POST /api/reflect` → Claude summarizes into structured notes, saved.
-- Reflections feed into Step 5's plan generator prompt (recent wins/losses).
-
-**Done when:** reflections are stored and the next weekly plan visibly adapts (e.g., retry a technique you struggled with, avoid one you disliked).
-
----
-
-## Step 9 — Technique tracking & progression
+## Step 7 — Technique tracking & progression
 
 Skill graph on top of existing tags.
 
@@ -125,7 +101,7 @@ Skill graph on top of existing tags.
 
 ---
 
-## Step 10 — Polish pass
+## Step 8 — Polish pass
 
 - Home dashboard: today's meals, macros progress, water ring, next cook day, current technique focus.
 - History view: calendar heatmap of cook sessions + macro adherence.
