@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { getProfile } from "../lib/profile";
 import { getWeightStats } from "../lib/weight";
+import { getTodayTotal } from "../lib/water";
+import { WaterRing } from "../components/WaterRing";
+import { WaterControls } from "./water/WaterControls";
 
 function fmtKg(kg: number | null) {
   return kg == null ? "—" : `${kg.toFixed(1)} kg`;
@@ -8,13 +11,16 @@ function fmtKg(kg: number | null) {
 
 export default async function Home() {
   const profile = await getProfile();
-  const stats = profile
-    ? await getWeightStats(
-        profile.goalWeightKg ?? null,
-        0.4,
-        profile.lastMacroWeightKg ?? null,
-      )
-    : null;
+  const [stats, waterToday] = profile
+    ? await Promise.all([
+        getWeightStats(
+          profile.goalWeightKg ?? null,
+          0.4,
+          profile.lastMacroWeightKg ?? null,
+        ),
+        getTodayTotal(),
+      ])
+    : [null, 0];
 
   return (
     <div className="space-y-8">
@@ -56,6 +62,30 @@ export default async function Home() {
               sub="ml"
             />
             <Card title="Goal" value={profile.goal} />
+          </section>
+
+          <section className="flex flex-col items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:flex-row sm:items-center">
+            <WaterRing
+              totalMl={waterToday}
+              targetMl={profile.waterMlTarget}
+              size={140}
+              stroke={12}
+            />
+            <div className="flex-1 space-y-2 text-center sm:text-left">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="font-medium">Water today</h2>
+                <Link
+                  href="/water"
+                  className="text-sm text-zinc-500 hover:underline"
+                >
+                  Open →
+                </Link>
+              </div>
+              <div className="text-sm text-zinc-500">
+                {Math.max(0, profile.waterMlTarget - waterToday)} ml to go
+              </div>
+              <WaterControls compact />
+            </div>
           </section>
 
           <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
