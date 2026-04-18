@@ -18,8 +18,12 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
     FormData
   >(saveProfile, {});
 
+  const formKey = profile
+    ? `${profile.id}-${new Date(profile.updatedAt).getTime()}`
+    : "new";
+
   return (
-    <form action={formAction} className="space-y-4">
+    <form key={formKey} action={formAction} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
           label="Größe (cm)"

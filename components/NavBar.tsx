@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/", label: "Start" },
   { href: "/plan", label: "Plan" },
-  { href: "/cook", label: "Kochen" },
   { href: "/recipes", label: "Rezepte" },
   { href: "/water", label: "Wasser" },
+  { href: "/expenses", label: "Ausgaben" },
   { href: "/weight", label: "Gewicht" },
   { href: "/history", label: "Verlauf" },
   { href: "/profile", label: "Profil" },

@@ -126,12 +126,19 @@ export type GeneratePlanArgs = {
   profile: Profile;
   recentMealTitles: string[];
   knownMainRecipes: KnownRecipeSummary[];
+  reflectionDigests?: {
+    recipeTitle: string;
+    rating: number;
+    summary: string;
+    nextTimeTry: string[];
+  }[];
 };
 
 export async function generatePlanDraft({
   profile,
   recentMealTitles,
   knownMainRecipes,
+  reflectionDigests = [],
 }: GeneratePlanArgs): Promise<PlanDraft> {
   const perMeal = {
     kcal: Math.round(profile.kcalTarget / 3),
@@ -165,6 +172,18 @@ recentMeals (nicht für NEUE Rezepte verwenden): ${
     recentMealTitles.length
       ? recentMealTitles.map((t) => `"${t}"`).join(", ")
       : "keine"
+  }
+
+${
+    reflectionDigests.length
+      ? `Feedback aus bisherigen Kochsessions — nutze diese Hinweise, um bekannte Rezepte evtl. zu ersetzen und bei neuen Rezepten diese Fehler zu vermeiden:
+${reflectionDigests
+  .map(
+    (r) =>
+      `  • "${r.recipeTitle}" (${r.rating}/5): ${r.summary}${r.nextTimeTry.length ? " [Nächstes Mal: " + r.nextTimeTry.join("; ") + "]" : ""}`,
+  )
+  .join("\n")}`
+      : "Keine vergangenen Reflexionen verfügbar."
   }
 
 Erstelle die Wochenplanung (newRecipes + 21 assignments).`;

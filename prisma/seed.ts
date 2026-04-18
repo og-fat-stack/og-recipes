@@ -1,20 +1,5 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient } from "../lib/generated/prisma/client";
-
-// Resolve the DB file relative to this seed script, not cwd, so `npm run
-// db:seed` hits the same file the Prisma CLI migrated.
-const here = path.dirname(fileURLToPath(import.meta.url));
-// Migrations resolved `file:./dev.db` relative to cwd (project root),
-// so the real DB lives at ../dev.db from this seed script.
-const dbPath = path.resolve(here, "..", "dev.db");
-
-const db = new PrismaClient({
-  adapter: new PrismaBetterSqlite3({
-    url: `file:${dbPath.replace(/\\/g, "/")}`,
-  }),
-});
+import "dotenv/config";
+import { db } from "../lib/db";
 
 const RECIPES = [
   {

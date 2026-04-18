@@ -5,6 +5,7 @@ import { getTodayTotal } from "../lib/water";
 import { WaterRing } from "../components/WaterRing";
 import { WaterControls } from "./water/WaterControls";
 import { getRecipes } from "../lib/recipe";
+import { fmtEuro, getCurrentWeekExpense, getExpenseStats } from "../lib/expense";
 
 function fmtKg(kg: number | null) {
   return kg == null ? "—" : `${kg.toFixed(1)} kg`;
@@ -18,7 +19,7 @@ const GOAL_LABELS: Record<string, string> = {
 
 export default async function Home() {
   const profile = await getProfile();
-  const [stats, waterToday, recipes] = profile
+  const [stats, waterToday, recipes, currentExpense, expenseStats] = profile
     ? await Promise.all([
         getWeightStats(
           profile.goalWeightKg ?? null,
@@ -27,8 +28,10 @@ export default async function Home() {
         ),
         getTodayTotal(),
         getRecipes(),
+        getCurrentWeekExpense(),
+        getExpenseStats(12),
       ])
-    : [null, 0, []];
+    : [null, 0, [], null, null];
 
   return (
     <div className="space-y-8">
@@ -143,6 +146,44 @@ export default async function Home() {
                 .
               </p>
             )}
+          </section>
+
+          <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex items-center justify-between">
+              <h2 className="font-medium">Wocheneinkauf</h2>
+              <Link
+                href="/expenses"
+                className="text-sm text-zinc-500 hover:underline"
+              >
+                Öffnen →
+              </Link>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <MiniStat
+                label="Diese Woche"
+                value={
+                  currentExpense
+                    ? fmtEuro(currentExpense.amountCents)
+                    : "—"
+                }
+              />
+              <MiniStat
+                label="Ø 12 Wochen"
+                value={
+                  expenseStats?.avgCents != null
+                    ? fmtEuro(expenseStats.avgCents)
+                    : "—"
+                }
+              />
+              <MiniStat
+                label="Bisher gesamt"
+                value={
+                  expenseStats && expenseStats.totalCents > 0
+                    ? fmtEuro(expenseStats.totalCents)
+                    : "—"
+                }
+              />
+            </div>
           </section>
 
           <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">

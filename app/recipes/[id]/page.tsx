@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRecipe, type Ingredient } from "../../../lib/recipe";
 import { DeleteRecipeButton } from "./DeleteRecipeButton";
+import { CookedButton } from "./CookedButton";
 
 export default async function RecipePage({
   params,
@@ -37,7 +38,10 @@ export default async function RecipePage({
               {recipe.batchStorageDays} Tage
             </p>
           </div>
-          <DeleteRecipeButton id={recipe.id} />
+          <div className="flex items-center gap-2">
+            <CookedButton recipeId={recipe.id} />
+            <DeleteRecipeButton id={recipe.id} />
+          </div>
         </div>
         {techniques.length > 0 && (
           <div className="flex flex-wrap gap-1">

@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Profile {
@@ -52,11 +52,31 @@ model Recipe {
 }
 
 model MealPlan {
-  id        Int           @id @default(autoincrement())
-  weekStart DateTime      @unique
-  notes     String?
-  createdAt DateTime      @default(now())
-  meals     PlannedMeal[]
+  id            Int                 @id @default(autoincrement())
+  weekStart     DateTime            @unique
+  notes         String?
+  createdAt     DateTime            @default(now())
+  meals         PlannedMeal[]
+  shoppingState ShoppingItemState[]
+}
+
+model WeeklyExpense {
+  id          Int      @id @default(autoincrement())
+  weekStart   DateTime @unique
+  amountCents Int
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ShoppingItemState {
+  id      Int      @id @default(autoincrement())
+  plan    MealPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planId  Int
+  itemKey String
+  checked Boolean  @default(false)
+
+  @@unique([planId, itemKey])
 }
 
 model PlannedMeal {
@@ -75,14 +95,26 @@ model PlannedMeal {
 }
 
 model CookSession {
-  id           Int      @id @default(autoincrement())
+  id           Int         @id @default(autoincrement())
   date         DateTime
-  recipe       Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipe       Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   recipeId     Int
   portionsMade Int
-  createdAt    DateTime @default(now())
+  createdAt    DateTime    @default(now())
+  reflection   Reflection?
 
   @@index([date])
+}
+
+model Reflection {
+  id            Int         @id @default(autoincrement())
+  cookSession   CookSession @relation(fields: [cookSessionId], references: [id], onDelete: Cascade)
+  cookSessionId Int         @unique
+  wentWell      String?
+  wentWrong     String?
+  rating        Int
+  claudeNotes   Json
+  createdAt     DateTime    @default(now())
 }
 
 model WaterEntry {

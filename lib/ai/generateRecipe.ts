@@ -10,7 +10,7 @@ export const RecipeDraftSchema = z.object({
   proteinG: z.number().int().min(0).max(300),
   carbG: z.number().int().min(0).max(500),
   fatG: z.number().int().min(0).max(300),
-  batchStorageDays: z.number().int().min(1).max(14),
+  batchStorageDays: z.number().int().min(0).max(14),
   ingredients: z
     .array(
       z.object({

@@ -9,6 +9,7 @@ import {
   weekStart,
 } from "../../lib/plan";
 import { generatePlanDraft } from "../../lib/ai/generatePlan";
+import { getReflectionDigests } from "../../lib/reflection";
 
 export type GeneratePlanState =
   | { status: "idle" }
@@ -24,9 +25,10 @@ export async function generateWeeklyPlan(
     return { status: "error", error: "Zuerst das Profil ausfüllen." };
   }
   try {
-    const [recentTitles, knownMainPool] = await Promise.all([
+    const [recentTitles, knownMainPool, reflectionDigests] = await Promise.all([
       getRecentMealTitles(14),
       pickKnownMainMealRecipes(2),
+      getReflectionDigests(6),
     ]);
 
     const knownSummaries = knownMainPool.map((r) => ({
@@ -44,6 +46,12 @@ export async function generateWeeklyPlan(
       profile,
       recentMealTitles: recentTitles,
       knownMainRecipes: knownSummaries,
+      reflectionDigests: reflectionDigests.map((r) => ({
+        recipeTitle: r.recipeTitle,
+        rating: r.rating,
+        summary: r.summary,
+        nextTimeTry: r.nextTimeTry,
+      })),
     });
 
     const ws = weekStart();
