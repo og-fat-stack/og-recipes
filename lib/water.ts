@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { addDays } from "./time";
 import { dayKey } from "./weight";
 
 export type WaterDay = {
@@ -23,16 +24,14 @@ export async function getTodayEntries() {
 }
 
 export async function getRecentDays(days = 14): Promise<WaterDay[]> {
-  const since = dayKey();
-  since.setDate(since.getDate() - (days - 1));
+  const since = addDays(dayKey(), -(days - 1));
   const rows = await db.waterEntry.findMany({
     where: { day: { gte: since } },
     select: { day: true, ml: true },
   });
   const map = new Map<number, number>();
   for (let i = 0; i < days; i++) {
-    const d = new Date(since);
-    d.setDate(since.getDate() + i);
+    const d = addDays(since, i);
     map.set(d.getTime(), 0);
   }
   for (const r of rows) {

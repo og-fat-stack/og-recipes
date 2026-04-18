@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { startOfDay } from "./time";
 
 export type WeightStats = {
   latestKg: number | null;
@@ -12,13 +13,9 @@ export type WeightStats = {
   needsMacroRefresh: boolean;
 };
 
-/**
- * Start-of-day UTC for a given Date (so one entry per calendar day).
- */
+/** Berlin-local start-of-day (so one entry per calendar day). */
 export function dayKey(d: Date = new Date()): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+  return startOfDay(d);
 }
 
 function avg(nums: number[]): number | null {

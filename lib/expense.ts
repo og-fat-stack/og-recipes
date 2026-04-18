@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { weekStart } from "./plan";
+import { addDays, weekStart } from "./time";
 
 export function parseEuroToCents(input: string): number | null {
   const cleaned = input.trim().replace(",", ".").replace(/[^0-9.]/g, "");
@@ -21,8 +21,7 @@ export async function getCurrentWeekExpense() {
 }
 
 export async function getRecentExpenses(weeks = 12) {
-  const since = weekStart();
-  since.setDate(since.getDate() - (weeks - 1) * 7);
+  const since = addDays(weekStart(), -(weeks - 1) * 7);
   const rows = await db.weeklyExpense.findMany({
     where: { weekStart: { gte: since } },
     orderBy: { weekStart: "asc" },
@@ -31,8 +30,7 @@ export async function getRecentExpenses(weeks = 12) {
   // Zero-fill missing weeks for a clean chart.
   const series: { weekStart: Date; amountCents: number | null }[] = [];
   for (let i = 0; i < weeks; i++) {
-    const ws = new Date(since);
-    ws.setDate(since.getDate() + i * 7);
+    const ws = addDays(since, i * 7);
     const hit = rows.find((r) => r.weekStart.getTime() === ws.getTime());
     series.push({ weekStart: ws, amountCents: hit?.amountCents ?? null });
   }
