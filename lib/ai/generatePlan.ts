@@ -11,7 +11,7 @@ export const PlanAssignmentSchema = z.object({
 
 export const PlanDraftSchema = z.object({
   newRecipes: z.array(RecipeDraftSchema).min(1).max(6),
-  assignments: z.array(PlanAssignmentSchema).length(21),
+  assignments: z.array(PlanAssignmentSchema).min(3).max(21),
   weekNotes: z.string().max(2000).optional().nullable(),
 });
 
@@ -29,8 +29,9 @@ export type KnownRecipeSummary = {
 };
 
 const SYSTEM_PROMPT = `Du bist ein persönlicher Koch-Coach und Meal-Prep-Planer für eine
-Abnehm-App. Du planst eine Woche mit 3 Mahlzeiten pro Tag (Frühstück + Mittag + Abend, also
-21 Slots).
+Abnehm-App. Du planst Mahlzeiten für einen vom Nutzer gewählten Tagesbereich (meist eine
+volle Woche Mo–So mit 21 Slots, manchmal nur ein Teilbereich, z.B. Di–Sa). 3 Mahlzeiten
+pro Tag (Frühstück + Mittag + Abend). Die genaue Anzahl Slots steht im User-Input.
 
 Rhythmus und Struktur:
 - Der Nutzer kocht die Hauptmahlzeiten (Mittag + Abend) in 3 Batches an Mo / Mi / Fr.
@@ -64,6 +65,36 @@ Vorgaben für JEDES neue Rezept:
 - Eiweißreich: Hauptmahlzeiten ≥ 35 g pro Portion. Frühstück ≥ 25 g pro Portion.
 - In den Notizen eine kurze "Maße ohne Waage"-Sektion.
 - Techniken als deutsche Tags (max 5).
+- MENGEN IN DEN SCHRITTEN WIEDERHOLEN: Jeder Zubereitungsschritt nennt die konkreten Mengen
+  inline ("die 2 gehackten Zwiebeln und 4 gepressten Knoblauchzehen anbraten"), inkl. Salz, Fett,
+  Säure ("1 TL grobes Meersalz", "Saft einer halben Zitrone", "1 EL Olivenöl"). Aus den Schritten
+  allein kochbar.
+
+SALT-FAT-ACID-HEAT (SFAH) — Pflicht bei jedem neuen Rezept (Samin-Nosrat-Framework):
+- KLARE CUISINE-RICHTUNG; Fett + Säure + Aromaten müssen zueinander passen:
+  • mediterran/levantinisch: Olivenöl + Zitrone/Rotweinessig + Knoblauch/Petersilie/Kreuzkümmel/
+    Sumach/Tahini.
+  • französisch: Butter + Weißwein/Dijon + Schalotte/Thymian.
+  • italienisch: Olivenöl/Butter + Rotweinessig/Tomate + Knoblauch/Basilikum/Oregano.
+  • ostasiatisch: neutrales Öl + Reisessig/Sojasauce + Ingwer/Knoblauch/Frühlingszwiebel,
+    geröstetes Sesamöl zum Finishen.
+  • südostasiatisch: neutrales Öl/Kokosmilch + Limette/Fischsauce + Knoblauch/Chili/Koriander.
+  • mexikanisch: neutrales Öl/Schweineschmalz + Limette + Kreuzkümmel/Chili/Koriandergrün.
+  • indisch: Ghee/Butterschmalz + Joghurt/Tamarinde + Ingwer/Knoblauch/Garam Masala.
+  Keine widersprüchlichen Welten mischen (z. B. nicht Parmesan und Fischsauce gleichzeitig).
+- SALZ IN SCHICHTEN: Proteine 15–60 Min vorab salzen; Koch-/Pastawasser salzen (~1–2%);
+  Gemüse beim Anbraten salzen; am Ende abschmecken. Standard: grobes Meersalz, Mengen konkret
+  in den Schritten ("1 TL grobes Meersalz"). Letzter Schritt enthält "abschmecken und ggf.
+  nachsalzen".
+- SÄURE bewusst dosieren: tiefe Säure (Tomate/Wein/Essig im Ansatz) früh; Brightness-Säure
+  (Zitrone, Essig-Splash) AM ENDE vom Herd genommen. Fast jedes Hauptgericht endet mit einem
+  Säure-Touch passend zur Cuisine.
+- HITZE bewusst wählen: trockene Hitze (heiße Pfanne, 200–230°C Ofen) fürs Bräunen — Oberfläche
+  trocken tupfen, Pfanne nicht überfüllen (sonst Dampf statt Kruste). Nasse Hitze (Schmoren,
+  Köcheln) für Zartheit. Schritte mit Pfannen-Signalen statt nur Minuten ("kräftiges Zischen",
+  "tief goldbraun", "löst sich von der Pfanne"). Fleisch 5–10 Min ruhen lassen.
+- FETT macht Salz und Säure schmeckbar; ein finaler Akzent (Olivenöl-Drizzle, Joghurt-Klecks,
+  geröstete Nüsse) hebt das Gericht.
 
 Antworte AUSSCHLIESSLICH mit validem JSON (kein Markdown, keine Code-Fences).
 
@@ -109,8 +140,9 @@ Konkretes Beispiel-Antwort-Skelett:
 }
 
 Pflicht:
-- "assignments" hat EXAKT 21 Einträge — jede (day, slot)-Kombination genau einmal.
-- day = 0 (Mo) bis 6 (So).
+- "assignments" hat EXAKT die im User-Input vorgegebene Anzahl Einträge — jede
+  (day, slot)-Kombination im angegebenen Bereich genau einmal.
+- day muss im im User-Input angegebenen Bereich liegen (0=Mo … 6=So).
 - slot = "breakfast" | "lunch" | "dinner".
 - Alle Zahlenwerte sind Integer außer qty (darf Dezimal sein).`;
 
@@ -132,14 +164,25 @@ export type GeneratePlanArgs = {
     summary: string;
     nextTimeTry: string[];
   }[];
+  dayRange?: { start: number; end: number };
+  useUpIngredients?: string[];
 };
+
+const DAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
 
 export async function generatePlanDraft({
   profile,
   recentMealTitles,
   knownMainRecipes,
   reflectionDigests = [],
+  dayRange = { start: 0, end: 6 },
+  useUpIngredients = [],
 }: GeneratePlanArgs): Promise<PlanDraft> {
+  const { start: startDay, end: endDay } = dayRange;
+  const dayCount = endDay - startDay + 1;
+  const expectedSlots = dayCount * 3;
+  const isFullWeek = startDay === 0 && endDay === 6;
+
   const perMeal = {
     kcal: Math.round(profile.kcalTarget / 3),
     protein: Math.round(profile.proteinG / 3),
@@ -147,8 +190,17 @@ export async function generatePlanDraft({
     fat: Math.round(profile.fatG / 3),
   };
 
+  const rangeBlock = isFullWeek
+    ? `Tagesbereich: Mo–So (volle Woche, day 0..6, 21 Slots).`
+    : `Tagesbereich: ${DAY_LABELS[startDay]}–${DAY_LABELS[endDay]} (day ${startDay}..${endDay}, ${dayCount} Tage, ${expectedSlots} Slots).
+Wichtig: An den Tagen außerhalb dieses Bereichs wird NICHT gekocht/gegessen — generiere KEINE assignments für day < ${startDay} oder day > ${endDay}. Hauptmahl-Batches passend zur Tagezahl (Mo/Mi/Fr-Rhythmus nur soweit diese Tage im Bereich liegen, sonst am ersten Bereichstag starten und Haltbarkeit beachten).`;
+
+  const mainBatchHint = isFullWeek
+    ? `Volle Woche: 3 Hauptmahl-Batches (Mo/Mi/Fr).`
+    : `Teilbereich: wähle so viele Hauptmahl-Batches, wie nötig, um die ${dayCount} Tage abzudecken (1 Batch ≈ 2 Tage Hauptmahlzeiten, Haltbarkeit beachten).`;
+
   const knownBlock = knownMainRecipes.length
-    ? `knownMainRecipes (wiederverwenden als Hauptmahl-Batches; Indizes 0..${knownMainRecipes.length - 1}):
+    ? `knownMainRecipes (wiederverwendbar als Hauptmahl-Batches; Indizes 0..${knownMainRecipes.length - 1}):
 ${knownMainRecipes
   .map(
     (r, i) =>
@@ -156,9 +208,13 @@ ${knownMainRecipes
   )
   .join("\n")}
 
-Generiere nur ${3 - knownMainRecipes.length} neues Hauptmahl-Rezept + 1 Frühstücks-Rezept.`
-    : `knownMainRecipes ist leer (erste Woche).
-Generiere alle 3 Hauptmahl-Rezepte neu + 1 Frühstücks-Rezept (also "newRecipes" hat 4 Einträge).`;
+${mainBatchHint} Nutze die bekannten Rezepte für so viele Hauptmahl-Batches wie sinnvoll und ergänze fehlende Hauptmahl-Batches durch neue Rezepte. Frühstück: 1 separates neues Rezept.`
+    : `knownMainRecipes ist leer.
+${mainBatchHint} Generiere alle benötigten Hauptmahl-Rezepte neu + 1 Frühstücks-Rezept.`;
+
+  const useUpBlock = useUpIngredients.length
+    ? `Zutaten zum Aufbrauchen (priorisieren in NEUEN Rezepten, damit sie nicht schlecht werden — wenn möglich in mehreren Rezepten verteilt verwenden): ${useUpIngredients.map((i) => `"${i}"`).join(", ")}.`
+    : "";
 
   const userMsg = `Profil:
 - Tagesziele: ${profile.kcalTarget} kcal · ${profile.proteinG} g E · ${profile.carbG} g K · ${profile.fatG} g F
@@ -166,8 +222,10 @@ Generiere alle 3 Hauptmahl-Rezepte neu + 1 Frühstücks-Rezept (also "newRecipes
 - Ziel: ${profile.goal}
 - Budget ist wichtig: günstige, alltagstaugliche Zutaten.
 
-${knownBlock}
+${rangeBlock}
 
+${knownBlock}
+${useUpBlock ? `\n${useUpBlock}\n` : ""}
 recentMeals (nicht für NEUE Rezepte verwenden): ${
     recentMealTitles.length
       ? recentMealTitles.map((t) => `"${t}"`).join(", ")
@@ -186,7 +244,7 @@ ${reflectionDigests
       : "Keine vergangenen Reflexionen verfügbar."
   }
 
-Erstelle die Wochenplanung (newRecipes + 21 assignments).`;
+Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day ${startDay}..${endDay}).`;
 
   const msg = await callClaude({
     model: "planner",
@@ -216,12 +274,19 @@ Erstelle die Wochenplanung (newRecipes + 21 assignments).`;
 
   const seen = new Set<string>();
   for (const a of result.data.assignments) {
+    if (a.day < startDay || a.day > endDay) {
+      throw new Error(
+        `Tag ${a.day} liegt außerhalb des Bereichs ${startDay}..${endDay}.`,
+      );
+    }
     const key = `${a.day}-${a.slot}`;
     if (seen.has(key)) throw new Error(`Doppelte Zuweisung für ${key}.`);
     seen.add(key);
   }
-  if (seen.size !== 21) {
-    throw new Error(`Plan deckt nur ${seen.size} von 21 Slots ab.`);
+  if (seen.size !== expectedSlots) {
+    throw new Error(
+      `Plan deckt nur ${seen.size} von ${expectedSlots} Slots ab.`,
+    );
   }
 
   const totalIndexCount =

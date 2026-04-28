@@ -16,14 +16,29 @@ export type GeneratePlanState =
   | { status: "ok" }
   | { status: "error"; error: string };
 
+function parseDay(v: FormDataEntryValue | null, fallback: number): number {
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 0 && n <= 6 ? n : fallback;
+}
+
 export async function generateWeeklyPlan(
   _prev: GeneratePlanState,
-  _formData: FormData,
+  formData: FormData,
 ): Promise<GeneratePlanState> {
   const profile = await getProfile();
   if (!profile) {
     return { status: "error", error: "Zuerst das Profil ausfüllen." };
   }
+
+  const startDay = parseDay(formData.get("startDay"), 0);
+  let endDay = parseDay(formData.get("endDay"), 6);
+  if (endDay < startDay) endDay = startDay;
+  const useUpIngredients = (formData.get("useUpIngredients") ?? "")
+    .toString()
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   try {
     const [recentTitles, knownMainPool, reflectionDigests] = await Promise.all([
       getRecentMealTitles(14),
@@ -52,13 +67,13 @@ export async function generateWeeklyPlan(
         summary: r.summary,
         nextTimeTry: r.nextTimeTry,
       })),
+      dayRange: { start: startDay, end: endDay },
+      useUpIngredients,
     });
 
     const ws = weekStart();
     await db.mealPlan.deleteMany({ where: { weekStart: ws } });
 
-    // Create the new recipes, collect ids. The full index space is
-    // [knownMainPool ids..., newly created ids...] matching Claude's indexing.
     const newRecipeIds: number[] = [];
     for (const r of draft.newRecipes) {
       const created = await db.recipe.create({

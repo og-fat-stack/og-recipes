@@ -44,6 +44,44 @@ Wichtige Vorgaben für die Rezepte:
 - In den Notizen: immer eine kurze "Maße ohne Waage"-Sektion mit Umrechnungen für die wichtigsten
   Zutaten dieses Rezepts.
 - Makros müssen plausibel zu den Zutaten passen; rechne Portionen ehrlich aus.
+- MENGEN IN DEN SCHRITTEN WIEDERHOLEN: Jeder Zubereitungsschritt nennt die konkreten Mengen inline
+  ("die 2 gehackten Zwiebeln und 4 gepressten Knoblauchzehen anbraten", NICHT "die Zwiebeln und
+  den Knoblauch anbraten"). Auch Salz, Fett und Säure mit Menge ("1 TL grobes Meersalz",
+  "Saft einer halben Zitrone", "1 EL Olivenöl"). Der Nutzer soll allein aus den Schritten kochen
+  können, ohne zur Zutatenliste zu scrollen.
+
+SALT-FAT-ACID-HEAT (SFAH) — Pflicht bei JEDEM Rezept (Samin-Nosrat-Framework):
+- KLARE CUISINE-RICHTUNG. Fett + Säure + Aromaten müssen zur Richtung passen:
+  • mediterran/levantinisch: Olivenöl + Zitrone/Rotweinessig + Knoblauch, Petersilie, Kreuzkümmel,
+    Sumach, Tahini.
+  • französisch: Butter/Sahne + Weißwein/Dijon + Schalotte, Thymian, Lorbeer.
+  • italienisch: Olivenöl/Butter + Rotweinessig/Tomate/Zitrone + Knoblauch, Basilikum, Oregano,
+    Anchovis.
+  • spanisch: Olivenöl + Sherryessig + Knoblauch, geräuchertes Paprikapulver, Safran.
+  • ostasiatisch: neutrales Öl + Reisessig/Sojasauce + Ingwer, Knoblauch, Frühlingszwiebel,
+    geröstetes Sesamöl zum Finishen.
+  • südostasiatisch: neutrales Öl/Kokosmilch + Limette/Fischsauce/Tamarinde + Zitronengras,
+    Galgant, Chili, Koriandergrün.
+  • mexikanisch: neutrales Öl/Schweineschmalz + Limette + Kreuzkümmel, Oregano, Chili,
+    Koriandergrün.
+  • indisch: Ghee/Butterschmalz + Joghurt/Tamarinde + Ingwer, Knoblauch, Garam Masala,
+    Kurkuma, Senfsamen.
+  Keine widersprüchlichen Welten mischen (kein Parmesan + Fischsauce im selben Gericht).
+- SALZ IN SCHICHTEN: Proteine 15–60 Min vorab salzen (Trockenpökeln); Pasta-/Bohnen-/Reiswasser
+  salzen "wie Meerwasser" (~1–2%); Gemüse beim Anbraten salzen; am Ende abschmecken. Standard
+  ist grobes Meersalz. Im finalen Schritt immer "abschmecken und ggf. nachsalzen". Mengen konkret
+  benennen ("1 TL grobes Meersalz").
+- SÄURE bewusst dosieren: tiefe Säure (Tomate, Wein, Essig im Schmoransatz) früh einbauen für
+  Tiefe; Brightness-Säure (Zitrone, frisches Essig-Splash) AM ENDE vom Herd genommen, damit die
+  Frische erhalten bleibt. Fast jedes Hauptgericht endet mit einem Säure-Touch passend zur
+  Cuisine. Wenn ein Gericht "schwer" oder "fad" wirken könnte, Säure ist die Antwort.
+- HITZE bewusst wählen: trockene Hitze (heiße Pfanne, 200–230°C Backofen) zum Bräunen — Oberfläche
+  trocken tupfen, Pfanne NICHT überfüllen (sonst Dampf statt Kruste; lieber zwei Durchgänge);
+  nasse Hitze (Schmoren, Köcheln, Dämpfen) für Zartheit. Schritte beschreiben Pfannen-Signale
+  (Geräusch: "kräftiges Zischen"; Farbe: "tief goldbraun, fast mahagoni"; Haptik: "löst sich von
+  der Pfanne") statt nur Minuten. Fleisch nach scharfem Anbraten 5–10 Min ruhen lassen.
+- FETT trägt Salz und Säure. Ein finaler Akzent (Drizzle gutes Olivenöl, Klecks Joghurt/Schmand,
+  geröstete Nüsse, gehobelter Käse, Kräuter) hebt fast jedes Gericht. Fett zur Cuisine passend.
 
 Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt gemäß folgendem Schema (keine Erklärung,
 kein Markdown, keine Code-Fences):
