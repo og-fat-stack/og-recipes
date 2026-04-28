@@ -112,6 +112,7 @@ export async function generateWeeklyPlan(
     });
 
     revalidatePath("/plan");
+    revalidatePath("/plan/shopping");
     revalidatePath("/");
     revalidatePath("/recipes");
     return { status: "ok" };
@@ -127,5 +128,6 @@ export async function deleteCurrentPlan(): Promise<void> {
   const ws = weekStart();
   await db.mealPlan.deleteMany({ where: { weekStart: ws } });
   revalidatePath("/plan");
+  revalidatePath("/plan/shopping");
   revalidatePath("/");
 }
