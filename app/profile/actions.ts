@@ -41,7 +41,11 @@ export async function saveProfile(
     return { error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
 
-  const macros = computeMacros(parsed.data);
+  const existing = await db.profile.findUnique({ where: { id: 1 } });
+  const macros = computeMacros({
+    ...parsed.data,
+    workoutKcalWeekly: existing?.workoutKcalWeekly ?? 0,
+  });
 
   const data = {
     ...parsed.data,

@@ -28,6 +28,7 @@ export type MacroInput = {
   sex: Sex;
   activityLevel: ActivityLevel;
   goal: Goal;
+  workoutKcalWeekly?: number;
 };
 
 export type MacroTargets = {
@@ -56,7 +57,10 @@ export function computeMacros(input: MacroInput): MacroTargets {
   const sexFloor = input.sex === "female" ? 1200 : 1500;
   const kcalFloor = Math.max(bmrVal, sexFloor);
   const rawTarget = tdee + GOAL_DELTA[input.goal];
-  const kcalTarget = Math.max(kcalFloor, rawTarget);
+  // Workout burn is folded in as a flat per-day bump (weekly / 7) so eating
+  // targets stay stable across the week instead of spiking on training days.
+  const workoutBump = Math.round((input.workoutKcalWeekly ?? 0) / 7);
+  const kcalTarget = Math.max(kcalFloor, rawTarget + workoutBump);
 
   // Protein: 2 g per kg (muscle retention on a cut).
   const proteinG = Math.round(input.weightKg * 2);
