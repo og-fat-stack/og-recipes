@@ -43,9 +43,11 @@ export async function saveProfile(
   }
 
   const bodyFatPct = await getLatestBodyFatPct();
+  const existing = await db.profile.findUnique({ where: { id: 1 } });
   const macros = computeMacros({
     ...parsed.data,
     bodyFatPct: bodyFatPct ?? undefined,
+    workoutKcalWeekly: existing?.workoutKcalWeekly ?? 0,
   });
 
   const data = {

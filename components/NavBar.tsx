@@ -7,6 +7,7 @@ import { logout } from "../app/login/actions";
 const TABS = [
   { href: "/", label: "Start" },
   { href: "/plan", label: "Plan" },
+  { href: "/training", label: "Training" },
   { href: "/recipes", label: "Rezepte" },
   { href: "/expenses", label: "Ausgaben" },
   { href: "/weight", label: "Gewicht" },

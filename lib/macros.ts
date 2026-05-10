@@ -29,6 +29,7 @@ export type MacroInput = {
   sex: Sex;
   activityLevel: ActivityLevel;
   goal: Goal;
+  workoutKcalWeekly?: number;
 };
 
 export type MacroTargets = {
@@ -83,7 +84,10 @@ export function computeMacros(input: MacroInput): MacroTargets {
   const sexFloor = input.sex === "female" ? 1200 : 1500;
   const kcalFloor = Math.max(bmrVal, sexFloor);
   const rawTarget = tdee + GOAL_DELTA[input.goal];
-  const kcalTarget = Math.max(kcalFloor, rawTarget);
+  // Workout burn is folded in as a flat per-day bump (weekly / 7) so eating
+  // targets stay stable across the week instead of spiking on training days.
+  const workoutBump = Math.round((input.workoutKcalWeekly ?? 0) / 7);
+  const kcalTarget = Math.max(kcalFloor, rawTarget + workoutBump);
 
   // Protein. With BF% known: 2.4 g/kg lean body mass (Helms 2014 cutting
   // midpoint of 2.3–3.1 g/kg LBM). Cap at 2 g/kg total + 25 g so an
