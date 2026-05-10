@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "../../lib/db";
 import { dayKey } from "../../lib/weight";
 import { computeMacros } from "../../lib/macros";
+import { getLatestBodyFatPct } from "../../lib/measurements";
 
 const LogSchema = z.object({
   kg: z.coerce.number().min(30).max(400),
@@ -68,9 +69,11 @@ export async function refreshMacrosFromAvg(): Promise<LogWeightState> {
   const avg =
     entries.reduce((s, e) => s + e.kg, 0) / entries.length;
 
+  const bodyFatPct = await getLatestBodyFatPct();
   const macros = computeMacros({
     heightCm: profile.heightCm,
     weightKg: avg,
+    bodyFatPct: bodyFatPct ?? undefined,
     age: profile.age,
     sex: profile.sex as "male" | "female",
     activityLevel: profile.activityLevel as
@@ -92,6 +95,7 @@ export async function refreshMacrosFromAvg(): Promise<LogWeightState> {
       fatG: macros.fatG,
       waterMlTarget: macros.waterMlTarget,
       lastMacroWeightKg: avg,
+      lastMacroBodyFatPct: bodyFatPct,
     },
   });
 

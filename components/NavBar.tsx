@@ -8,9 +8,9 @@ const TABS = [
   { href: "/", label: "Start" },
   { href: "/plan", label: "Plan" },
   { href: "/recipes", label: "Rezepte" },
-  { href: "/water", label: "Wasser" },
   { href: "/expenses", label: "Ausgaben" },
   { href: "/weight", label: "Gewicht" },
+  { href: "/measurements", label: "Maße" },
   { href: "/history", label: "Verlauf" },
   { href: "/profile", label: "Profil" },
 ] as const;

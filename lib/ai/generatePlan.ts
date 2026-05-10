@@ -2,6 +2,8 @@ import { z } from "zod";
 import { callClaude, extractText } from "../anthropic";
 import type { Profile } from "../generated/prisma/client";
 import { RecipeDraftSchema } from "./generateRecipe";
+import { getLatestMeasurement } from "../measurements";
+import { compositionSummaryForPrompt } from "../bodyComp";
 
 export const PlanAssignmentSchema = z.object({
   day: z.number().int().min(0).max(6),
@@ -216,12 +218,24 @@ ${mainBatchHint} Generiere alle benötigten Hauptmahl-Rezepte neu + 1 Frühstüc
     ? `Zutaten zum Aufbrauchen (priorisieren in NEUEN Rezepten, damit sie nicht schlecht werden — wenn möglich in mehreren Rezepten verteilt verwenden): ${useUpIngredients.map((i) => `"${i}"`).join(", ")}.`
     : "";
 
+  const latestMeasurement = await getLatestMeasurement();
+  const compositionBlock = latestMeasurement
+    ? compositionSummaryForPrompt({
+        waistCm: latestMeasurement.waistCm,
+        hipCm: latestMeasurement.hipCm,
+        bodyFatPct: latestMeasurement.bodyFatPct,
+        heightCm: profile.heightCm,
+        weightKg: profile.weightKg,
+        sex: profile.sex as "male" | "female",
+      })
+    : null;
+
   const userMsg = `Profil:
 - Tagesziele: ${profile.kcalTarget} kcal · ${profile.proteinG} g E · ${profile.carbG} g K · ${profile.fatG} g F
 - Pro Mahlzeit Zielwerte: ~${perMeal.kcal} kcal · ~${perMeal.protein} g E · ~${perMeal.carb} g K · ~${perMeal.fat} g F
 - Ziel: ${profile.goal}
 - Budget ist wichtig: günstige, alltagstaugliche Zutaten.
-
+${compositionBlock ? `\n${compositionBlock}\n` : ""}
 ${rangeBlock}
 
 ${knownBlock}

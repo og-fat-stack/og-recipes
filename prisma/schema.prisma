@@ -26,7 +26,8 @@ model Profile {
   carbG          Int
   fatG           Int
   waterMlTarget  Int
-  lastMacroWeightKg Float?
+  lastMacroWeightKg   Float?
+  lastMacroBodyFatPct Float?
   updatedAt      DateTime @updatedAt
   createdAt      DateTime @default(now())
 }
@@ -117,21 +118,24 @@ model Reflection {
   createdAt     DateTime    @default(now())
 }
 
-model WaterEntry {
-  id        Int      @id @default(autoincrement())
-  day       DateTime
-  ml        Int
-  createdAt DateTime @default(now())
-
-  @@index([day])
-}
-
 model WeightEntry {
   id        Int      @id @default(autoincrement())
   date      DateTime @unique
   kg        Float
   note      String?
   createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+model MeasurementEntry {
+  id         Int      @id @default(autoincrement())
+  date       DateTime @unique
+  waistCm    Float?
+  hipCm      Float?
+  bodyFatPct Float?
+  note       String?
+  createdAt  DateTime @default(now())
 
   @@index([date])
 }

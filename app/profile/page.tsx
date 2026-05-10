@@ -1,8 +1,29 @@
+import Link from "next/link";
 import { getProfile } from "../../lib/profile";
+import { getLatestMeasurement } from "../../lib/measurements";
+import {
+  computeMacros,
+  type ActivityLevel,
+  type Goal,
+  type Sex,
+} from "../../lib/macros";
 import { ProfileForm } from "./ProfileForm";
 
 export default async function ProfilePage() {
   const profile = await getProfile();
+  const latest = profile ? await getLatestMeasurement() : null;
+  const energy = profile
+    ? computeMacros({
+        heightCm: profile.heightCm,
+        weightKg: profile.weightKg,
+        bodyFatPct: profile.lastMacroBodyFatPct ?? undefined,
+        age: profile.age,
+        sex: profile.sex as Sex,
+        activityLevel: profile.activityLevel as ActivityLevel,
+        goal: profile.goal as Goal,
+      })
+    : null;
+  const deficit = energy ? profile!.kcalTarget - energy.tdee : 0;
 
   return (
     <div className="space-y-8">
@@ -13,7 +34,7 @@ export default async function ProfilePage() {
         </p>
       </header>
 
-      {profile && (
+      {profile && energy && (
         <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
           <h2 className="text-sm font-medium text-zinc-500">
             Aktuelle Ziele
@@ -25,6 +46,81 @@ export default async function ProfilePage() {
             <Stat label="Fett" value={`${profile.fatG} g`} />
             <Stat label="Wasser" value={`${profile.waterMlTarget} ml`} />
           </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800 sm:grid-cols-3">
+            <Stat label="Grundumsatz" value={`${energy.bmr} kcal`} />
+            <Stat label="Erhaltungsbedarf" value={`${energy.tdee} kcal`} />
+            <Stat
+              label={
+                deficit < 0
+                  ? "Defizit"
+                  : deficit > 0
+                    ? "Überschuss"
+                    : "Bilanz"
+              }
+              value={
+                deficit === 0
+                  ? "Erhalt"
+                  : `${deficit > 0 ? "+" : ""}${deficit} kcal/Tag`
+              }
+            />
+          </div>
+          <p className="mt-3 text-xs text-zinc-500">
+            Berechnung:{" "}
+            {profile.lastMacroBodyFatPct != null
+              ? `Katch-McArdle (KFA ${profile.lastMacroBodyFatPct.toFixed(1)} %, Protein nach Magermasse)`
+              : "Mifflin-St Jeor (KFA für genaueren Wert eintragen)"}
+. {deficit !== 0
+              ? `Theoretisch ≈ ${(Math.abs(deficit) * 7 / 7700).toFixed(2)} kg Fett pro Woche (1 kg Fett ≈ 7700 kcal).`
+              : "Keine Gewichtsänderung erwartet."}
+          </p>
+        </section>
+      )}
+
+      {profile && (
+        <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-zinc-500">Letzte Messung</h2>
+            <Link
+              href="/measurements"
+              className="text-sm text-zinc-500 hover:underline"
+            >
+              {latest ? "Bearbeiten →" : "Eintragen →"}
+            </Link>
+          </div>
+          {latest ? (
+            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Stat
+                label="Taille"
+                value={
+                  latest.waistCm != null
+                    ? `${latest.waistCm.toFixed(1)} cm`
+                    : "—"
+                }
+              />
+              <Stat
+                label="Hüfte"
+                value={
+                  latest.hipCm != null ? `${latest.hipCm.toFixed(1)} cm` : "—"
+                }
+              />
+              <Stat
+                label="KFA"
+                value={
+                  latest.bodyFatPct != null
+                    ? `${latest.bodyFatPct.toFixed(1)} %`
+                    : "—"
+                }
+              />
+              <Stat
+                label="Datum"
+                value={latest.date.toLocaleDateString("de-DE")}
+              />
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-zinc-500">
+              Noch keine Maße erfasst.
+            </p>
+          )}
         </section>
       )}
 

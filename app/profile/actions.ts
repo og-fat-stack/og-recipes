@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "../../lib/db";
 import { computeMacros } from "../../lib/macros";
+import { getLatestBodyFatPct } from "../../lib/measurements";
 
 const ProfileSchema = z.object({
   heightCm: z.coerce.number().min(100).max(250),
@@ -41,7 +42,11 @@ export async function saveProfile(
     return { error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
 
-  const macros = computeMacros(parsed.data);
+  const bodyFatPct = await getLatestBodyFatPct();
+  const macros = computeMacros({
+    ...parsed.data,
+    bodyFatPct: bodyFatPct ?? undefined,
+  });
 
   const data = {
     ...parsed.data,
@@ -51,6 +56,7 @@ export async function saveProfile(
     fatG: macros.fatG,
     waterMlTarget: macros.waterMlTarget,
     lastMacroWeightKg: parsed.data.weightKg,
+    lastMacroBodyFatPct: bodyFatPct,
   };
 
   await db.profile.upsert({
