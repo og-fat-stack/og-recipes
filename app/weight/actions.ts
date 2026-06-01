@@ -83,7 +83,6 @@ export async function refreshMacrosFromAvg(): Promise<LogWeightState> {
       | "active"
       | "very_active",
     goal: profile.goal as "cut" | "maintain" | "gain",
-    workoutKcalWeekly: profile.workoutKcalWeekly ?? 0,
   });
 
   await db.profile.update({

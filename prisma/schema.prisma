@@ -28,7 +28,6 @@ model Profile {
   waterMlTarget  Int
   lastMacroWeightKg   Float?
   lastMacroBodyFatPct Float?
-  workoutKcalWeekly   Int      @default(0)
   updatedAt      DateTime @updatedAt
   createdAt      DateTime @default(now())
 }
@@ -139,28 +138,4 @@ model MeasurementEntry {
   createdAt  DateTime @default(now())
 
   @@index([date])
-}
-
-model TrainingPlan {
-  id        Int               @id @default(autoincrement())
-  weekStart DateTime          @unique
-  notes     String?
-  createdAt DateTime          @default(now())
-  sessions  TrainingSession[]
-}
-
-model TrainingSession {
-  id           Int          @id @default(autoincrement())
-  plan         TrainingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-  planId       Int
-  day          Int
-  context      String
-  name         String
-  focus        String
-  durationMin  Int
-  kcalEstimate Int
-  exercises    Json
-  notes        String?
-
-  @@unique([planId, day])
 }
