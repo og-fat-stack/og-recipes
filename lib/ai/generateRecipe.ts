@@ -104,6 +104,7 @@ kein Markdown, keine Code-Fences):
 export type GenerateArgs = {
   prompt: string;
   profile: Profile | null;
+  claudeMemory?: string | null;
 };
 
 function stripCodeFences(text: string): string {
@@ -117,10 +118,16 @@ function stripCodeFences(text: string): string {
 export async function generateRecipeDraft({
   prompt,
   profile,
+  claudeMemory,
 }: GenerateArgs): Promise<RecipeDraft> {
   const profileContext = profile
     ? `Nutzerprofil: Tagesziel ${profile.kcalTarget} kcal, ${profile.proteinG} g Eiweiß, ${profile.carbG} g KH, ${profile.fatG} g Fett. Ziel: ${profile.goal}. Plane jede Portion so, dass sie ca. 1/3 eines Tages-Makros deckt (er isst 3 Mahlzeiten pro Tag). Achte auf günstige Zutaten (Linsen, Eier, Quark, Hähnchenschenkel, Haferflocken) — der Nutzer achtet aufs Budget.`
     : `Nutzerprofil: nicht gesetzt. Plane eine eiweißreiche, moderat kalorische Portion (~400–550 kcal, 30+ g Eiweiß) mit günstigen Zutaten.`;
+
+  const memory = claudeMemory?.trim();
+  const memoryBlock = memory
+    ? `\n\nPERSÖNLICHE VORLIEBEN & HINWEISE DES NUTZERS (unbedingt beachten — wichtiger als Standardannahmen):\n${memory}`
+    : "";
 
   const msg = await callClaude({
     model: "smart",
@@ -130,7 +137,7 @@ export async function generateRecipeDraft({
     messages: [
       {
         role: "user",
-        content: `${profileContext}\n\nRezept-Wunsch: ${prompt}`,
+        content: `${profileContext}${memoryBlock}\n\nRezept-Wunsch: ${prompt}`,
       },
     ],
   });

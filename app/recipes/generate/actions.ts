@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "../../../lib/db";
 import { getProfile } from "../../../lib/profile";
+import { getClaudeMemoryText } from "../../../lib/claudeMemory";
 import {
   generateRecipeDraft,
   type RecipeDraft,
@@ -27,8 +28,11 @@ export async function generateRecipe(
     };
   }
   try {
-    const profile = await getProfile();
-    const draft = await generateRecipeDraft({ prompt, profile });
+    const [profile, claudeMemory] = await Promise.all([
+      getProfile(),
+      getClaudeMemoryText(),
+    ]);
+    const draft = await generateRecipeDraft({ prompt, profile, claudeMemory });
     return { status: "ok", draft, prompt };
   } catch (e) {
     return {

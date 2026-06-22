@@ -12,6 +12,7 @@ const TABS = [
   { href: "/weight", label: "Gewicht" },
   { href: "/measurements", label: "Maße" },
   { href: "/history", label: "Verlauf" },
+  { href: "/memory", label: "Memory" },
   { href: "/profile", label: "Profil" },
 ] as const;
 

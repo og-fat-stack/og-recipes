@@ -10,6 +10,7 @@ import {
 } from "../../lib/plan";
 import { generatePlanDraft } from "../../lib/ai/generatePlan";
 import { getReflectionDigests } from "../../lib/reflection";
+import { getClaudeMemoryText } from "../../lib/claudeMemory";
 
 export type GeneratePlanState =
   | { status: "idle" }
@@ -40,11 +41,13 @@ export async function generateWeeklyPlan(
     .filter(Boolean);
 
   try {
-    const [recentTitles, knownMainPool, reflectionDigests] = await Promise.all([
-      getRecentMealTitles(14),
-      pickKnownMainMealRecipes(2),
-      getReflectionDigests(6),
-    ]);
+    const [recentTitles, knownMainPool, reflectionDigests, claudeMemory] =
+      await Promise.all([
+        getRecentMealTitles(14),
+        pickKnownMainMealRecipes(2),
+        getReflectionDigests(6),
+        getClaudeMemoryText(),
+      ]);
 
     const knownSummaries = knownMainPool.map((r) => ({
       title: r.title,
@@ -69,6 +72,7 @@ export async function generateWeeklyPlan(
       })),
       dayRange: { start: startDay, end: endDay },
       useUpIngredients,
+      claudeMemory,
     });
 
     const ws = weekStart();

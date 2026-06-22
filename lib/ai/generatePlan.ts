@@ -44,11 +44,16 @@ Rhythmus und Struktur:
   vom Nutzer gekochte und bekannte Rezepte. Nutze diese als 2 der 3 Hauptmahl-Batches und
   generiere nur 1 NEUES Hauptmahl-Rezept. Das Ziel: jede Woche 1 neues Rezept + 2 bekannte.
   Wenn knownMainRecipes LEER ist (erste Woche), generiere alle 3 Hauptmahl-Rezepte neu.
-- FRÜHSTÜCK ist separat: 1 einfaches Frühstücks-Rezept, bewusst simpel (Overnight Oats,
-  Quark-Bowl, Rührei mit Haferflocken etc.). 5–10 Min. aktive Zeit. Portionen = 1.
+- FRÜHSTÜCK ist separat und bewusst simpel (Overnight Oats, Quark-Bowl, Rührei mit
+  Haferflocken, Skyr-Bowl, Grießbrei, Shakshuka-Style ohne Paprika etc.). 5–10 Min. aktive
+  Zeit. Portionen = 1 (wird frisch zubereitet). ABWECHSLUNG: Wie viele VERSCHIEDENE
+  Frühstücks-Rezepte du erstellst, steht im User-Input ("Frühstücks-Abwechslung"). Erstelle
+  genau so viele und verteile sie abwechselnd über die Frühstücks-Slots (nicht jeden Tag
+  dasselbe — z. B. bei 2 Rezepten tageweise im Wechsel, bei 3 Rezepten reihum). Die Frühstücke
+  sollen sich klar unterscheiden (anderes Hauptgetreide/Eiweiß/Geschmack, süß vs. herzhaft).
 
 Reihenfolge in "newRecipes":
-- Zuerst das/die neuen Hauptmahl-Rezept(e), dann das Frühstück.
+- Zuerst die neuen Hauptmahl-Rezepte, dann die Frühstücks-Rezepte.
 - Die knownMainRecipes erscheinen NICHT in "newRecipes" — sie sind bereits in der DB.
 
 BUDGET — SEHR WICHTIG:
@@ -109,9 +114,10 @@ RECIPE-INDEX-KODIERUNG in "assignments":
   Input).
 - Danach folgen die "newRecipes" in der Reihenfolge deiner Antwort: index K, K+1, ...
   (wobei K = Anzahl knownMainRecipes).
-- Beispiel: knownMainRecipes hat 2 Einträge, newRecipes hat 2 Einträge (1 neu-Hauptmahl +
-  1 Frühstück). Dann sind die Indizes: 0 = known[0], 1 = known[1], 2 = newRecipes[0]
-  (neues Hauptmahl), 3 = newRecipes[1] (Frühstück).
+- Beispiel: knownMainRecipes hat 2 Einträge, newRecipes hat 3 Einträge (1 neu-Hauptmahl +
+  2 verschiedene Frühstücke). Dann sind die Indizes: 0 = known[0], 1 = known[1],
+  2 = newRecipes[0] (neues Hauptmahl), 3 = newRecipes[1] (Frühstück A), 4 = newRecipes[2]
+  (Frühstück B). Die Frühstücks-Slots der Woche wechseln dann zwischen Index 3 und 4.
 
 Konkretes Beispiel-Antwort-Skelett:
 
@@ -168,6 +174,7 @@ export type GeneratePlanArgs = {
   }[];
   dayRange?: { start: number; end: number };
   useUpIngredients?: string[];
+  claudeMemory?: string | null;
 };
 
 const DAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
@@ -179,11 +186,19 @@ export async function generatePlanDraft({
   reflectionDigests = [],
   dayRange = { start: 0, end: 6 },
   useUpIngredients = [],
+  claudeMemory,
 }: GeneratePlanArgs): Promise<PlanDraft> {
   const { start: startDay, end: endDay } = dayRange;
   const dayCount = endDay - startDay + 1;
   const expectedSlots = dayCount * 3;
   const isFullWeek = startDay === 0 && endDay === 6;
+
+  // Frühstücks-Abwechslung: mehrere verschiedene Frühstücke über die Woche rotieren,
+  // skaliert mit der Anzahl Tage (nie mehr Rezepte als Frühstücks-Slots).
+  const breakfastVariety = Math.min(
+    dayCount,
+    dayCount >= 5 ? 3 : dayCount >= 3 ? 2 : 1,
+  );
 
   const perMeal = {
     kcal: Math.round(profile.kcalTarget / 3),
@@ -210,9 +225,9 @@ ${knownMainRecipes
   )
   .join("\n")}
 
-${mainBatchHint} Nutze die bekannten Rezepte für so viele Hauptmahl-Batches wie sinnvoll und ergänze fehlende Hauptmahl-Batches durch neue Rezepte. Frühstück: 1 separates neues Rezept.`
+${mainBatchHint} Nutze die bekannten Rezepte für so viele Hauptmahl-Batches wie sinnvoll und ergänze fehlende Hauptmahl-Batches durch neue Rezepte. Frühstück: separate neue Rezepte (Anzahl siehe "Frühstücks-Abwechslung").`
     : `knownMainRecipes ist leer.
-${mainBatchHint} Generiere alle benötigten Hauptmahl-Rezepte neu + 1 Frühstücks-Rezept.`;
+${mainBatchHint} Generiere alle benötigten Hauptmahl-Rezepte neu + die Frühstücks-Rezepte (Anzahl siehe "Frühstücks-Abwechslung").`;
 
   const useUpBlock = useUpIngredients.length
     ? `Zutaten zum Aufbrauchen (priorisieren in NEUEN Rezepten, damit sie nicht schlecht werden — wenn möglich in mehreren Rezepten verteilt verwenden): ${useUpIngredients.map((i) => `"${i}"`).join(", ")}.`
@@ -230,13 +245,23 @@ ${mainBatchHint} Generiere alle benötigten Hauptmahl-Rezepte neu + 1 Frühstüc
       })
     : null;
 
+  const memory = claudeMemory?.trim();
+  const memoryBlock = memory
+    ? `PERSÖNLICHE VORLIEBEN & HINWEISE DES NUTZERS (unbedingt beachten — wichtiger als Standardannahmen):
+${memory}
+`
+    : "";
+
   const userMsg = `Profil:
 - Tagesziele: ${profile.kcalTarget} kcal · ${profile.proteinG} g E · ${profile.carbG} g K · ${profile.fatG} g F
 - Pro Mahlzeit Zielwerte: ~${perMeal.kcal} kcal · ~${perMeal.protein} g E · ~${perMeal.carb} g K · ~${perMeal.fat} g F
 - Ziel: ${profile.goal}
 - Budget ist wichtig: günstige, alltagstaugliche Zutaten.
 ${compositionBlock ? `\n${compositionBlock}\n` : ""}
+${memoryBlock ? `\n${memoryBlock}\n` : ""}
 ${rangeBlock}
+
+Frühstücks-Abwechslung: Erstelle ${breakfastVariety} VERSCHIEDENE einfache Frühstücks-Rezepte und verteile sie abwechselnd über die ${dayCount} Frühstücks-Slots (day ${startDay}..${endDay}), damit nicht jeden Tag dasselbe Frühstück kommt. Die Rezepte sollen sich klar unterscheiden (anderes Hauptgetreide/Eiweiß, süß vs. herzhaft).
 
 ${knownBlock}
 ${useUpBlock ? `\n${useUpBlock}\n` : ""}
