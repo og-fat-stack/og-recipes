@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { getRecentReflections } from "../../lib/reflection";
 import type { ReflectionNotes } from "../../lib/ai/summarizeReflection";
 
 export default async function HistoryPage() {
+  await connection();
   const reflections = await getRecentReflections(30);
 
   return (

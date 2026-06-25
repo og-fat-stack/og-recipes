@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { getRecipes } from "../../lib/recipe";
 
 export default async function RecipesPage() {
+  await connection();
   const recipes = await getRecipes();
 
   return (

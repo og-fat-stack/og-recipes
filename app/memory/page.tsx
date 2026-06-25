@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import {
   getClaudeMemory,
   DEFAULT_CLAUDE_MEMORY,
@@ -5,6 +6,7 @@ import {
 import { MemoryForm } from "./MemoryForm";
 
 export default async function MemoryPage() {
+  await connection();
   const memory = await getClaudeMemory();
   const content = memory?.content ?? DEFAULT_CLAUDE_MEMORY;
 

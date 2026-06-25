@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import {
   buildShoppingList,
   fmtQty,
@@ -9,6 +10,7 @@ import { ResetButton } from "./ResetButton";
 import { CopyMarkdownButton } from "./CopyMarkdownButton";
 
 export default async function ShoppingPage() {
+  await connection();
   const plan = await getCurrentPlanWithIngredients();
 
   if (!plan) {

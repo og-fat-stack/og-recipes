@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { getRecipe, type Ingredient } from "../../../lib/recipe";
 import { DeleteRecipeButton } from "./DeleteRecipeButton";
@@ -9,6 +10,7 @@ export default async function RecipePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
   const recipeId = Number(id);
   if (!Number.isFinite(recipeId)) notFound();

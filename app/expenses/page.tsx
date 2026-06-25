@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import {
   fmtEuro,
   getCurrentWeekExpense,
@@ -8,6 +9,7 @@ import { ExpenseChart } from "../../components/ExpenseChart";
 import { ExpenseForm } from "./ExpenseForm";
 
 export default async function ExpensesPage() {
+  await connection();
   const [current, stats] = await Promise.all([
     getCurrentWeekExpense(),
     getExpenseStats(12),

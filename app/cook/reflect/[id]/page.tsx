@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { db } from "../../../../lib/db";
 import type { ReflectionNotes } from "../../../../lib/ai/summarizeReflection";
@@ -11,6 +12,7 @@ export default async function ReflectPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ saved?: string }>;
 }) {
+  await connection();
   const { id } = await params;
   const { saved } = await searchParams;
   const sessionId = Number(id);

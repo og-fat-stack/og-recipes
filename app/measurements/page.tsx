@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { getProfile } from "../../lib/profile";
 import { getMeasurementEntries } from "../../lib/measurements";
 import {
@@ -18,6 +19,7 @@ function fmtDate(d: Date) {
 }
 
 export default async function MeasurementsPage() {
+  await connection();
   const profile = await getProfile();
   const entries = await getMeasurementEntries(60);
   const latest = entries[0] ?? null;

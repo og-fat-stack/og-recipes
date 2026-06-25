@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import {
   DAYS,
   SLOT_LABELS,
@@ -15,6 +16,7 @@ function fmtDate(d: Date) {
 }
 
 export default async function PlanPage() {
+  await connection();
   const [profile, plan] = await Promise.all([getProfile(), getCurrentPlan()]);
   const ws = weekStart();
 

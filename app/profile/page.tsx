@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { getProfile } from "../../lib/profile";
 import { getLatestMeasurement } from "../../lib/measurements";
 import {
@@ -10,6 +11,7 @@ import {
 import { ProfileForm } from "./ProfileForm";
 
 export default async function ProfilePage() {
+  await connection();
   const profile = await getProfile();
   const latest = profile ? await getLatestMeasurement() : null;
   const energy = profile

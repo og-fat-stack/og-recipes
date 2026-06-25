@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { getProfile } from "../lib/profile";
 import { getWeightStats } from "../lib/weight";
 import { getRecipes } from "../lib/recipe";
@@ -33,6 +34,7 @@ const GOAL_LABELS: Record<string, string> = {
 };
 
 export default async function Home() {
+  await connection();
   const profile = await getProfile();
   const [stats, recipes, currentExpense, expenseStats, latestMeasurement] = profile
     ? await Promise.all([
