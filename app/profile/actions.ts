@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "../../lib/db";
 import { computeMacros } from "../../lib/macros";
+import { planActivityKcalPerDay } from "../../lib/training";
 import { getLatestBodyFatPct } from "../../lib/measurements";
+
+// Kein Aktivitätslevel-Input mehr: Der trainingsfreie Alltag ist fix "sedentary",
+// die eigentliche Aktivität kommt aus dem Trainingsplan (planActivityKcalPerDay).
+const ACTIVITY_BASELINE = "sedentary" as const;
 
 const ProfileSchema = z.object({
   heightCm: z.coerce.number().min(100).max(250),
@@ -12,13 +17,6 @@ const ProfileSchema = z.object({
   goalWeightKg: z.coerce.number().min(30).max(300).optional(),
   age: z.coerce.number().int().min(12).max(100),
   sex: z.enum(["male", "female"]),
-  activityLevel: z.enum([
-    "sedentary",
-    "light",
-    "moderate",
-    "active",
-    "very_active",
-  ]),
   goal: z.enum(["cut", "maintain", "gain"]),
 });
 
@@ -34,7 +32,6 @@ export async function saveProfile(
     goalWeightKg: formData.get("goalWeightKg") || undefined,
     age: formData.get("age"),
     sex: formData.get("sex"),
-    activityLevel: formData.get("activityLevel"),
     goal: formData.get("goal"),
   });
 
@@ -45,11 +42,14 @@ export async function saveProfile(
   const bodyFatPct = await getLatestBodyFatPct();
   const macros = computeMacros({
     ...parsed.data,
+    activityLevel: ACTIVITY_BASELINE,
     bodyFatPct: bodyFatPct ?? undefined,
+    exerciseKcalPerDay: planActivityKcalPerDay(parsed.data.weightKg),
   });
 
   const data = {
     ...parsed.data,
+    activityLevel: ACTIVITY_BASELINE,
     kcalTarget: macros.kcalTarget,
     proteinG: macros.proteinG,
     carbG: macros.carbG,

@@ -1,31 +1,37 @@
 "use client";
 
 import { useActionState } from "react";
-import { saveExpense, type SaveExpenseState } from "./actions";
+import { logSteps, type LogStepsState } from "./actions";
 
-export function ExpenseForm({
-  defaultAmount,
-  defaultNote,
-}: {
-  defaultAmount?: string;
-  defaultNote?: string;
-}) {
-  const [state, action, pending] = useActionState<SaveExpenseState, FormData>(
-    saveExpense,
+export function StepForm({ defaultSteps }: { defaultSteps?: number }) {
+  const [state, action, pending] = useActionState<LogStepsState, FormData>(
+    logSteps,
     {},
   );
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <form action={action} className="flex flex-wrap items-end gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-600 dark:text-zinc-400">Betrag (€)</span>
+        <span className="text-zinc-600 dark:text-zinc-400">Schritte</span>
         <input
-          name="amount"
-          inputMode="decimal"
-          defaultValue={defaultAmount ?? ""}
+          name="steps"
+          type="number"
+          step="1"
+          min="0"
+          defaultValue={defaultSteps ?? ""}
+          placeholder="z. B. 8500"
           required
-          placeholder="42,30"
           className="w-32 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-zinc-600 dark:text-zinc-400">Datum</span>
+        <input
+          name="date"
+          type="date"
+          defaultValue={today}
+          className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
         />
       </label>
       <label className="flex flex-1 flex-col gap-1 text-sm">
@@ -33,8 +39,7 @@ export function ExpenseForm({
         <input
           name="note"
           type="text"
-          defaultValue={defaultNote ?? ""}
-          placeholder="optional (z. B. Aldi + Markt)"
+          placeholder="optional"
           className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
         />
       </label>
@@ -43,7 +48,7 @@ export function ExpenseForm({
         disabled={pending}
         className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
       >
-        {pending ? "Speichern..." : "Speichern"}
+        {pending ? "Speichern..." : "Eintragen"}
       </button>
       {state.error && (
         <p className="w-full text-sm text-red-600 dark:text-red-400">

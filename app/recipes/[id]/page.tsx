@@ -2,6 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { getRecipe, type Ingredient } from "../../../lib/recipe";
+import { planCookSessions } from "../../../lib/cookPlan";
 import { DeleteRecipeButton } from "./DeleteRecipeButton";
 import { CookedButton } from "./CookedButton";
 
@@ -20,6 +21,7 @@ export default async function RecipePage({
   const ingredients = (recipe.ingredients as unknown as Ingredient[]) ?? [];
   const steps = (recipe.steps as unknown as string[]) ?? [];
   const techniques = (recipe.techniques as unknown as string[]) ?? [];
+  const cookPlan = planCookSessions({ portions: recipe.portions, ingredients });
 
   return (
     <div className="space-y-8">
@@ -45,6 +47,26 @@ export default async function RecipePage({
             <DeleteRecipeButton id={recipe.id} />
           </div>
         </div>
+        {cookPlan.length > 1 && (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+            <p className="font-medium">
+              Auf {cookPlan.length} Kochtage aufgeteilt
+            </p>
+            <p className="mt-1">
+              Mit {cookPlan.reduce((n, e) => n + e.thighs, 0)} Hähnchenschenkeln
+              passt das nicht in einen Durchgang (max. 3 gleichzeitig). „Fertig
+              gekocht“ legt automatisch {cookPlan.length} Kochsessions an:
+            </p>
+            <ul className="mt-1 list-inside list-disc">
+              {cookPlan.map((e) => (
+                <li key={e.dayOffset}>
+                  {e.dayOffset === 0 ? "Heute" : `Tag ${e.dayOffset + 1}`}:{" "}
+                  {e.thighs} Schenkel schmoren → {e.portionsMade} Portionen
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {techniques.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {techniques.map((t) => (

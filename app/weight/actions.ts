@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "../../lib/db";
 import { dayKey } from "../../lib/weight";
 import { computeMacros } from "../../lib/macros";
+import { planActivityKcalPerDay } from "../../lib/training";
 import { getLatestBodyFatPct } from "../../lib/measurements";
 
 const LogSchema = z.object({
@@ -76,13 +77,10 @@ export async function refreshMacrosFromAvg(): Promise<LogWeightState> {
     bodyFatPct: bodyFatPct ?? undefined,
     age: profile.age,
     sex: profile.sex as "male" | "female",
-    activityLevel: profile.activityLevel as
-      | "sedentary"
-      | "light"
-      | "moderate"
-      | "active"
-      | "very_active",
+    // Grundbedarf immer "sedentary"; die Aktivität kommt aus dem Trainingsplan.
+    activityLevel: "sedentary",
     goal: profile.goal as "cut" | "maintain" | "gain",
+    exerciseKcalPerDay: planActivityKcalPerDay(avg),
   });
 
   await db.profile.update({

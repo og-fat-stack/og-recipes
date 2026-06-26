@@ -146,3 +146,23 @@ model MeasurementEntry {
 
   @@index([date])
 }
+
+model StepEntry {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @unique
+  steps     Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+model DailyCheck {
+  id      Int      @id @default(autoincrement())
+  date    DateTime
+  itemKey String
+  checked Boolean  @default(false)
+
+  @@unique([date, itemKey])
+  @@index([date])
+}

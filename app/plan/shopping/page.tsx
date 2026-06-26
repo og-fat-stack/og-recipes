@@ -72,12 +72,6 @@ export default async function ShoppingPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href="/expenses"
-            className="rounded-full border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
-          >
-            💶 Preis eintragen
-          </Link>
           {total > 0 && <CopyMarkdownButton markdown={markdown} />}
           {total > 0 && <ResetButton planId={plan.id} />}
         </div>

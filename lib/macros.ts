@@ -29,11 +29,20 @@ export type MacroInput = {
   sex: Sex;
   activityLevel: ActivityLevel;
   goal: Goal;
+  /**
+   * Plan-Aktivität pro Tag (kcal): strukturiertes Training + tägliche Schritte,
+   * über die Woche gemittelt. Wird auf das TDEE addiert. `activityLevel` bildet
+   * nur den trainingsfreien Alltag ab und ist fix "sedentary" — die eigentliche
+   * Aktivität kommt aus dem Trainingsplan (siehe planActivityKcalPerDay).
+   */
+  exerciseKcalPerDay?: number;
 };
 
 export type MacroTargets = {
   bmr: number;
   tdee: number;
+  /** Anteil am TDEE, der aus dem Training stammt (zur Anzeige). */
+  exerciseKcal: number;
   kcalTarget: number;
   proteinG: number;
   carbG: number;
@@ -75,7 +84,10 @@ export function computeMacros(input: MacroInput): MacroTargets {
   }
   bmrVal = Math.round(bmrVal);
 
-  const tdee = Math.round(bmrVal * ACTIVITY_MULTIPLIER[input.activityLevel]);
+  const exerciseKcal = Math.max(0, Math.round(input.exerciseKcalPerDay ?? 0));
+  const tdee =
+    Math.round(bmrVal * ACTIVITY_MULTIPLIER[input.activityLevel]) +
+    exerciseKcal;
 
   // Hormonal-safe kcal floor: never below BMR, and never below the sex-specific
   // minimum (1500 male / 1200 female). Eating under BMR chronically suppresses
@@ -121,6 +133,7 @@ export function computeMacros(input: MacroInput): MacroTargets {
   return {
     bmr: bmrVal,
     tdee,
+    exerciseKcal,
     kcalTarget,
     proteinG,
     carbG,

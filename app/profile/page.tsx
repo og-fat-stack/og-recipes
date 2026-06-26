@@ -4,10 +4,10 @@ import { getProfile } from "../../lib/profile";
 import { getLatestMeasurement } from "../../lib/measurements";
 import {
   computeMacros,
-  type ActivityLevel,
   type Goal,
   type Sex,
 } from "../../lib/macros";
+import { planActivityKcalPerDay } from "../../lib/training";
 import { ProfileForm } from "./ProfileForm";
 
 export default async function ProfilePage() {
@@ -21,8 +21,9 @@ export default async function ProfilePage() {
         bodyFatPct: profile.lastMacroBodyFatPct ?? undefined,
         age: profile.age,
         sex: profile.sex as Sex,
-        activityLevel: profile.activityLevel as ActivityLevel,
+        activityLevel: "sedentary",
         goal: profile.goal as Goal,
+        exerciseKcalPerDay: planActivityKcalPerDay(profile.weightKg),
       })
     : null;
   const deficit = energy ? profile!.kcalTarget - energy.tdee : 0;
@@ -48,8 +49,12 @@ export default async function ProfilePage() {
             <Stat label="Fett" value={`${profile.fatG} g`} />
             <Stat label="Wasser" value={`${profile.waterMlTarget} ml`} />
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800 sm:grid-cols-3">
+          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800 sm:grid-cols-4">
             <Stat label="Grundumsatz" value={`${energy.bmr} kcal`} />
+            <Stat
+              label="Aktivität (Ø/Tag)"
+              value={`+${energy.exerciseKcal} kcal`}
+            />
             <Stat label="Erhaltungsbedarf" value={`${energy.tdee} kcal`} />
             <Stat
               label={

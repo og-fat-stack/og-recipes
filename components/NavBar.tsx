@@ -8,7 +8,7 @@ const TABS = [
   { href: "/", label: "Start" },
   { href: "/plan", label: "Plan" },
   { href: "/recipes", label: "Rezepte" },
-  { href: "/expenses", label: "Ausgaben" },
+  { href: "/training", label: "Training" },
   { href: "/weight", label: "Gewicht" },
   { href: "/measurements", label: "Maße" },
   { href: "/history", label: "Verlauf" },

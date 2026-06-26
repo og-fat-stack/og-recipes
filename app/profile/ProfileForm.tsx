@@ -4,14 +4,6 @@ import { useActionState } from "react";
 import { saveProfile, type SaveProfileState } from "./actions";
 import type { Profile } from "../../lib/generated/prisma/client";
 
-const ACTIVITY_OPTIONS = [
-  { value: "sedentary", label: "Sitzend (Schreibtisch, wenig Bewegung)" },
-  { value: "light", label: "Leicht (1–3×/Woche)" },
-  { value: "moderate", label: "Moderat (3–5×/Woche)" },
-  { value: "active", label: "Aktiv (6–7×/Woche)" },
-  { value: "very_active", label: "Sehr aktiv (2×/Tag)" },
-] as const;
-
 export function ProfileForm({ profile }: { profile: Profile | null }) {
   const [state, formAction, pending] = useActionState<
     SaveProfileState,
@@ -65,12 +57,6 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
           ]}
         />
         <Select
-          label="Aktivitätslevel"
-          name="activityLevel"
-          defaultValue={profile?.activityLevel ?? "light"}
-          options={ACTIVITY_OPTIONS}
-        />
-        <Select
           label="Ziel"
           name="goal"
           defaultValue={profile?.goal ?? "cut"}
@@ -81,6 +67,15 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
           ]}
         />
       </div>
+
+      <p className="text-xs text-zinc-500">
+        Kein Aktivitätslevel mehr nötig: Dein täglicher Aktivitätsverbrauch wird
+        aus dem{" "}
+        <a href="/training" className="underline">
+          Trainingsplan
+        </a>{" "}
+        (Einheiten + Schritt-Ziel) berechnet und auf den Grundbedarf addiert.
+      </p>
 
       {state.error && (
         <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>
