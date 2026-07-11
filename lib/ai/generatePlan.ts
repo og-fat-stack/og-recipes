@@ -64,6 +64,20 @@ BUDGET — SEHR WICHTIG:
   Halloumi.
 - Eine Portion < 3 € (Supermarktpreise DE).
 
+FLEISCH-GRENZEN (DGE-Richtwerte 2024, VERBINDLICH — gelten für die GANZE geplante Woche über
+alle Mahlzeiten zusammen):
+- Max. 300 g Fleisch + Wurst pro Woche INSGESAMT (Geflügel, Rind, Schwein, Lamm plus jede
+  Wurst/Schinken/Speck), also ~43 g pro geplantem Tag. Das konkrete Gramm-Limit für den
+  aktuellen Tagesbereich steht im User-Input ("Fleisch-Budget") — halte es strikt ein.
+- Weißes Fleisch (Geflügel: Huhn, Pute) klar bevorzugen. Rotes Fleisch (Rind, Schwein, Lamm)
+  stark reduzieren. Verarbeitetes Fleisch/Wurst (Salami, Schinken, Speck, Würstchen) am
+  stärksten minimieren (höchstens ~30 g/Woche) — es ist gesundheitlich am problematischsten.
+- Fisch 1–2 Portionen pro Woche einplanen (zählt NICHT zu den 300 g Fleisch), bevorzugt
+  günstig: Thunfisch/Sardinen/Makrele aus der Dose.
+- Praktische Umsetzung beim Batch-Kochen: HÖCHSTENS EIN Hauptmahl-Batch der Woche darf auf
+  rotem Fleisch aufbauen; die übrigen Batches pflanzlich (Hülsenfrüchte, Eier, Tofu) oder mit
+  Geflügel bzw. Fisch. So bleibt die 300-g-Grenze automatisch eingehalten.
+
 Vorgaben für JEDES neue Rezept:
 - DER NUTZER HAT KEINE KÜCHENWAAGE. Mengen nur in: Stück, Tassen (1 Tasse ≈ 200 ml), EL, TL,
   Handvoll (≈ 30 g), Becher (500 g), Packung, Schale (250 g), Glas, mittel, faustgroß.
@@ -207,6 +221,15 @@ export async function generatePlanDraft({
     fat: Math.round(profile.fatG / 3),
   };
 
+  // Fleisch-Grenzen nach DGE-Richtwert 2024: max. 300 g Fleisch + Wurst pro Woche,
+  // anteilig auf den geplanten Tagesbereich skaliert. Wurst/verarbeitet separat gedeckelt.
+  // Fisch 1–2 Portionen/Woche (zählt nicht zu den 300 g).
+  const MEAT_CAP_PER_WEEK_G = 300;
+  const PROCESSED_CAP_PER_WEEK_G = 30;
+  const meatCapG = Math.round((MEAT_CAP_PER_WEEK_G * dayCount) / 7);
+  const processedCapG = Math.round((PROCESSED_CAP_PER_WEEK_G * dayCount) / 7);
+  const fishPortions = dayCount >= 4 ? "1–2" : "1";
+
   const rangeBlock = isFullWeek
     ? `Tagesbereich: Mo–So (volle Woche, day 0..6, 21 Slots).`
     : `Tagesbereich: ${DAY_LABELS[startDay]}–${DAY_LABELS[endDay]} (day ${startDay}..${endDay}, ${dayCount} Tage, ${expectedSlots} Slots).
@@ -260,6 +283,8 @@ ${memory}
 ${compositionBlock ? `\n${compositionBlock}\n` : ""}
 ${memoryBlock ? `\n${memoryBlock}\n` : ""}
 ${rangeBlock}
+
+Fleisch-Budget (DGE, VERBINDLICH für diesen Tagesbereich von ${dayCount} Tag(en)): max. ${meatCapG} g Fleisch + Wurst INSGESAMT über alle Mahlzeiten (davon höchstens ~${processedCapG} g verarbeitet/Wurst). Weißes Fleisch (Geflügel) vor rotem Fleisch bevorzugen, rotes Fleisch minimieren. Fisch: ${fishPortions} Portion(en) einplanen (zählt NICHT zum Fleisch-Budget). Übrige Hauptmahlzeiten pflanzlich (Hülsenfrüchte, Eier, Tofu).
 
 Frühstücks-Abwechslung: Erstelle ${breakfastVariety} VERSCHIEDENE einfache Frühstücks-Rezepte und verteile sie abwechselnd über die ${dayCount} Frühstücks-Slots (day ${startDay}..${endDay}), damit nicht jeden Tag dasselbe Frühstück kommt. Die Rezepte sollen sich klar unterscheiden (anderes Hauptgetreide/Eiweiß, süß vs. herzhaft).
 
