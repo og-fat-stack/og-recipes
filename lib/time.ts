@@ -75,6 +75,13 @@ export function weekStart(d: Date = new Date()): Date {
   return fromBerlinWallClock(p.year, p.month, p.day + offset);
 }
 
+/** Berlin-local weekday index of `d`: 0=Mo … 6=So. */
+export function berlinWeekdayIndex(d: Date = new Date()): number {
+  const p = berlinWallClock(d);
+  const dow = new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay(); // 0=Sun..6=Sat
+  return dow === 0 ? 6 : dow - 1;
+}
+
 /** Add `n` calendar days in Berlin time (DST-safe). */
 export function addDays(d: Date, n: number): Date {
   const p = berlinWallClock(d);

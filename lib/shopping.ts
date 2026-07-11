@@ -1,6 +1,6 @@
 import { db } from "./db";
 import type { Ingredient } from "./recipe";
-import { weekStart } from "./plan";
+import { weekStartFor, type WeekSel } from "./plan";
 
 export type Aisle =
   | "obst_gemuese"
@@ -245,14 +245,18 @@ function normalize(name: string): string {
     .trim();
 }
 
-export async function getCurrentPlanWithIngredients() {
+export async function getPlanWithIngredientsForWeek(sel: WeekSel = "this") {
   return db.mealPlan.findUnique({
-    where: { weekStart: weekStart() },
+    where: { weekStart: weekStartFor(sel) },
     include: {
       meals: { include: { recipe: true } },
       shoppingState: true,
     },
   });
+}
+
+export async function getCurrentPlanWithIngredients() {
+  return getPlanWithIngredientsForWeek("this");
 }
 
 type PlanWithMeals = NonNullable<

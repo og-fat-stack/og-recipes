@@ -3,21 +3,28 @@ import { connection } from "next/server";
 import {
   buildShoppingList,
   fmtQty,
-  getCurrentPlanWithIngredients,
+  getPlanWithIngredientsForWeek,
 } from "../../../lib/shopping";
+import { parseWeekSel } from "../../../lib/plan";
 import { ShoppingRow } from "./ShoppingRow";
 import { ResetButton } from "./ResetButton";
 import { CopyMarkdownButton } from "./CopyMarkdownButton";
 
-export default async function ShoppingPage() {
+export default async function ShoppingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ week?: string }>;
+}) {
   await connection();
-  const plan = await getCurrentPlanWithIngredients();
+  const week = parseWeekSel((await searchParams).week);
+  const planHref = week === "next" ? "/plan?week=next" : "/plan";
+  const plan = await getPlanWithIngredientsForWeek(week);
 
   if (!plan) {
     return (
       <div className="space-y-6">
         <header>
-          <Link href="/plan" className="text-sm text-zinc-500 hover:underline">
+          <Link href={planHref} className="text-sm text-zinc-500 hover:underline">
             ← Plan
           </Link>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
@@ -26,8 +33,9 @@ export default async function ShoppingPage() {
         </header>
         <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
           <p className="text-zinc-600 dark:text-zinc-400">
-            Noch kein Plan für diese Woche. Erstelle zuerst einen auf{" "}
-            <Link href="/plan" className="underline">
+            Noch kein Plan für {week === "next" ? "nächste" : "diese"} Woche.
+            Erstelle zuerst einen auf{" "}
+            <Link href={planHref} className="underline">
               /plan
             </Link>
             .
@@ -60,7 +68,7 @@ export default async function ShoppingPage() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <Link href="/plan" className="text-sm text-zinc-500 hover:underline">
+          <Link href={planHref} className="text-sm text-zinc-500 hover:underline">
             ← Plan
           </Link>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">

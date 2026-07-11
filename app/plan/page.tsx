@@ -5,20 +5,34 @@ import {
   SLOT_LABELS,
   SLOTS,
   addDays,
-  getCurrentPlan,
-  weekStart,
+  getPlanForWeek,
+  parseWeekSel,
+  weekStartFor,
 } from "../../lib/plan";
+import { berlinWeekdayIndex } from "../../lib/time";
 import { getProfile } from "../../lib/profile";
 import { GeneratePlanButton } from "./GeneratePlanButton";
+
+const WEEK_TABS = [
+  { sel: "this" as const, label: "Diese Woche", href: "/plan" },
+  { sel: "next" as const, label: "Nächste Woche", href: "/plan?week=next" },
+];
 
 function fmtDate(d: Date) {
   return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
 }
 
-export default async function PlanPage() {
+export default async function PlanPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ week?: string }>;
+}) {
   await connection();
-  const [profile, plan] = await Promise.all([getProfile(), getCurrentPlan()]);
-  const ws = weekStart();
+  const week = parseWeekSel((await searchParams).week);
+  const ws = weekStartFor(week);
+  const [profile, plan] = await Promise.all([getProfile(), getPlanForWeek(ws)]);
+  // In der laufenden Woche werden vergangene Tage nicht (mehr) verplant.
+  const minDay = week === "this" ? berlinWeekdayIndex() : 0;
 
   // Build a 7×2 grid keyed by `${day}-${slot}`.
   const grid = new Map<
@@ -67,15 +81,37 @@ export default async function PlanPage() {
         <div className="flex items-center gap-2">
           {plan && (
             <Link
-              href="/plan/shopping"
+              href={week === "next" ? "/plan/shopping?week=next" : "/plan/shopping"}
               className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
             >
               🛒 Einkaufsliste
             </Link>
           )}
-          {profile && <GeneratePlanButton hasPlan={!!plan} />}
+          {profile && (
+            <GeneratePlanButton hasPlan={!!plan} week={week} minDay={minDay} />
+          )}
         </div>
       </header>
+
+      <div className="inline-flex rounded-full border border-zinc-200 p-1 dark:border-zinc-800">
+        {WEEK_TABS.map((t) => {
+          const active = t.sel === week;
+          return (
+            <Link
+              key={t.sel}
+              href={t.href}
+              className={
+                "rounded-full px-4 py-1.5 text-sm font-medium transition " +
+                (active
+                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                  : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100")
+              }
+            >
+              {t.label}
+            </Link>
+          );
+        })}
+      </div>
 
       {!profile && (
         <div className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
@@ -87,7 +123,8 @@ export default async function PlanPage() {
       {profile && !plan && (
         <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
           <p className="text-zinc-600 dark:text-zinc-400">
-            Noch kein Plan für diese Woche. Klick oben auf „Woche generieren".
+            Noch kein Plan für {week === "next" ? "nächste" : "diese"} Woche.
+            Klick oben auf „Woche generieren".
           </p>
         </div>
       )}

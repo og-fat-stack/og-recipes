@@ -3,6 +3,20 @@ import { addDays, startOfDay, weekStart } from "./time";
 
 export { addDays, weekStart };
 
+/** Welche Woche ein Plan betrifft: laufende oder kommende. */
+export type WeekSel = "this" | "next";
+
+/** Normalisiert einen (evtl. undefinierten) Query-/Form-Wert auf eine Woche. */
+export function parseWeekSel(v: string | null | undefined): WeekSel {
+  return v === "next" ? "next" : "this";
+}
+
+/** Montag (Berlin) der gewählten Woche. */
+export function weekStartFor(sel: WeekSel): Date {
+  const ws = weekStart();
+  return sel === "next" ? addDays(ws, 7) : ws;
+}
+
 export const DAYS = [
   "Mo",
   "Di",
@@ -21,8 +35,7 @@ export const SLOT_LABELS: Record<Slot, string> = {
   dinner: "Abend",
 };
 
-export async function getCurrentPlan() {
-  const ws = weekStart();
+export async function getPlanForWeek(ws: Date) {
   return db.mealPlan.findUnique({
     where: { weekStart: ws },
     include: {
@@ -32,6 +45,10 @@ export async function getCurrentPlan() {
       },
     },
   });
+}
+
+export async function getCurrentPlan() {
+  return getPlanForWeek(weekStart());
 }
 
 /**

@@ -5,9 +5,12 @@ import { db } from "../../lib/db";
 import { getProfile } from "../../lib/profile";
 import {
   getRecentMealTitles,
+  parseWeekSel,
   pickKnownMainMealRecipes,
   weekStart,
+  weekStartFor,
 } from "../../lib/plan";
+import { berlinWeekdayIndex } from "../../lib/time";
 import { generatePlanDraft } from "../../lib/ai/generatePlan";
 import { getReflectionDigests } from "../../lib/reflection";
 import { getClaudeMemoryText } from "../../lib/claudeMemory";
@@ -31,7 +34,13 @@ export async function generateWeeklyPlan(
     return { status: "error", error: "Zuerst das Profil ausfüllen." };
   }
 
-  const startDay = parseDay(formData.get("startDay"), 0);
+  const week = parseWeekSel(formData.get("week")?.toString());
+  const ws = weekStartFor(week);
+
+  // Für vergangene Tage wird nie geplant: in der laufenden Woche frühestens ab
+  // heute, in der kommenden Woche liegt ohnehin alles in der Zukunft.
+  const minDay = week === "this" ? berlinWeekdayIndex() : 0;
+  const startDay = Math.max(parseDay(formData.get("startDay"), minDay), minDay);
   let endDay = parseDay(formData.get("endDay"), 6);
   if (endDay < startDay) endDay = startDay;
   const useUpIngredients = (formData.get("useUpIngredients") ?? "")
@@ -75,7 +84,6 @@ export async function generateWeeklyPlan(
       claudeMemory,
     });
 
-    const ws = weekStart();
     await db.mealPlan.deleteMany({ where: { weekStart: ws } });
 
     const newRecipeIds: number[] = [];
@@ -101,12 +109,18 @@ export async function generateWeeklyPlan(
 
     const allIds = [...knownMainPool.map((r) => r.id), ...newRecipeIds];
 
+    // Sicherheitsnetz: nie etwas außerhalb des erlaubten Bereichs anlegen —
+    // insbesondere keine vergangenen Tage der laufenden Woche.
+    const assignments = draft.assignments.filter(
+      (a) => a.day >= startDay && a.day <= endDay,
+    );
+
     await db.mealPlan.create({
       data: {
         weekStart: ws,
         notes: draft.weekNotes ?? null,
         meals: {
-          create: draft.assignments.map((a) => ({
+          create: assignments.map((a) => ({
             day: a.day,
             slot: a.slot,
             recipeId: allIds[a.recipeIndex],
