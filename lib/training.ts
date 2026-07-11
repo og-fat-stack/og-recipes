@@ -1,10 +1,14 @@
 /**
  * Kuratierter Wochenplan, abgestimmt auf das aktuelle Ziel (Cut / Bauchfett
- * reduzieren, Start sedentary). Logik dahinter:
+ * reduzieren, Start sedentary). KOMPLETT ZU HAUSE, überwiegend reines
+ * Körpergewicht — Equipment optional (Türreck/Klimmzugstange oder ein
+ * Widerstandsband für die Zug-Übungen; sonst reicht ein stabiler Tisch/Stuhl).
+ * Logik dahinter:
  * - 3× Ganzkörper-Krafttraining (Mo/Mi/Fr) hält die Muskulatur im Defizit →
- *   verlorenes Gewicht ist Fett, nicht Muskel.
- * - 2× lockeres Zone-2-Cardio (Di/Do) auf dem Laufband (~5,5–6,5 km/h, Steigung
- *   4–6 %, Puls ~115–135/min) für Kalorienverbrauch bei geringer Belastung.
+ *   verlorenes Gewicht ist Fett, nicht Muskel. Progressiver Reiz über Tempo,
+ *   Hebel (Füße erhöht, einbeinig) und Wiederholungen statt mehr Gewicht.
+ * - 2× lockeres Zone-2-Cardio (Di/Do): zügig gehen draußen oder Bodyweight-
+ *   Cardio zu Hause (~Puls 115–135/min) für Verbrauch bei geringer Belastung.
  * - Täglich 8–10k Schritte als größter, nachhaltigster Hebel (NEAT).
  * - Bauchtraining formt den Muskel, verbrennt aber kein Bauchfett gezielt.
  */
@@ -50,7 +54,102 @@ export const KIND_META: Record<
   },
 };
 
-export const WEEKLY_PLAN: TrainingDay[] = [
+/** Zuhause-Variante: überwiegend reines Körpergewicht, Equipment optional. */
+export const WEEKLY_PLAN_HOME: TrainingDay[] = [
+  {
+    day: 0,
+    label: "Mo",
+    kind: "strength",
+    title: "Ganzkörper A (Push) + Core",
+    durationMin: 45,
+    items: [
+      "Kniebeuge (Körpergewicht) — 3×15–20, langsam runter (Progression: Tempo/Pause, dann einbeinig)",
+      "Liegestütze — 3×8–15 (leichter: Hände erhöht/Knie · schwerer: Füße erhöht)",
+      "Umgekehrtes Rudern unterm stabilen Tisch (oder Band-Rudern) — 3×8–12",
+      "Pike-Liegestütze (Schultern) — 3×6–12",
+      "Plank — 3× 30–45 s",
+    ],
+  },
+  {
+    day: 1,
+    label: "Di",
+    kind: "cardio",
+    title: "Zone-2-Cardio (zu Hause / draußen)",
+    durationMin: 35,
+    items: [
+      "Zügig gehen draußen ~5,5–6,5 km/h (30–40 Min) — oder Treppen für mehr Puls",
+      "Ohne Platz: lockeres Seilspringen, Marschieren auf der Stelle, Schattenboxen",
+      "Puls ~115–135/min (Zone 2) — Reden muss noch gehen",
+    ],
+  },
+  {
+    day: 2,
+    label: "Mi",
+    kind: "strength",
+    title: "Ganzkörper B (Beine + Pull) + Core",
+    durationMin: 45,
+    items: [
+      "Ausfallschritte / Split Squats — 3×10–12 je Bein",
+      "Glute Bridge / Hip Thrust (einbeinig als Progression) — 3×12–15",
+      "Umgekehrtes Rudern oder Klimmzüge (falls Türreck) — 3×6–10",
+      "Dips zwischen zwei Stühlen (oder Bank-Dips) — 3×8–12",
+      "Liegendes Beinheben — 3×12–15",
+    ],
+  },
+  {
+    day: 3,
+    label: "Do",
+    kind: "cardio",
+    title: "Cardio / Intervalle (zu Hause)",
+    durationMin: 35,
+    items: [
+      "Zone-2 gehen 30–40 Min — oder 1×/Woche kurzes Bodyweight-HIIT (10–15 Min)",
+      "HIIT-Zirkel: Burpees, Mountain Climbers, High Knees, Hampelmänner (30 s / 30 s Pause)",
+      "Sauber bleiben — Technik vor Tempo",
+    ],
+  },
+  {
+    day: 4,
+    label: "Fr",
+    kind: "strength",
+    title: "Ganzkörper C (gemischt)",
+    durationMin: 45,
+    items: [
+      "Bulgarian Split Squat (hinterer Fuß auf Stuhl) — 3×8–12 je Bein",
+      "Pike-Liegestütze oder Schulterdrücken mit Rucksack — 3×8–12",
+      "Klimmzüge / Türreck- oder Band-Rudern — 3×6–10",
+      "Liegestütze (eng/breit) — 3× so viele wie sauber gehen",
+      "Side-Plank + Plank-Reach — 3× 30–45 s",
+    ],
+  },
+  {
+    day: 5,
+    label: "Sa",
+    kind: "active",
+    title: "Aktiv erholen",
+    durationMin: 60,
+    items: [
+      "Langer Spaziergang oder lockere Radtour",
+      "Mobility / leichtes Dehnen",
+      "Hauptsache in Bewegung bleiben",
+    ],
+  },
+  {
+    day: 6,
+    label: "So",
+    kind: "rest",
+    title: "Pause",
+    durationMin: 0,
+    items: [
+      "Echter Ruhetag",
+      "Schlaf priorisieren (wichtig fürs Bauchfett)",
+      "Trotzdem ein paar Schritte sammeln",
+    ],
+  },
+];
+
+/** Gym-Variante: freie Gewichte, Maschinen und Laufband. */
+export const WEEKLY_PLAN_GYM: TrainingDay[] = [
   {
     day: 0,
     label: "Mo",
@@ -59,7 +158,7 @@ export const WEEKLY_PLAN: TrainingDay[] = [
     durationMin: 50,
     items: [
       "Kniebeuge — 3×8–10",
-      "Bankdrücken (oder Liegestütze) — 3×8–10",
+      "Bankdrücken — 3×8–10",
       "Latzug / Klimmzüge — 3×8–10",
       "Schulterdrücken — 3×10–12",
       "Plank — 3× 30–45 s",
@@ -143,16 +242,38 @@ export const WEEKLY_PLAN: TrainingDay[] = [
   },
 ];
 
+export type PlanVariant = "home" | "gym";
+
+export const PLAN_VARIANTS: Record<
+  PlanVariant,
+  { label: string; short: string; plan: TrainingDay[] }
+> = {
+  home: { label: "Zu Hause", short: "🏠 Körpergewicht", plan: WEEKLY_PLAN_HOME },
+  gym: { label: "Gym", short: "🏋️ Gym", plan: WEEKLY_PLAN_GYM },
+};
+
+/** Normalisiert einen (evtl. undefinierten) Query-Wert auf eine gültige Variante. */
+export function resolvePlanVariant(v: string | undefined): PlanVariant {
+  return v === "gym" ? "gym" : "home";
+}
+
+/**
+ * Standard-Plan für Makro-Berechnung und Tages-Checkliste. Beide Varianten sind
+ * energetisch nahezu gleich (gleiche `kind`-Struktur, ähnliche Dauer), daher
+ * hängt der Kalorienbedarf NICHT davon ab, welche Variante gerade angezeigt wird.
+ */
+export const WEEKLY_PLAN: TrainingDay[] = WEEKLY_PLAN_HOME;
+
 /** Wöchentliche aktive Trainingszeit (ohne Schritte). */
-export function weeklyActiveMinutes(): number {
-  return WEEKLY_PLAN.reduce((sum, d) => sum + d.durationMin, 0);
+export function weeklyActiveMinutes(plan: TrainingDay[] = WEEKLY_PLAN): number {
+  return plan.reduce((sum, d) => sum + d.durationMin, 0);
 }
 
 /**
  * Grobe MET-Werte je Trainingsart (Compendium of Physical Activities,
  * konservativ gewählt):
  * - strength: Krafttraining moderat-kräftig mit Pausen
- * - cardio:   zügiges Gehen am Laufband mit Steigung (Zone 2)
+ * - cardio:   zügiges Gehen / lockeres Bodyweight-Cardio (Zone 2)
  * - active:   lockerer langer Spaziergang
  */
 const KIND_MET: Record<TrainingKind, number> = {

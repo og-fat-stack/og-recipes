@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { connection } from "next/server";
 import {
   getStepEntries,
@@ -6,8 +7,9 @@ import {
   STEP_GOAL_MAX,
 } from "../../lib/steps";
 import {
-  WEEKLY_PLAN,
   KIND_META,
+  PLAN_VARIANTS,
+  resolvePlanVariant,
   weeklyActiveMinutes,
 } from "../../lib/training";
 import { StepForm } from "./StepForm";
@@ -31,12 +33,18 @@ function berlinTodayIndex(): number {
   return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(wd);
 }
 
-export default async function TrainingPage() {
+export default async function TrainingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ plan?: string }>;
+}) {
   await connection();
   const stats = await getStepStats();
   const entries = await getStepEntries(14);
   const todayIdx = berlinTodayIndex();
-  const todayPlan = WEEKLY_PLAN[todayIdx];
+  const variant = resolvePlanVariant((await searchParams).plan);
+  const weeklyPlan = PLAN_VARIANTS[variant].plan;
+  const todayPlan = weeklyPlan[todayIdx];
 
   return (
     <div className="space-y-10">
@@ -157,13 +165,42 @@ export default async function TrainingPage() {
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-lg font-medium">Wochenplan</h2>
           <span className="text-sm text-zinc-500">
-            {Math.round(weeklyActiveMinutes() / 5) * 5} Min aktive Zeit/Woche +
-            täglich Schritte
+            {Math.round(weeklyActiveMinutes(weeklyPlan) / 5) * 5} Min aktive
+            Zeit/Woche + täglich Schritte
           </span>
         </div>
 
+        <div className="inline-flex rounded-full border border-zinc-200 p-1 dark:border-zinc-800">
+          {(Object.keys(PLAN_VARIANTS) as (keyof typeof PLAN_VARIANTS)[]).map(
+            (key) => {
+              const active = key === variant;
+              return (
+                <Link
+                  key={key}
+                  href={key === "home" ? "/training" : `/training?plan=${key}`}
+                  scroll={false}
+                  className={
+                    "rounded-full px-4 py-1.5 text-sm font-medium transition " +
+                    (active
+                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100")
+                  }
+                >
+                  {PLAN_VARIANTS[key].short}
+                </Link>
+              );
+            },
+          )}
+        </div>
+
+        <p className="text-sm text-zinc-500">
+          {variant === "home"
+            ? "Alles zu Hause machbar — überwiegend reines Körpergewicht. Für die Zug-Übungen reicht ein stabiler Tisch; optional Türreck oder Widerstandsband."
+            : "Klassische Gym-Variante mit freien Gewichten, Maschinen und Laufband."}
+        </p>
+
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {WEEKLY_PLAN.map((d) => {
+          {weeklyPlan.map((d) => {
             const meta = KIND_META[d.kind];
             const isToday = d.day === todayIdx;
             return (
