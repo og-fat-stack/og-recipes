@@ -125,3 +125,23 @@ export async function toggleActivityEnabled(): Promise<void> {
   revalidatePath("/profile");
   revalidatePath("/weight");
 }
+
+/**
+ * Schaltet um, ob Plan- und Rezeptgenerierung günstig einkaufen oder ohne
+ * Budget-Einschränkung planen. Wirkt erst bei der nächsten Generierung — keine
+ * gespeicherten Werte neu zu berechnen.
+ */
+export async function toggleBudgetConscious(): Promise<void> {
+  const userId = await requireUserId();
+  const profile = await db.profile.findUnique({
+    where: { userId },
+    select: { budgetConscious: true },
+  });
+  if (!profile) return;
+  await db.profile.update({
+    where: { userId },
+    data: { budgetConscious: !profile.budgetConscious },
+  });
+  revalidatePath("/profile");
+  revalidatePath("/plan");
+}

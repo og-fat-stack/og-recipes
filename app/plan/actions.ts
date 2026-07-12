@@ -79,6 +79,7 @@ export async function generateWeeklyPlan(
       dayRange: { start: startDay, end: endDay },
       useUpIngredients,
       claudeMemory,
+      budgetConscious: profile.budgetConscious,
     });
 
     await db.mealPlan.deleteMany({ where: { userId, weekStart: ws } });

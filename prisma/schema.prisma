@@ -51,6 +51,9 @@ model Profile {
   /// Schilddrüse entfernt / behandelte Hypothyreose? Reduziert den geschätzten
   /// Grundumsatz (Formeln setzen normale Schilddrüsenfunktion voraus).
   thyroidReduced Boolean @default(false)
+  /// Beim Generieren günstig einkaufen (true) oder ohne Budget-Einschränkung
+  /// (false)? Steuert die Zutatenauswahl in Plan- und Rezeptgenerierung.
+  budgetConscious Boolean @default(true)
   goal           String   @default("cut")
   kcalTarget     Int
   proteinG       Int

@@ -10,6 +10,7 @@ import {
 } from "../../lib/macros";
 import { planActivityKcalPerDay } from "../../lib/training";
 import { ActivityToggle } from "../../components/ActivityToggle";
+import { BudgetToggle } from "../../components/BudgetToggle";
 import { ProfileForm } from "./ProfileForm";
 
 export default async function ProfilePage() {
@@ -77,11 +78,12 @@ export default async function ProfilePage() {
               }
             />
           </div>
-          <div className="mt-4">
+          <div className="mt-4 space-y-2">
             <ActivityToggle
               enabled={profile.activityEnabled}
               extraKcal={planActivityKcalPerDay(profile.weightKg)}
             />
+            <BudgetToggle budgetConscious={profile.budgetConscious} />
           </div>
           <p className="mt-3 text-xs text-zinc-500">
             Berechnung:{" "}

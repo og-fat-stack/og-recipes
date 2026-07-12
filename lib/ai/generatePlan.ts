@@ -183,6 +183,8 @@ export type GeneratePlanArgs = {
   dayRange?: { start: number; end: number };
   useUpIngredients?: string[];
   claudeMemory?: string | null;
+  /** false = ohne Budget-Einschränkung planen (Standard: true = günstig). */
+  budgetConscious?: boolean;
 };
 
 const DAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
@@ -194,6 +196,7 @@ export async function generatePlanDraft({
   dayRange = { start: 0, end: 6 },
   useUpIngredients = [],
   claudeMemory,
+  budgetConscious = true,
 }: GeneratePlanArgs): Promise<PlanDraft> {
   const { start: startDay, end: endDay } = dayRange;
   const dayCount = endDay - startDay + 1;
@@ -269,11 +272,15 @@ ${memory}
 `
     : "";
 
+  const budgetLine = budgetConscious
+    ? "- Budget ist wichtig: günstige, alltagstaugliche Zutaten."
+    : "- KEINE Budget-Einschränkung: Der Nutzer hat freie Zutatenwahl gewählt. IGNORIERE den BUDGET-Abschnitt aus dem System-Prompt vollständig — Kosten sind KEIN Auswahlkriterium. Wähle Zutaten nach Geschmack, Qualität und Nährwert (auch Lachs, Rind, Garnelen, Feta, Avocado, Nüsse sind erlaubt). Alle anderen Vorgaben (Fleisch-Grenzen, Vorlieben/Abneigungen, Eiweißziele) gelten UNVERÄNDERT weiter.";
+
   const userMsg = `Profil:
 - Tagesziele: ${profile.kcalTarget} kcal · ${profile.proteinG} g E · ${profile.carbG} g K · ${profile.fatG} g F
 - Pro Mahlzeit Zielwerte: ~${perMeal.kcal} kcal · ~${perMeal.protein} g E · ~${perMeal.carb} g K · ~${perMeal.fat} g F
 - Ziel: ${profile.goal}
-- Budget ist wichtig: günstige, alltagstaugliche Zutaten.
+${budgetLine}
 ${compositionBlock ? `\n${compositionBlock}\n` : ""}
 ${memoryBlock ? `\n${memoryBlock}\n` : ""}
 ${rangeBlock}
