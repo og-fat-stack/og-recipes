@@ -48,6 +48,9 @@ model Profile {
   /// Training + Schritte in die Kalorienziele einrechnen? Aus = nur Grundbedarf
   /// (sedentary), die Extra-Aktivitätskalorien werden nicht gezählt.
   activityEnabled Boolean @default(true)
+  /// Schilddrüse entfernt / behandelte Hypothyreose? Reduziert den geschätzten
+  /// Grundumsatz (Formeln setzen normale Schilddrüsenfunktion voraus).
+  thyroidReduced Boolean @default(false)
   goal           String   @default("cut")
   kcalTarget     Int
   proteinG       Int

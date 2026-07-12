@@ -19,6 +19,7 @@ const ProfileSchema = z.object({
   age: z.coerce.number().int().min(12).max(100),
   sex: z.enum(["male", "female"]),
   goal: z.enum(["cut", "maintain", "gain"]),
+  thyroidReduced: z.coerce.boolean(),
 });
 
 export type SaveProfileState = { error?: string; ok?: boolean };
@@ -34,6 +35,7 @@ export async function saveProfile(
     age: formData.get("age"),
     sex: formData.get("sex"),
     goal: formData.get("goal"),
+    thyroidReduced: formData.get("thyroidReduced") != null,
   });
 
   if (!parsed.success) {
@@ -100,6 +102,7 @@ export async function toggleActivityEnabled(): Promise<void> {
     sex: profile.sex as "male" | "female",
     activityLevel: ACTIVITY_BASELINE,
     goal: profile.goal as "cut" | "maintain" | "gain",
+    thyroidReduced: profile.thyroidReduced,
     exerciseKcalPerDay: activityEnabled
       ? planActivityKcalPerDay(profile.weightKg)
       : 0,

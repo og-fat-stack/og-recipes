@@ -68,6 +68,25 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
         />
       </div>
 
+      <label className="flex items-start gap-3 rounded-md border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+        <input
+          type="checkbox"
+          name="thyroidReduced"
+          defaultChecked={profile?.thyroidReduced ?? false}
+          className="mt-0.5 h-4 w-4"
+        />
+        <span className="flex flex-col">
+          <span className="font-medium">
+            Schilddrüse entfernt / behandelte Hypothyreose
+          </span>
+          <span className="text-xs text-zinc-500">
+            Senkt den geschätzten Grundumsatz um 10 %, weil die üblichen Formeln
+            eine normale Schilddrüsenfunktion voraussetzen. Der echte Wiegetrend
+            bleibt maßgeblich.
+          </span>
+        </span>
+      </label>
+
       <p className="text-xs text-zinc-500">
         Kein Aktivitätslevel mehr nötig: Dein täglicher Aktivitätsverbrauch wird
         aus dem{" "}

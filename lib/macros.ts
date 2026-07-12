@@ -21,6 +21,16 @@ const GOAL_DELTA: Record<Goal, number> = {
   gain: 300,
 };
 
+/**
+ * BMR-Abschlag bei entfernter Schilddrüse / behandelter Hypothyreose. Unter
+ * reiner L-Thyroxin-Ersatztherapie fehlt die körpereigene T3-Produktion; der
+ * gemessene Ruheumsatz liegt auch bei normalem TSH messbar niedriger, als
+ * Mifflin-St-Jeor/Katch-McArdle (setzen normale Schilddrüsenfunktion voraus)
+ * schätzen. 10 % ist die Mitte der berichteten ~5–15 %. Quelle: Metabolic
+ * Consequences of Thyroidectomy, J Clin Med 2024 (MDPI 13:7465).
+ */
+const THYROID_BMR_FACTOR = 0.9;
+
 export type MacroInput = {
   heightCm: number;
   weightKg: number;
@@ -36,6 +46,11 @@ export type MacroInput = {
    * Aktivität kommt aus dem Trainingsplan (siehe planActivityKcalPerDay).
    */
   exerciseKcalPerDay?: number;
+  /**
+   * Schilddrüse entfernt / behandelte Hypothyreose → geschätzter Grundumsatz
+   * wird um {@link THYROID_BMR_FACTOR} reduziert.
+   */
+  thyroidReduced?: boolean;
 };
 
 export type MacroTargets = {
@@ -82,6 +97,9 @@ export function computeMacros(input: MacroInput): MacroTargets {
     const km = bmrKatchMcArdle(leanKg);
     if (km >= mifflin * 0.8 && km <= mifflin * 1.2) bmrVal = km;
   }
+  // Bei entfernter Schilddrüse den geschätzten Grundumsatz absenken, BEVOR
+  // TDEE und die kcal-Untergrenze davon abgeleitet werden.
+  if (input.thyroidReduced) bmrVal *= THYROID_BMR_FACTOR;
   bmrVal = Math.round(bmrVal);
 
   const exerciseKcal = Math.max(0, Math.round(input.exerciseKcalPerDay ?? 0));

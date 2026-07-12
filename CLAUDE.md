@@ -17,6 +17,8 @@ profile, targets, recipes, plans, and tracking data.
   target bands live in `lib/macros.ts` and `lib/bodyComp.ts`; extend those
   rather than hardcoding male values. Body-fat bands are additionally
   age-adjusted (Gallagher 2000, `bfTarget(sex, age)`) — always pass the age.
+  BMR is reduced 10% when `profile.thyroidReduced` is set (thyroidectomy /
+  treated hypothyroidism) — pass `thyroidReduced` to every `computeMacros` call.
 - UI text is German (informal "du").
 - Auth is username + password only: scrypt hashes (`lib/password.ts`), HMAC
   session cookie (`lib/auth-core.ts`). Do not add email, OAuth, magic links,

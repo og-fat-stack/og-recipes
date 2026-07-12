@@ -26,6 +26,7 @@ export default async function ProfilePage() {
         sex: profile.sex as Sex,
         activityLevel: "sedentary",
         goal: profile.goal as Goal,
+        thyroidReduced: profile.thyroidReduced,
         exerciseKcalPerDay: profile.activityEnabled
           ? planActivityKcalPerDay(profile.weightKg)
           : 0,
@@ -87,6 +88,7 @@ export default async function ProfilePage() {
             {profile.lastMacroBodyFatPct != null
               ? `Katch-McArdle (KFA ${profile.lastMacroBodyFatPct.toFixed(1)} %, Protein nach Magermasse)`
               : "Mifflin-St Jeor (KFA für genaueren Wert eintragen)"}
+            {profile.thyroidReduced ? " · Grundumsatz −10 % (Schilddrüse)" : ""}
 . {deficit !== 0
               ? `Theoretisch ≈ ${(Math.abs(deficit) * 7 / 7700).toFixed(2)} kg Fett pro Woche (1 kg Fett ≈ 7700 kcal).`
               : "Keine Gewichtsänderung erwartet."}
