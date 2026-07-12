@@ -13,8 +13,8 @@ export function RefreshMacrosButton({ highlight }: { highlight?: boolean }) {
       className={
         "rounded-full px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 " +
         (highlight
-          ? "bg-amber-500 text-white hover:bg-amber-600"
-          : "border border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900")
+          ? "bg-warn text-on-contrast hover:bg-warn"
+          : "border border-line-strong text-ink-muted hover:bg-surface-subtle")
       }
     >
       {pending ? "Neu berechnen..." : "Makros aus 7-Tage-Schnitt neu berechnen"}

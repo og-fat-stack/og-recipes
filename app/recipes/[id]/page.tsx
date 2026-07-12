@@ -30,7 +30,7 @@ export default async function RecipePage({
       <header className="space-y-3">
         <Link
           href="/recipes"
-          className="text-sm text-zinc-500 hover:underline"
+          className="text-sm text-ink-subtle hover:underline"
         >
           ← Rezepte
         </Link>
@@ -39,7 +39,7 @@ export default async function RecipePage({
             <h1 className="text-3xl font-semibold tracking-tight">
               {recipe.title}
             </h1>
-            <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+            <p className="mt-1 text-ink-muted">
               {recipe.cuisine} · {recipe.portions} Portionen · hält{" "}
               {recipe.batchStorageDays} Tage
             </p>
@@ -50,7 +50,7 @@ export default async function RecipePage({
           </div>
         </div>
         {cookPlan.length > 1 && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+          <div className="rounded-card border border-warn-line bg-warn-surface p-3 text-sm text-warn-surface-ink">
             <p className="font-medium">
               Auf {cookPlan.length} Kochtage aufgeteilt
             </p>
@@ -74,7 +74,7 @@ export default async function RecipePage({
             {techniques.map((t) => (
               <span
                 key={t}
-                className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                className="rounded-full bg-surface-subtle px-2 py-0.5 text-xs text-ink-muted"
               >
                 {t}
               </span>
@@ -83,8 +83,8 @@ export default async function RecipePage({
         )}
       </header>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="text-sm font-medium text-zinc-500">Pro Portion</h2>
+      <section className="rounded-card border border-line bg-surface p-4">
+        <h2 className="text-sm font-medium text-ink-subtle">Pro Portion</h2>
         <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label="kcal" value={recipe.kcalPerPortion.toString()} />
           <Stat label="Eiweiß" value={`${recipe.proteinG} g`} />
@@ -94,8 +94,8 @@ export default async function RecipePage({
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-medium text-zinc-500">Zutaten</h2>
-        <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <h2 className="mb-2 text-sm font-medium text-ink-subtle">Zutaten</h2>
+        <ul className="divide-y divide-line rounded-card border border-line">
           {ingredients.map((ing, i) => (
             <li
               key={i}
@@ -103,7 +103,7 @@ export default async function RecipePage({
             >
               <span>{ing.name}</span>
               {(ing.qty != null || ing.unit) && (
-                <span className="text-zinc-500">
+                <span className="text-ink-subtle">
                   {ing.qty ?? ""} {ing.unit ?? ""}
                 </span>
               )}
@@ -113,11 +113,11 @@ export default async function RecipePage({
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-medium text-zinc-500">Schritte</h2>
+        <h2 className="mb-2 text-sm font-medium text-ink-subtle">Schritte</h2>
         <ol className="space-y-2">
           {steps.map((s, i) => (
             <li key={i} className="flex gap-3 text-sm">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-contrast text-xs font-semibold text-on-contrast">
                 {i + 1}
               </span>
               <span>{s}</span>
@@ -128,7 +128,7 @@ export default async function RecipePage({
 
       {recipe.notes && (
         <section>
-          <h2 className="mb-2 text-sm font-medium text-zinc-500">Notizen</h2>
+          <h2 className="mb-2 text-sm font-medium text-ink-subtle">Notizen</h2>
           <p className="text-sm whitespace-pre-wrap">{recipe.notes}</p>
         </section>
       )}
@@ -139,7 +139,7 @@ export default async function RecipePage({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs text-zinc-500">{label}</div>
+      <div className="text-xs text-ink-subtle">{label}</div>
       <div className="text-lg font-semibold">{value}</div>
     </div>
   );

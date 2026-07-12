@@ -13,7 +13,7 @@ export function StepForm({ defaultSteps }: { defaultSteps?: number }) {
   return (
     <form action={action} className="flex flex-wrap items-end gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-600 dark:text-zinc-400">Schritte</span>
+        <span className="text-ink-muted">Schritte</span>
         <input
           name="steps"
           type="number"
@@ -22,41 +22,41 @@ export function StepForm({ defaultSteps }: { defaultSteps?: number }) {
           defaultValue={defaultSteps ?? ""}
           placeholder="z. B. 8500"
           required
-          className="w-32 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="w-32 rounded-control border border-line-strong bg-surface px-3 py-2 text-sm"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-600 dark:text-zinc-400">Datum</span>
+        <span className="text-ink-muted">Datum</span>
         <input
           name="date"
           type="date"
           defaultValue={today}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm"
         />
       </label>
       <label className="flex flex-1 flex-col gap-1 text-sm">
-        <span className="text-zinc-600 dark:text-zinc-400">Notiz</span>
+        <span className="text-ink-muted">Notiz</span>
         <input
           name="note"
           type="text"
           placeholder="optional"
-          className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm"
         />
       </label>
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+        className="rounded-full bg-contrast px-5 py-2 text-sm font-medium text-on-contrast hover:bg-contrast-hover disabled:opacity-50"
       >
         {pending ? "Speichern..." : "Eintragen"}
       </button>
       {state.error && (
-        <p className="w-full text-sm text-red-600 dark:text-red-400">
+        <p className="w-full text-sm text-danger-ink">
           {state.error}
         </p>
       )}
       {state.ok && (
-        <p className="w-full text-sm text-emerald-600 dark:text-emerald-400">
+        <p className="w-full text-sm text-accent-ink">
           Gespeichert.
         </p>
       )}

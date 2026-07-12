@@ -20,7 +20,7 @@ export function NavBar({ userName }: { userName: string | null }) {
   if (pathname === "/login" || pathname === "/register") return null;
 
   return (
-    <nav className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+    <nav className="border-b border-line bg-surface">
       <div className="mx-auto flex max-w-4xl items-center gap-1 overflow-x-auto px-4 py-3">
         <span className="mr-4 font-semibold tracking-tight">og-recipes</span>
         {TABS.map((t) => {
@@ -33,8 +33,8 @@ export function NavBar({ userName }: { userName: string | null }) {
               className={
                 "rounded-full px-3 py-1.5 text-sm transition-colors " +
                 (active
-                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                  : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900")
+                  ? "bg-contrast text-on-contrast"
+                  : "text-ink-muted hover:bg-surface-subtle")
               }
             >
               {t.label}
@@ -43,13 +43,13 @@ export function NavBar({ userName }: { userName: string | null }) {
         })}
         <form action={logout} className="ml-auto flex items-center gap-2">
           {userName && (
-            <span className="hidden whitespace-nowrap text-sm text-zinc-500 sm:inline">
+            <span className="hidden whitespace-nowrap text-sm text-ink-subtle sm:inline">
               {userName}
             </span>
           )}
           <button
             type="submit"
-            className="rounded-full px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            className="rounded-full px-3 py-1.5 text-sm text-ink-muted hover:bg-surface-subtle"
           >
             Abmelden
           </button>

@@ -26,15 +26,15 @@ export default async function ShoppingPage({
     return (
       <div className="space-y-6">
         <header>
-          <Link href={planHref} className="text-sm text-zinc-500 hover:underline">
+          <Link href={planHref} className="text-sm text-ink-subtle hover:underline">
             ← Plan
           </Link>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
             Einkaufsliste
           </h1>
         </header>
-        <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
-          <p className="text-zinc-600 dark:text-zinc-400">
+        <div className="rounded-card border border-dashed border-line-strong p-8 text-center">
+          <p className="text-ink-muted">
             Noch kein Plan für {week === "next" ? "nächste" : "diese"} Woche.
             Erstelle zuerst einen auf{" "}
             <Link href={planHref} className="underline">
@@ -70,13 +70,13 @@ export default async function ShoppingPage({
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <Link href={planHref} className="text-sm text-zinc-500 hover:underline">
+          <Link href={planHref} className="text-sm text-ink-subtle hover:underline">
             ← Plan
           </Link>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
             Einkaufsliste
           </h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-ink-muted">
             {done} von {total} erledigt · aus {new Set(plan.meals.map((m) => m.recipeId)).size}{" "}
             Rezepten der Woche
           </p>
@@ -88,11 +88,11 @@ export default async function ShoppingPage({
       </header>
 
       {items.length === 0 ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-ink-subtle">
           Keine Zutaten in den Rezepten dieser Woche.
         </p>
       ) : (
-        <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <ul className="divide-y divide-line rounded-card border border-line">
           {items.map((it) => (
             <ShoppingRow
               key={it.itemKey}

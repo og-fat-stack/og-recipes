@@ -51,25 +51,25 @@ export function GeneratePlanButton({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover disabled:opacity-50"
         >
           {label}
         </button>
         <button
           type="button"
           onClick={() => setShowOptions((s) => !s)}
-          className="rounded-full border border-zinc-300 px-3 py-2 text-xs text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+          className="rounded-full border border-line-strong px-3 py-2 text-xs text-ink-muted hover:bg-surface-subtle"
         >
           {showOptions ? "Optionen verbergen" : "Optionen"}
         </button>
       </div>
 
       {showOptions && (
-        <div className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="space-y-3 rounded-card border border-line bg-surface-page p-3 text-sm">
           <div>
             <label
               htmlFor="useUpIngredients"
-              className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+              className="mb-1 block text-xs font-medium text-ink-muted"
             >
               Zutaten zum Aufbrauchen (komma-separiert)
             </label>
@@ -78,16 +78,16 @@ export function GeneratePlanButton({
               name="useUpIngredients"
               type="text"
               placeholder="z.B. Zucchini, Hähnchenschenkel, Spinat"
-              className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+              className="w-full rounded-control border border-line-strong bg-surface px-2 py-1 text-sm"
             />
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+            <label className="text-xs font-medium text-ink-muted">
               Von
               <select
                 name="startDay"
                 defaultValue={String(minDay)}
-                className="ml-2 rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                className="ml-2 rounded-control border border-line-strong bg-surface px-2 py-1 text-sm"
               >
                 {dayOptions.map((d) => (
                   <option key={d.value} value={d.value}>
@@ -96,12 +96,12 @@ export function GeneratePlanButton({
                 ))}
               </select>
             </label>
-            <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+            <label className="text-xs font-medium text-ink-muted">
               Bis
               <select
                 name="endDay"
                 defaultValue="6"
-                className="ml-2 rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                className="ml-2 rounded-control border border-line-strong bg-surface px-2 py-1 text-sm"
               >
                 {dayOptions.map((d) => (
                   <option key={d.value} value={d.value}>
@@ -110,7 +110,7 @@ export function GeneratePlanButton({
                 ))}
               </select>
             </label>
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-ink-subtle">
               An den nicht gewählten Tagen ist kein Kochen geplant.
               {!nextWeek && minDay > 0
                 ? " Vergangene Tage dieser Woche sind gesperrt."
@@ -121,7 +121,7 @@ export function GeneratePlanButton({
       )}
 
       {state.status === "error" && (
-        <p className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+        <p className="rounded-control border border-danger-line bg-danger-surface px-3 py-2 text-sm text-danger-surface-ink">
           {state.error}
         </p>
       )}

@@ -1,0 +1,37 @@
+# Page Layout & App Conventions
+
+## Shell
+
+`app/layout.tsx` provides: `bg-surface-page text-ink` wrapper → [NavBar](../organisms/nav-bar.md)
+→ `<main>`-equivalent `mx-auto w-full max-w-4xl flex-1 px-4 py-8`.
+
+Inside that, a page is:
+
+```tsx
+<div className="mx-auto max-w-xl space-y-6">   {/* narrow pages: dashboard, forms */}
+<div className="space-y-6">                    {/* full-width pages: Plan, Rezepte */}
+<div className="mx-auto max-w-sm py-16">       {/* auth pages */}
+```
+
+Section order: [page-header](../organisms/page-header.md) → notices → content
+cards/sections, separated by the parent's `space-y-6`.
+
+## Building a new page — checklist
+
+1. Read the specs of every component you'll use (`specs/atoms|molecules|organisms/`).
+2. Colors ONLY via semantic utilities (`stories/foundations/Color.mdx`) — never a
+   raw palette class, never `dark:` for colors.
+3. One `<h1>` (`text-3xl font-semibold tracking-tight`), one primary button max.
+4. German UI text, informal "du"; dates via `toLocaleDateString("de-DE", …)`
+   with `timeZone: "Europe/Berlin"`.
+5. Add the page to `TABS` in `components/NavBar.tsx` if it's a top-level area.
+6. Server components + server actions by default; `"use client"` only for
+   interactivity (toggles, `useTransition` buttons).
+7. Every personal query scoped via `requireUserId()` (see CLAUDE.md).
+8. Run `node scripts/token-audit.mjs` — zero errors before committing.
+
+## Responsive
+
+Mobile-first; the app is used on phones. `sm:` is the only breakpoint in use
+(grids to 2 columns, optional labels appear). Wide content scrolls in its own
+`overflow-x-auto` container.

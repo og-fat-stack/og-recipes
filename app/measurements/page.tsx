@@ -31,14 +31,14 @@ export default async function MeasurementsPage() {
     <div className="space-y-8">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">Maße</h1>
-        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+        <p className="mt-1 text-ink-muted">
           Wissenschaftliche Heim-Messungen jenseits des BMI: Taille, Hüfte und
           Körperfettanteil. Alle Felder optional — trag ein, was du heute hast.
         </p>
       </header>
 
       {!profile && (
-        <div className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
+        <div className="rounded-card border border-dashed border-line-strong p-4 text-sm">
           Zuerst <Link href="/profile" className="underline">Profil</Link>{" "}
           ausfüllen, damit Zielbänder berechnet werden können.
         </div>
@@ -46,7 +46,7 @@ export default async function MeasurementsPage() {
 
       {profile && (
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-zinc-500">
+          <h2 className="text-sm font-medium text-ink-subtle">
             Neue Messung eintragen
           </h2>
           <MeasurementForm
@@ -70,13 +70,13 @@ export default async function MeasurementsPage() {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-zinc-500">Verlauf</h2>
+        <h2 className="text-sm font-medium text-ink-subtle">Verlauf</h2>
         {entries.length === 0 ? (
-          <p className="text-sm text-zinc-500">Noch keine Einträge.</p>
+          <p className="text-sm text-ink-subtle">Noch keine Einträge.</p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-hidden rounded-card border border-line">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+              <thead className="bg-surface-subtle text-left text-xs uppercase tracking-wide text-ink-subtle">
                 <tr>
                   <th className="px-3 py-2">Datum</th>
                   <th className="px-3 py-2">Taille</th>
@@ -89,7 +89,7 @@ export default async function MeasurementsPage() {
                 {entries.map((e) => (
                   <tr
                     key={e.id}
-                    className="border-t border-zinc-200 dark:border-zinc-800"
+                    className="border-t border-line"
                   >
                     <td className="px-3 py-2">{fmtDate(e.date)}</td>
                     <td className="px-3 py-2">
@@ -103,7 +103,7 @@ export default async function MeasurementsPage() {
                         ? `${e.bodyFatPct.toFixed(1)} %`
                         : "—"}
                     </td>
-                    <td className="px-3 py-2 text-zinc-500">{e.note ?? ""}</td>
+                    <td className="px-3 py-2 text-ink-subtle">{e.note ?? ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -139,7 +139,7 @@ function CurrentBands({
       : null;
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <section className="rounded-card border border-line bg-surface p-4">
       <h2 className="font-medium">Aktuelle Werte vs. Zielband</h2>
       <ul className="mt-3 space-y-2 text-sm">
         {latest.waistCm != null && (
@@ -186,10 +186,10 @@ function CurrentBands({
           />
         )}
         {ideal && (
-          <li className="pt-2 text-zinc-600 dark:text-zinc-400">
+          <li className="pt-2 text-ink-muted">
             Persönliches Idealgewicht (bei aktueller Magermasse, altersgerechtes
             Zielband {bfBand.greenMin}–{bfBand.greenMax} % KFA):{" "}
-            <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+            <span className="font-semibold text-ink">
               {ideal.minKg.toFixed(1)}–{ideal.maxKg.toFixed(1)} kg
             </span>
           </li>
@@ -212,10 +212,10 @@ function BandRow({
 }) {
   return (
     <li className="flex flex-wrap items-center gap-3">
-      <span className="w-16 text-zinc-500">{label}</span>
+      <span className="w-16 text-ink-subtle">{label}</span>
       <span className="font-semibold">{value}</span>
       <Chip status={status} />
-      <span className="text-xs text-zinc-500">Ziel {target}</span>
+      <span className="text-xs text-ink-subtle">Ziel {target}</span>
     </li>
   );
 }
@@ -223,10 +223,10 @@ function BandRow({
 function Chip({ status }: { status: BandStatus }) {
   const cls =
     status === "green"
-      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+      ? "bg-accent-surface text-accent-surface-ink"
       : status === "amber"
-        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-        : "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300";
+        ? "bg-warn-surface text-warn-surface-ink"
+        : "bg-danger-surface text-danger-surface-ink";
   const label =
     status === "green"
       ? "im Zielbereich"

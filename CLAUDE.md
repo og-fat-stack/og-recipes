@@ -24,6 +24,31 @@ profile, targets, recipes, plans, and tracking data.
   session cookie (`lib/auth-core.ts`). Do not add email, OAuth, magic links,
   or shared passwords.
 
+## Design system — read before writing UI
+
+This project has an LLM-readable design system. Before writing or modifying ANY
+UI code:
+
+1. **Read the relevant spec** — the component file under
+   `specs/{atoms,molecules,organisms}/`, the matching foundation doc in
+   `stories/foundations/*.mdx` (Storybook docs pages: Color, Typography,
+   Spacing & Layout, Shape/Elevation/Motion), `specs/patterns/page-layout.md`,
+   and `specs/tokens/token-reference.md` for the value lookup.
+2. **Use only semantic token utilities** from `app/tokens.css` (`bg-surface`,
+   `text-ink-muted`, `border-line`, `bg-accent`, `rounded-card`, …). Never write
+   a raw palette utility (`bg-slate-100`, `text-teal-600`), a hex/rgb/hsl
+   value, or a `dark:` variant for a color — dark mode is resolved inside the
+   token layer. If no token fits, add one to `app/tokens.css` **and**
+   `specs/tokens/token-reference.md` — do not inline a raw value.
+3. **Respect "when to use / when NOT to use"** in each component spec. Don't
+   invent a new component or recipe when an existing spec covers the case.
+4. **Run the audit before committing:** `node scripts/token-audit.mjs`.
+   Zero errors is required. Its output names the exact token to use.
+5. When a component changes, update its spec file in the same change.
+
+Source code shows what was built; the specs describe how to build the next
+thing. Follow the specs, not your priors.
+
 ## Commands
 
 - `npm run dev` — dev server

@@ -52,7 +52,7 @@ export default async function TrainingPage({
     <div className="space-y-10">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">Training</h1>
-        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+        <p className="mt-1 text-ink-muted">
           Wochenplan für den Cut: 3× Kraft hält die Muskeln im Defizit, 2×
           lockeres Cardio, und täglich {STEP_GOAL_MIN.toLocaleString("de-DE")}–
           {STEP_GOAL_MAX.toLocaleString("de-DE")} Schritte als größter Hebel
@@ -105,7 +105,7 @@ export default async function TrainingPage({
           />
         </div>
 
-        <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-800/60 dark:bg-sky-950/30 dark:text-sky-200">
+        <div className="rounded-card border border-line bg-surface-subtle p-3 text-sm text-ink-muted">
           Faustregel: ~10 Min Gehen ≈ 1.000 Schritte. Dein Tagesziel von{" "}
           {STEP_GOAL_MIN.toLocaleString("de-DE")}–
           {STEP_GOAL_MAX.toLocaleString("de-DE")} Schritten entspricht also rund{" "}
@@ -114,22 +114,22 @@ export default async function TrainingPage({
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-zinc-500">
+          <h3 className="text-sm font-medium text-ink-subtle">
             Schritte eintragen
           </h3>
           <StepForm defaultSteps={stats.todaySteps ?? undefined} />
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-zinc-500">
+          <h3 className="text-sm font-medium text-ink-subtle">
             Verlauf (14 Tage)
           </h3>
           {entries.length === 0 ? (
-            <p className="text-sm text-zinc-500">Noch keine Einträge.</p>
+            <p className="text-sm text-ink-subtle">Noch keine Einträge.</p>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <div className="overflow-hidden rounded-card border border-line">
               <table className="w-full text-sm">
-                <thead className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+                <thead className="bg-surface-subtle text-left text-xs uppercase tracking-wide text-ink-subtle">
                   <tr>
                     <th className="px-3 py-2">Datum</th>
                     <th className="px-3 py-2">Schritte</th>
@@ -141,7 +141,7 @@ export default async function TrainingPage({
                   {entries.map((e) => (
                     <tr
                       key={e.id}
-                      className="border-t border-zinc-200 dark:border-zinc-800"
+                      className="border-t border-line"
                     >
                       <td className="px-3 py-2">{fmtDate(e.date)}</td>
                       <td className="px-3 py-2 font-medium">
@@ -150,7 +150,7 @@ export default async function TrainingPage({
                       <td className="px-3 py-2">
                         <GoalChip steps={e.steps} />
                       </td>
-                      <td className="px-3 py-2 text-zinc-500">
+                      <td className="px-3 py-2 text-ink-subtle">
                         {e.note ?? ""}
                       </td>
                     </tr>
@@ -166,13 +166,13 @@ export default async function TrainingPage({
       <section className="space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-lg font-medium">Wochenplan</h2>
-          <span className="text-sm text-zinc-500">
+          <span className="text-sm text-ink-subtle">
             {Math.round(weeklyActiveMinutes(weeklyPlan) / 5) * 5} Min aktive
             Zeit/Woche + täglich Schritte
           </span>
         </div>
 
-        <div className="inline-flex rounded-full border border-zinc-200 p-1 dark:border-zinc-800">
+        <div className="inline-flex rounded-full border border-line p-1">
           {(Object.keys(PLAN_VARIANTS) as (keyof typeof PLAN_VARIANTS)[]).map(
             (key) => {
               const active = key === variant;
@@ -184,8 +184,8 @@ export default async function TrainingPage({
                   className={
                     "rounded-full px-4 py-1.5 text-sm font-medium transition " +
                     (active
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100")
+                      ? "bg-contrast text-on-contrast"
+                      : "text-ink-muted hover:text-ink")
                   }
                 >
                   {PLAN_VARIANTS[key].short}
@@ -195,7 +195,7 @@ export default async function TrainingPage({
           )}
         </div>
 
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-ink-subtle">
           {variant === "home"
             ? "Alles zu Hause machbar — überwiegend reines Körpergewicht. Für die Zug-Übungen reicht ein stabiler Tisch; optional Türreck oder Widerstandsband."
             : "Klassische Gym-Variante mit freien Gewichten, Maschinen und Laufband."}
@@ -209,17 +209,17 @@ export default async function TrainingPage({
               <div
                 key={d.day}
                 className={
-                  "rounded-xl border p-4 " +
+                  "rounded-card border p-4 " +
                   (isToday
-                    ? "border-zinc-900 bg-white shadow-sm dark:border-zinc-100 dark:bg-zinc-900"
-                    : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900")
+                    ? "border-contrast bg-surface shadow-sm"
+                    : "border-line bg-surface")
                 }
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-base font-semibold">{d.label}</span>
                     {isToday && (
-                      <span className="rounded-full bg-zinc-900 px-2 py-0.5 text-xs text-white dark:bg-zinc-100 dark:text-zinc-900">
+                      <span className="rounded-full bg-contrast px-2 py-0.5 text-xs text-on-contrast">
                         heute
                       </span>
                     )}
@@ -230,14 +230,14 @@ export default async function TrainingPage({
                 </div>
                 <p className="mt-2 font-medium">{d.title}</p>
                 {d.durationMin > 0 && (
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-ink-subtle">
                     ca. {d.durationMin} Min
                   </p>
                 )}
-                <ul className="mt-2 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+                <ul className="mt-2 space-y-1 text-sm text-ink-muted">
                   {d.items.map((it, i) => (
                     <li key={i} className="flex gap-2">
-                      <span className="text-zinc-400">•</span>
+                      <span className="text-ink-subtle">•</span>
                       <span>{it}</span>
                     </li>
                   ))}
@@ -248,7 +248,7 @@ export default async function TrainingPage({
         </div>
 
         {todayPlan && (
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-ink-subtle">
             Heute dran: <strong>{todayPlan.title}</strong> ({KIND_META[todayPlan.kind].label}).
           </p>
         )}
@@ -262,10 +262,10 @@ function GoalChip({ steps }: { steps: number }) {
     steps >= STEP_GOAL_MIN ? "green" : steps >= STEP_GOAL_MIN * 0.75 ? "amber" : "red";
   const cls =
     status === "green"
-      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+      ? "bg-accent-surface text-accent-surface-ink"
       : status === "amber"
-        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-        : "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300";
+        ? "bg-warn-surface text-warn-surface-ink"
+        : "bg-danger-surface text-danger-surface-ink";
   const label =
     status === "green" ? "Ziel erreicht" : status === "amber" ? "fast" : "drunter";
   return <span className={`rounded-full px-2 py-0.5 text-xs ${cls}`}>{label}</span>;
@@ -284,15 +284,15 @@ function Stat({
 }) {
   const toneClass =
     tone === "good"
-      ? "text-emerald-600 dark:text-emerald-400"
+      ? "text-accent-ink"
       : tone === "warn"
-        ? "text-amber-600 dark:text-amber-400"
+        ? "text-warn-ink"
         : "";
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="text-xs text-zinc-500">{label}</div>
+    <div className="rounded-card border border-line bg-surface p-4">
+      <div className="text-xs text-ink-subtle">{label}</div>
       <div className={`mt-1 text-xl font-semibold ${toneClass}`}>{value}</div>
-      {sub && <div className="text-xs text-zinc-500">{sub}</div>}
+      {sub && <div className="text-xs text-ink-subtle">{sub}</div>}
     </div>
   );
 }

@@ -34,21 +34,21 @@ export default async function WeightPage() {
     <div className="space-y-8">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">Gewicht</h1>
-        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+        <p className="mt-1 text-ink-muted">
           Täglich wiegen (morgens, nach dem WC, vor Essen/Trinken). Achte auf
           den 7-Tage-Schnitt, nicht den Tageswert.
         </p>
       </header>
 
       {!profile && (
-        <div className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm dark:border-zinc-700">
+        <div className="rounded-card border border-dashed border-line-strong p-4 text-sm">
           Zuerst <Link href="/profile" className="underline">Profil</Link>{" "}
           ausfüllen (inkl. Zielgewicht), um Prognosen zu sehen.
         </div>
       )}
 
       {profile && !profile.goalWeightKg && (
-        <div className="rounded-xl border border-dashed border-amber-400 p-4 text-sm">
+        <div className="rounded-card border border-dashed border-warn-line p-4 text-sm">
           Zielgewicht im{" "}
           <Link href="/profile" className="underline">Profil</Link> hinterlegen,
           um die Ankunft zu berechnen.
@@ -83,7 +83,7 @@ export default async function WeightPage() {
       </section>
 
       {stats.needsMacroRefresh && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-400 bg-amber-50 p-4 text-sm dark:bg-amber-950/30">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-warn-line bg-warn-surface p-4 text-sm">
           <div>
             Du hast seit der letzten Makro-Berechnung ≥ 2 kg abgenommen.
             Der Grundumsatz hat sich verändert — bitte neu berechnen.
@@ -93,23 +93,23 @@ export default async function WeightPage() {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-zinc-500">Wiegen eintragen</h2>
+        <h2 className="text-sm font-medium text-ink-subtle">Wiegen eintragen</h2>
         <WeightForm defaultKg={stats.latestKg ?? profile?.weightKg} />
       </section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-zinc-500">Verlauf</h2>
+          <h2 className="text-sm font-medium text-ink-subtle">Verlauf</h2>
           {!stats.needsMacroRefresh && entries.length > 0 && (
             <RefreshMacrosButton />
           )}
         </div>
         {entries.length === 0 ? (
-          <p className="text-sm text-zinc-500">Noch keine Einträge.</p>
+          <p className="text-sm text-ink-subtle">Noch keine Einträge.</p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-hidden rounded-card border border-line">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+              <thead className="bg-surface-subtle text-left text-xs uppercase tracking-wide text-ink-subtle">
                 <tr>
                   <th className="px-3 py-2">Datum</th>
                   <th className="px-3 py-2">Gewicht</th>
@@ -120,11 +120,11 @@ export default async function WeightPage() {
                 {entries.map((e) => (
                   <tr
                     key={e.id}
-                    className="border-t border-zinc-200 dark:border-zinc-800"
+                    className="border-t border-line"
                   >
                     <td className="px-3 py-2">{fmtDate(e.date)}</td>
                     <td className="px-3 py-2">{e.kg.toFixed(1)} kg</td>
-                    <td className="px-3 py-2 text-zinc-500">{e.note ?? ""}</td>
+                    <td className="px-3 py-2 text-ink-subtle">{e.note ?? ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -149,15 +149,15 @@ function Stat({
 }) {
   const toneClass =
     tone === "good"
-      ? "text-emerald-600 dark:text-emerald-400"
+      ? "text-accent-ink"
       : tone === "warn"
-        ? "text-amber-600 dark:text-amber-400"
+        ? "text-warn-ink"
         : "";
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="text-xs text-zinc-500">{label}</div>
+    <div className="rounded-card border border-line bg-surface p-4">
+      <div className="text-xs text-ink-subtle">{label}</div>
       <div className={`mt-1 text-xl font-semibold ${toneClass}`}>{value}</div>
-      {sub && <div className="text-xs text-zinc-500">{sub}</div>}
+      {sub && <div className="text-xs text-ink-subtle">{sub}</div>}
     </div>
   );
 }

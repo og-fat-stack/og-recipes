@@ -10,7 +10,7 @@ export function CookedButton({ recipeId }: { recipeId: number }) {
       type="button"
       disabled={pending}
       onClick={() => start(() => startCookSession(recipeId).then(() => {}))}
-      className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+      className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover disabled:opacity-50"
     >
       {pending ? "..." : "✅ Fertig gekocht"}
     </button>

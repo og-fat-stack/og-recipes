@@ -1,0 +1,25 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundations/Typography" />
+
+# Typography
+
+Tailwind's built-in type scale IS the token set — but only these steps are in
+the system. UI text is German, informal "du".
+
+| Step | Utility | Use | Preview |
+|------|---------|-----|---------|
+| Page title | `text-3xl font-semibold tracking-tight` | exactly one `<h1>` per page | <span style={{fontSize: '1.875rem', fontWeight: 600, letterSpacing: '-0.025em'}}>Heute</span> |
+| Auth title | `text-2xl font-semibold tracking-tight` | login/register only | <span style={{fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.025em'}}>Anmelden</span> |
+| Stat value | `text-lg`–`text-xl font-semibold` | large numbers on dashboards | <span style={{fontSize: '1.25rem', fontWeight: 600}}>1.850 kcal</span> |
+| Body / default | `text-sm` | almost everything: labels, rows, buttons, inputs, prose | <span style={{fontSize: '0.875rem'}}>3 von 7 erledigt</span> |
+| Meta | `text-xs` | captions, units, secondary line in a row, table headers | <span style={{fontSize: '0.75rem', color: 'var(--og-ink-subtle)'}}>wöchentlich · offen</span> |
+
+- `text-base` is effectively unused — reach for `text-sm`.
+- **Weights: only `font-medium` and `font-semibold`.** Medium = labels, row
+  titles, buttons. Semibold = headings and stat values. Never `font-bold`.
+- Section headings inside a page are NOT h-scale: use
+  `text-sm font-medium text-ink-subtle` (see the "Routinen" heading pattern).
+- Table headers: `text-xs font-medium uppercase tracking-wide text-ink-subtle`.
+- Font family comes from the layout (`--font-sans`); never set `font-family`
+  or a `font-[…]` arbitrary value in a component.

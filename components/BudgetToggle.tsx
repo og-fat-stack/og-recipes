@@ -16,11 +16,11 @@ export function BudgetToggle({ budgetConscious }: { budgetConscious: boolean }) 
       disabled={pending}
       onClick={() => start(() => toggleBudgetConscious())}
       aria-pressed={budgetConscious}
-      className="flex w-full items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-left hover:border-zinc-400 disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
+      className="flex w-full items-center justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 text-left hover:border-line-active disabled:opacity-60"
     >
       <span className="flex flex-col">
         <span className="text-sm font-medium">Günstig einkaufen</span>
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-ink-subtle">
           {budgetConscious
             ? "An — Plan & Rezepte bevorzugen günstige Zutaten (< 3 €/Portion)"
             : "Aus — keine Budget-Einschränkung, Zutaten frei nach Geschmack/Qualität"}
@@ -29,12 +29,12 @@ export function BudgetToggle({ budgetConscious }: { budgetConscious: boolean }) 
       <span
         className={
           "flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors " +
-          (budgetConscious ? "bg-emerald-600" : "bg-zinc-300 dark:bg-zinc-700")
+          (budgetConscious ? "bg-accent" : "bg-surface-inset")
         }
       >
         <span
           className={
-            "h-5 w-5 rounded-full bg-white shadow transition-transform " +
+            "h-5 w-5 rounded-full bg-on-accent shadow transition-transform " +
             (budgetConscious ? "translate-x-5" : "")
           }
         />

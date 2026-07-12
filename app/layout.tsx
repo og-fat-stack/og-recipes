@@ -38,7 +38,7 @@ export default async function RootLayout({
       lang="de"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <body className="min-h-full flex flex-col bg-surface-page text-ink">
         <NavBar userName={user?.name ?? null} />
         <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">
           {children}

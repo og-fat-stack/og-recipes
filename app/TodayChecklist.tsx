@@ -7,7 +7,7 @@ import type { ChecklistItem } from "../lib/checklist";
 
 export function TodayChecklist({ items }: { items: ChecklistItem[] }) {
   return (
-    <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+    <ul className="divide-y divide-line rounded-card border border-line bg-surface">
       {items.map((item) => (
         <Row key={item.key} item={item} />
       ))}
@@ -21,10 +21,10 @@ function Row({ item }: { item: ChecklistItem }) {
   const box = (
     <span
       className={
-        "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-sm transition-colors " +
+        "flex h-6 w-6 shrink-0 items-center justify-center rounded-control border text-sm transition-colors " +
         (item.done
-          ? "border-emerald-600 bg-emerald-600 text-white"
-          : "border-zinc-300 text-transparent dark:border-zinc-600")
+          ? "border-accent bg-accent text-on-accent"
+          : "border-line-strong text-transparent")
       }
     >
       ✓
@@ -38,13 +38,13 @@ function Row({ item }: { item: ChecklistItem }) {
         <span
           className={
             "text-sm font-medium " +
-            (item.done ? "text-zinc-400 line-through dark:text-zinc-500" : "")
+            (item.done ? "text-ink-subtle line-through" : "")
           }
         >
           {item.label}
         </span>
         {item.sublabel && (
-          <span className="text-xs text-zinc-500">{item.sublabel}</span>
+          <span className="text-xs text-ink-subtle">{item.sublabel}</span>
         )}
       </span>
     </>
@@ -56,11 +56,11 @@ function Row({ item }: { item: ChecklistItem }) {
       <li>
         <Link
           href={item.href ?? "#"}
-          className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+          className="flex items-center gap-3 px-4 py-3 hover:bg-surface-hover"
         >
           {content}
           {item.href && (
-            <span className="ml-auto text-xs text-zinc-400">→</span>
+            <span className="ml-auto text-xs text-ink-subtle">→</span>
           )}
         </Link>
       </li>
@@ -73,7 +73,7 @@ function Row({ item }: { item: ChecklistItem }) {
         type="button"
         disabled={pending}
         onClick={() => start(() => toggleDailyCheck(item.key, !item.done))}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-zinc-50 disabled:opacity-60 dark:hover:bg-zinc-800/50"
+        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-hover disabled:opacity-60"
       >
         {content}
       </button>

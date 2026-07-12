@@ -1,0 +1,34 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundations/Spacing & Layout" />
+
+# Spacing & Layout
+
+Tailwind's 4px-grid spacing scale IS the token set. Only these steps are
+conventional in this app — stick to them; never use an arbitrary value
+(`p-[13px]`) or an unlisted step without reason.
+
+| Step | Utility | Use |
+|------|---------|-----|
+| 2px | `p-0.5`, `py-0.5` | toggle knob inset, chip vertical padding |
+| 4px | `gap-1`, `space-y-1`, `mt-1` | tight stacks: title ↔ subtitle |
+| 8px | `gap-2`, `space-y-2`, `px-2 py-2` | chips row, section heading ↔ card, table cells |
+| 12px | `gap-3`, `px-3`, `py-3` | list-row padding (`px-4 py-3`), input padding (`px-3 py-2`), form gap |
+| 16px | `p-4`, `px-4`, `gap-4` | card padding, page gutter, card grids |
+| 24px | `space-y-6`, `mb-6` | vertical rhythm between page sections |
+| 32px | `p-8`, `py-8` | page vertical padding, empty-state padding |
+| 64px | `py-16` | auth-page top offset |
+
+## Page shell
+
+- Layout wrapper: `mx-auto w-full max-w-4xl flex-1 px-4 py-8` (in `app/layout.tsx`).
+- Content pages: `mx-auto max-w-xl space-y-6` (narrow, e.g. dashboard) or
+  plain `space-y-6` for full-width pages (Plan, Rezepte).
+- Auth pages: `mx-auto max-w-sm py-16`.
+- Grids: `grid gap-4 sm:grid-cols-2` for card grids.
+- Wide content (tables) scrolls inside its own `overflow-x-auto` wrapper —
+  the page never scrolls horizontally.
+
+`min-w-[…]` for table columns is the one tolerated arbitrary-value use
+(layout measurement, not a design token) — the audit reports it as a warning,
+not an error.

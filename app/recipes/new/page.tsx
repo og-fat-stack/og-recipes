@@ -7,7 +7,7 @@ export default function NewRecipePage() {
       <header>
         <Link
           href="/recipes"
-          className="text-sm text-zinc-500 hover:underline"
+          className="text-sm text-ink-subtle hover:underline"
         >
           ← Rezepte
         </Link>

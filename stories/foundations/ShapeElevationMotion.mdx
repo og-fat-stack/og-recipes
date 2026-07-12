@@ -1,0 +1,62 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundations/Shape, Elevation & Motion" />
+
+# Shape, Elevation, Motion, Z-Index
+
+## Radius — three shapes only
+
+export const RadiusDemo = ({ radius, label }) => (
+  <span
+    style={{
+      display: 'inline-block',
+      width: '4rem',
+      height: '2rem',
+      borderRadius: radius,
+      border: '1px solid var(--og-line-strong)',
+      background: 'var(--og-surface)',
+      verticalAlign: 'middle',
+    }}
+    aria-label={label}
+  />
+);
+
+| Preview | Token / utility | Value | Use |
+|---------|-----------------|-------|-----|
+| <RadiusDemo radius="0.375rem" label="control" /> | `rounded-control` | 0.375rem (md) | inputs, selects, inline form buttons, notice boxes in forms |
+| <RadiusDemo radius="0.75rem" label="card" /> | `rounded-card` | 0.75rem (xl) | cards, list panels, notices, empty states |
+| <RadiusDemo radius="999px" label="pill" /> | `rounded-full` | pill | pill buttons, nav links, chips/badges, dots, progress bars, toggles |
+
+Never `rounded-lg`, `rounded-sm`, bare `rounded`, or an arbitrary radius.
+Rule of thumb: **panels are cards, controls are controls, everything small is
+a pill.** Standalone action buttons are pills (`rounded-full`); buttons that sit
+inside a vertical form stack are controls (`rounded-control`) so they align
+with the inputs.
+
+## Elevation
+
+Flat design — borders separate surfaces, not shadows.
+
+| Utility | Use |
+|---------|-----|
+| (none) | default: cards use `border border-line`, no shadow |
+| `shadow-sm` | sticky/overlay elements that float over content |
+| `shadow` | the toggle knob only |
+
+No other shadow values, no arbitrary `shadow-[…]`.
+
+## Z-index
+
+None. The app has no modals, dropdowns, or toasts; stacking is handled by
+`sticky` table columns without an explicit z-index. If a layered component is
+ever added, mint `--z-*` tokens in `app/tokens.css` first.
+
+## Motion
+
+| Utility | Use |
+|---------|-----|
+| `transition-colors` | hover color changes (buttons, links, rows) |
+| `transition-transform` | toggle knob |
+| `transition-all` | progress-bar width |
+
+Default duration/easing only — never `duration-*`, `ease-*`, or raw values.

@@ -77,11 +77,11 @@ export function MeasurementForm({
         placeholder="z. B. morgens nach WC"
       />
 
-      <div className="rounded-xl border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+      <div className="rounded-card border border-line p-3 text-sm">
         <button
           type="button"
           onClick={() => setShowNavy((v) => !v)}
-          className="text-left text-zinc-600 hover:underline dark:text-zinc-400"
+          className="text-left text-ink-muted hover:underline"
         >
           {showNavy ? "▾" : "▸"} Körperfett mit Maßband schätzen (US-Navy)
         </button>
@@ -106,7 +106,7 @@ export function MeasurementForm({
                 />
               )}
             </div>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-ink-subtle">
               Hals: schmalste Stelle unter dem Adamsapfel. Taille: Männer in
               Bauchnabelhöhe, Frauen schmalste Stelle. {sex === "female" && "Hüfte: breiteste Stelle."}
             </p>
@@ -124,7 +124,7 @@ export function MeasurementForm({
                     );
                     if (input) input.value = navyBf.toFixed(1);
                   }}
-                  className="ml-3 rounded-full bg-zinc-100 px-3 py-1 text-xs hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+                  className="ml-3 rounded-full bg-surface-subtle px-3 py-1 text-xs hover:bg-surface-inset"
                 >
                   Wert übernehmen
                 </button>
@@ -138,17 +138,17 @@ export function MeasurementForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+          className="rounded-full bg-contrast px-5 py-2 text-sm font-medium text-on-contrast hover:bg-contrast-hover disabled:opacity-50"
         >
           {pending ? "Speichern..." : "Eintragen"}
         </button>
         {state.error && (
-          <span className="text-sm text-red-600 dark:text-red-400">
+          <span className="text-sm text-danger-ink">
             {state.error}
           </span>
         )}
         {state.ok && (
-          <span className="text-sm text-emerald-600 dark:text-emerald-400">
+          <span className="text-sm text-accent-ink">
             Gespeichert.
           </span>
         )}
@@ -163,10 +163,10 @@ function Field(
   const { label, ...rest } = props;
   return (
     <label className="flex flex-col gap-1 text-sm">
-      <span className="text-zinc-600 dark:text-zinc-400">{label}</span>
+      <span className="text-ink-muted">{label}</span>
       <input
         {...rest}
-        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-zinc-900 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
+        className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm shadow-sm focus:border-contrast focus:outline-none"
       />
     </label>
   );
@@ -183,13 +183,13 @@ function CalcField({
 }) {
   return (
     <label className="flex flex-col gap-1 text-sm">
-      <span className="text-zinc-600 dark:text-zinc-400">{label}</span>
+      <span className="text-ink-muted">{label}</span>
       <input
         type="number"
         step="0.1"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+        className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm"
       />
     </label>
   );

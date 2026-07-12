@@ -1,0 +1,117 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundations/Color" />
+
+# Color
+
+The palette is **slate neutrals + one accent (teal) + two status hues**
+(amber = warn/fällig, red = danger/Fehler). Nothing else. All colors are
+expressed as semantic tokens from `app/tokens.css` — components use the
+generated utilities (`bg-surface`, `text-ink-muted`, `border-line`, …) and
+**never** raw palette utilities (`bg-slate-100`, `text-teal-600`) or hex values.
+
+Dark mode is resolved **inside the token layer** (prefers-color-scheme override
+of the `--og-*` aliases). Therefore: **never write a `dark:` variant for a
+color.** If you are typing `dark:bg-…` or `dark:text-…`, you are using the
+wrong layer. (`dark:` remains legitimate for non-color utilities, which is rare.)
+
+The swatches below render the live tokens — switch your OS/browser color scheme
+to see the dark values resolve with zero component changes.
+
+export const Swatch = ({ token }) => (
+  <span
+    style={{
+      display: 'inline-block',
+      width: '4.5rem',
+      height: '1.75rem',
+      borderRadius: '0.5rem',
+      border: '1px solid var(--og-line-strong)',
+      boxShadow: 'inset 0 0 0 1px rgb(0 0 0 / 0.06)',
+      background: `var(--og-${token})`,
+      verticalAlign: 'middle',
+    }}
+  />
+);
+
+export const InkSwatch = ({ token }) => (
+  <span
+    style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '4.5rem',
+      height: '1.75rem',
+      borderRadius: '0.5rem',
+      border: '1px solid var(--og-line-strong)',
+      background: 'var(--og-surface)',
+      color: `var(--og-${token})`,
+      fontWeight: 600,
+      fontSize: '0.875rem',
+      verticalAlign: 'middle',
+    }}
+  >
+    Aa
+  </span>
+);
+
+## Semantic roles
+
+### Surfaces
+
+| Swatch | Utility | Use |
+|--------|---------|-----|
+| <Swatch token="surface-page" /> | `bg-surface-page` | body / layout wrapper |
+| <Swatch token="surface" /> | `bg-surface` | cards, list panels, table cells, NavBar |
+| <Swatch token="surface-subtle" /> | `bg-surface-subtle` | chips, `<kbd>`, nav-link hover, neutral notices |
+| <Swatch token="surface-hover" /> | `hover:bg-surface-hover` | list-row / table-row hover |
+| <Swatch token="surface-inset" /> | `bg-surface-inset` | progress-bar track, toggle track (off) |
+
+### Text — three steps only
+
+| Swatch | Utility | Use |
+|--------|---------|-----|
+| <InkSwatch token="ink" /> | `text-ink` | headings, values (usually inherited) |
+| <InkSwatch token="ink-muted" /> | `text-ink-muted` | secondary prose, text on subtle fills |
+| <InkSwatch token="ink-subtle" /> | `text-ink-subtle` | captions, units, table headers, arrows "→" |
+
+### Borders
+
+| Swatch | Utility | Use |
+|--------|---------|-----|
+| <Swatch token="line" /> | `border-line`, `divide-line` | cards, dividers |
+| <Swatch token="line-strong" /> | `border-line-strong` | input borders, empty-state dashes |
+| <Swatch token="line-active" /> | `hover:border-line-active`, `focus:border-line-active` | hovered cards, focused inputs |
+
+### Accent & contrast
+
+| Swatch | Utility | Use |
+|--------|---------|-----|
+| <Swatch token="accent" /> | `bg-accent`, `hover:bg-accent-hover`, `text-on-accent` | primary buttons, progress fill, "done" dot |
+| <InkSwatch token="accent-ink" /> | `text-accent-ink` | positive inline values |
+| <Swatch token="accent-surface" /> | `bg-accent-surface text-accent-surface-ink` | success chips |
+| <Swatch token="contrast" /> | `bg-contrast`, `hover:bg-contrast-hover`, `text-on-contrast` | secondary solid buttons, active nav pill |
+
+### Status hues
+
+| Swatch | Utility | Use |
+|--------|---------|-----|
+| <Swatch token="warn" /> | `bg-warn` (dot), `text-warn-ink` | "fällig" markers |
+| <Swatch token="warn-surface" /> | `bg-warn-surface text-warn-surface-ink border-warn-line` | hint notices |
+| <InkSwatch token="danger-ink" /> | `text-danger-ink` | errors, delete actions |
+| <Swatch token="danger-surface" /> | `bg-danger-surface text-danger-surface-ink border-danger-line` | error notices |
+| <Swatch token="tag-strength" /> | `bg-tag-strength text-tag-strength-ink` | Kraft-Chip |
+| <Swatch token="tag-cardio" /> | `bg-tag-cardio text-tag-cardio-ink` | Cardio-Chip |
+
+Neutral/info notices have no own hue: `border-line bg-surface-subtle text-ink-muted`.
+
+## Rules
+
+- One value, one token: before reaching for a new color, find the semantic role
+  above. If genuinely none fits, add a token to `app/tokens.css` **and**
+  `specs/tokens/token-reference.md` in the same change — never inline a raw value.
+- Accent (teal) means *success / progress / primary action*. Don't use it
+  decoratively.
+- Removed in the 2026-07 consolidation (do not re-add): `ink-soft`, `ink-faint`,
+  `surface-header`, `surface-inset-strong`, `line-hover`, `line-focus`, `info-*`.
+- The audit (`node scripts/token-audit.mjs`) fails the build on any raw palette
+  utility, hex/rgb/hsl value, or color `dark:` variant outside `app/tokens.css`.

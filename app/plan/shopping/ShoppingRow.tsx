@@ -36,20 +36,20 @@ export function ShoppingRow({
             void toggleShoppingItem(planId, itemKey, next);
           });
         }}
-        className="mt-1 h-4 w-4 accent-emerald-600"
+        className="mt-1 h-4 w-4 accent-accent"
       />
       <div className="flex-1">
         <div
           className={
             "flex items-baseline justify-between gap-3 " +
-            (optimistic ? "text-zinc-400 line-through" : "")
+            (optimistic ? "text-ink-subtle line-through" : "")
           }
         >
           <span>{label}</span>
-          {qty && <span className="text-zinc-500">{qty}</span>}
+          {qty && <span className="text-ink-subtle">{qty}</span>}
         </div>
         {sources.length > 0 && (
-          <div className="text-xs text-zinc-500">
+          <div className="text-xs text-ink-subtle">
             {sources.join(" · ")}
           </div>
         )}

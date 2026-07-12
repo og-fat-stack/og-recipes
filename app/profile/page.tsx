@@ -39,14 +39,14 @@ export default async function ProfilePage() {
     <div className="space-y-8">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">Profil</h1>
-        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+        <p className="mt-1 text-ink-muted">
           Deine Angaben bestimmen die täglichen Kalorien- und Makro-Ziele.
         </p>
       </header>
 
       {profile && energy && (
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-          <h2 className="text-sm font-medium text-zinc-500">
+        <section className="rounded-card border border-line bg-surface p-4">
+          <h2 className="text-sm font-medium text-ink-subtle">
             Aktuelle Ziele
           </h2>
           <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -56,7 +56,7 @@ export default async function ProfilePage() {
             <Stat label="Fett" value={`${profile.fatG} g`} />
             <Stat label="Wasser" value={`${profile.waterMlTarget} ml`} />
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800 sm:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4 sm:grid-cols-4">
             <Stat label="Grundumsatz" value={`${energy.bmr} kcal`} />
             <Stat
               label="Aktivität (Ø/Tag)"
@@ -85,7 +85,7 @@ export default async function ProfilePage() {
             />
             <BudgetToggle budgetConscious={profile.budgetConscious} />
           </div>
-          <p className="mt-3 text-xs text-zinc-500">
+          <p className="mt-3 text-xs text-ink-subtle">
             Berechnung:{" "}
             {profile.lastMacroBodyFatPct != null
               ? `Katch-McArdle (KFA ${profile.lastMacroBodyFatPct.toFixed(1)} %, Protein nach Magermasse)`
@@ -99,12 +99,12 @@ export default async function ProfilePage() {
       )}
 
       {profile && (
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <section className="rounded-card border border-line bg-surface p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-zinc-500">Letzte Messung</h2>
+            <h2 className="text-sm font-medium text-ink-subtle">Letzte Messung</h2>
             <Link
               href="/measurements"
-              className="text-sm text-zinc-500 hover:underline"
+              className="text-sm text-ink-subtle hover:underline"
             >
               {latest ? "Bearbeiten →" : "Eintragen →"}
             </Link>
@@ -139,7 +139,7 @@ export default async function ProfilePage() {
               />
             </div>
           ) : (
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="mt-2 text-sm text-ink-subtle">
               Noch keine Maße erfasst.
             </p>
           )}
@@ -154,7 +154,7 @@ export default async function ProfilePage() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs text-zinc-500">{label}</div>
+      <div className="text-xs text-ink-subtle">{label}</div>
       <div className="text-lg font-semibold">{value}</div>
     </div>
   );

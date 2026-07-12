@@ -18,7 +18,7 @@ export function DeleteRecipeButton({ id }: { id: number }) {
           router.push("/recipes");
         });
       }}
-      className="rounded-full border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:hover:bg-red-950/30"
+      className="rounded-full border border-danger-line px-3 py-1.5 text-sm text-danger-ink hover:bg-danger-surface disabled:opacity-50"
     >
       {pending ? "Löschen..." : "Löschen"}
     </button>

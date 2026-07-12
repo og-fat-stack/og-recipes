@@ -13,7 +13,7 @@ export default async function MemoryPage() {
     <div className="space-y-8">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">Claude-Memory</h1>
-        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+        <p className="mt-1 text-ink-muted">
           Was Claude beim Erstellen von Rezepten und Wochenplänen über dich
           wissen soll — Vorlieben, Abneigungen, Allergien, Küchen-Ausstattung.
           Wird in jeden Generierungs-Prompt eingespeist.
@@ -21,7 +21,7 @@ export default async function MemoryPage() {
       </header>
 
       {!memory && (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+        <p className="rounded-card border border-warn-line bg-warn-surface p-3 text-sm text-warn-surface-ink">
           Noch nichts gespeichert — Claude kennt bisher keine Vorlieben von
           dir. Trag ein, was beim Kochen und Planen berücksichtigt werden soll.
         </p>
