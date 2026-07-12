@@ -45,6 +45,9 @@ model Profile {
   age            Int
   sex            String
   activityLevel  String
+  /// Training + Schritte in die Kalorienziele einrechnen? Aus = nur Grundbedarf
+  /// (sedentary), die Extra-Aktivitätskalorien werden nicht gezählt.
+  activityEnabled Boolean @default(true)
   goal           String   @default("cut")
   kcalTarget     Int
   proteinG       Int

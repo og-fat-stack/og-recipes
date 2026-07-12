@@ -85,7 +85,9 @@ export async function refreshMacrosFromAvg(): Promise<LogWeightState> {
     // Grundbedarf immer "sedentary"; die Aktivität kommt aus dem Trainingsplan.
     activityLevel: "sedentary",
     goal: profile.goal as "cut" | "maintain" | "gain",
-    exerciseKcalPerDay: planActivityKcalPerDay(avg),
+    exerciseKcalPerDay: profile.activityEnabled
+      ? planActivityKcalPerDay(avg)
+      : 0,
   });
 
   await db.profile.update({

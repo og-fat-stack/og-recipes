@@ -9,6 +9,7 @@ import {
   type Sex,
 } from "../../lib/macros";
 import { planActivityKcalPerDay } from "../../lib/training";
+import { ActivityToggle } from "../../components/ActivityToggle";
 import { ProfileForm } from "./ProfileForm";
 
 export default async function ProfilePage() {
@@ -25,7 +26,9 @@ export default async function ProfilePage() {
         sex: profile.sex as Sex,
         activityLevel: "sedentary",
         goal: profile.goal as Goal,
-        exerciseKcalPerDay: planActivityKcalPerDay(profile.weightKg),
+        exerciseKcalPerDay: profile.activityEnabled
+          ? planActivityKcalPerDay(profile.weightKg)
+          : 0,
       })
     : null;
   const deficit = energy ? profile!.kcalTarget - energy.tdee : 0;
@@ -71,6 +74,12 @@ export default async function ProfilePage() {
                   ? "Erhalt"
                   : `${deficit > 0 ? "+" : ""}${deficit} kcal/Tag`
               }
+            />
+          </div>
+          <div className="mt-4">
+            <ActivityToggle
+              enabled={profile.activityEnabled}
+              extraKcal={planActivityKcalPerDay(profile.weightKg)}
             />
           </div>
           <p className="mt-3 text-xs text-zinc-500">

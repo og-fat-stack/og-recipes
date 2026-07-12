@@ -4,6 +4,8 @@ import { requireUserId } from "../lib/auth";
 import { getProfile } from "../lib/profile";
 import { getTodayChecklist } from "../lib/checklist";
 import { getRoutines } from "../lib/routines";
+import { planActivityKcalPerDay } from "../lib/training";
+import { ActivityToggle } from "../components/ActivityToggle";
 import { TodayChecklist } from "./TodayChecklist";
 
 export default async function Home() {
@@ -47,6 +49,13 @@ export default async function Home() {
       </header>
 
       <TodayChecklist items={checklist.items} />
+
+      {profile && (
+        <ActivityToggle
+          enabled={profile.activityEnabled}
+          extraKcal={planActivityKcalPerDay(profile.weightKg)}
+        />
+      )}
 
       <section className="space-y-2">
         <div className="flex items-baseline justify-between">

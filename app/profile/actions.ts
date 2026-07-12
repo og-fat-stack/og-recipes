@@ -41,12 +41,21 @@ export async function saveProfile(
   }
 
   const userId = await requireUserId();
-  const bodyFatPct = await getLatestBodyFatPct(userId);
+  const [bodyFatPct, existing] = await Promise.all([
+    getLatestBodyFatPct(userId),
+    db.profile.findUnique({
+      where: { userId },
+      select: { activityEnabled: true },
+    }),
+  ]);
+  const activityEnabled = existing?.activityEnabled ?? true;
   const macros = computeMacros({
     ...parsed.data,
     activityLevel: ACTIVITY_BASELINE,
     bodyFatPct: bodyFatPct ?? undefined,
-    exerciseKcalPerDay: planActivityKcalPerDay(parsed.data.weightKg),
+    exerciseKcalPerDay: activityEnabled
+      ? planActivityKcalPerDay(parsed.data.weightKg)
+      : 0,
   });
 
   const data = {
@@ -70,4 +79,46 @@ export async function saveProfile(
   revalidatePath("/");
   revalidatePath("/profile");
   return { ok: true };
+}
+
+/**
+ * Schaltet um, ob Training + Schritte in die Kalorienziele einfließen, und
+ * berechnet die gespeicherten Ziele sofort neu.
+ */
+export async function toggleActivityEnabled(): Promise<void> {
+  const userId = await requireUserId();
+  const profile = await db.profile.findUnique({ where: { userId } });
+  if (!profile) return;
+
+  const activityEnabled = !profile.activityEnabled;
+  const bodyFatPct = await getLatestBodyFatPct(userId);
+  const macros = computeMacros({
+    heightCm: profile.heightCm,
+    weightKg: profile.weightKg,
+    bodyFatPct: bodyFatPct ?? undefined,
+    age: profile.age,
+    sex: profile.sex as "male" | "female",
+    activityLevel: ACTIVITY_BASELINE,
+    goal: profile.goal as "cut" | "maintain" | "gain",
+    exerciseKcalPerDay: activityEnabled
+      ? planActivityKcalPerDay(profile.weightKg)
+      : 0,
+  });
+
+  await db.profile.update({
+    where: { userId },
+    data: {
+      activityEnabled,
+      kcalTarget: macros.kcalTarget,
+      proteinG: macros.proteinG,
+      carbG: macros.carbG,
+      fatG: macros.fatG,
+      waterMlTarget: macros.waterMlTarget,
+      lastMacroBodyFatPct: bodyFatPct,
+    },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/profile");
+  revalidatePath("/weight");
 }

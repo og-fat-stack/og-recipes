@@ -78,7 +78,9 @@ export async function saveMeasurement(
           // Grundbedarf immer "sedentary"; Aktivität kommt aus dem Trainingsplan.
           activityLevel: "sedentary",
           goal: profile.goal as "cut" | "maintain" | "gain",
-          exerciseKcalPerDay: planActivityKcalPerDay(profile.weightKg),
+          exerciseKcalPerDay: profile.activityEnabled
+            ? planActivityKcalPerDay(profile.weightKg)
+            : 0,
         });
         await db.profile.update({
           where: { userId },
