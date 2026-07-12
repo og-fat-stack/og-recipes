@@ -16,13 +16,15 @@ control only — the label lives in [form-field](../molecules/form-field.md).
 - `rounded-control` — corner
 - `border-line-strong` — border; `focus:border-line-active` — focus
 - `bg-surface` — background
-- `px-3 py-2 text-sm` — padding/type
+- `px-3 py-2 text-base` — padding/type. **Controls use `text-base` (16px), not
+  `text-sm`** — inputs below 16px make iOS Safari zoom on focus. Labels stay
+  `text-sm`.
 - `outline-none` — focus is shown via border, not outline
 
 ## 5. Props / API
 The canonical recipe (share it as a local `inputClass` const per page):
 ```
-rounded-control border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-line-active
+rounded-control border border-line-strong bg-surface px-3 py-2 text-base outline-none focus:border-line-active
 ```
 
 ## 6. States

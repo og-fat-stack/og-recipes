@@ -14,7 +14,7 @@
  *
  * Palette: slate neutrals + teal accent + amber (warn) + red (danger).
  * This is the only stylesheet allowed to contain raw color values.
- * Enforced by scripts/token-audit.mjs. Reference: specs/tokens/token-reference.md
+ * Enforced by scripts/token-audit.mjs. Reference: stories/tokens/TokenReference.mdx
  */
 
 :root {
@@ -159,4 +159,14 @@
    * Pills/dots/toggles use the built-in rounded-full. */
   --radius-control: var(--radius-md, 0.375rem);
   --radius-card: var(--radius-xl, 0.75rem);
+
+  /* Mobile-first type scale — overrides Tailwind's defaults for the steps the
+   * app uses. text-base (16px) stays default: inputs must be ≥16px or iOS
+   * zooms on focus. */
+  --text-xs: 0.8125rem; /* 13px — meta, captions */
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.9375rem; /* 15px — body, rows, buttons */
+  --text-sm--line-height: 1.45;
+  --text-3xl: clamp(1.625rem, 1.2rem + 1.8vw, 1.875rem); /* 26→30px page title */
+  --text-3xl--line-height: 1.2;
 }

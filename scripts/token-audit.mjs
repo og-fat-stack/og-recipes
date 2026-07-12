@@ -9,7 +9,7 @@
 // Run:  node scripts/token-audit.mjs          (exit 1 = errors found)
 //       node scripts/token-audit.mjs --strict (warnings also fail)
 //
-// Semantic tokens: app/tokens.css · lookup: specs/tokens/token-reference.md
+// Semantic tokens: app/tokens.css · lookup: stories/tokens/TokenReference.mdx
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -100,7 +100,7 @@ function suggest(match) {
   if (variants.includes('dark:'))
     return 'streichen — Dark Mode löst der Token-Layer (app/tokens.css)';
   const s = SUGGEST[base];
-  if (!s) return 'semantisches Token — siehe specs/tokens/token-reference.md';
+  if (!s) return 'semantisches Token — siehe stories/tokens/TokenReference.mdx';
   return s.includes(' ') ? s : variants + s;
 }
 

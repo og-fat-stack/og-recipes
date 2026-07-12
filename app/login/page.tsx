@@ -5,7 +5,7 @@ import { PasswordInput } from "../../components/PasswordInput";
 import { login } from "./actions";
 
 const inputClass =
-  "rounded-control border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-line-active";
+  "rounded-control border border-line-strong bg-surface px-3 py-2 text-base outline-none focus:border-line-active";
 
 export default async function LoginPage({
   searchParams,

@@ -31,4 +31,4 @@ not error) — keep 640px table / 140px column unless content demands otherwise.
 See the Wochenplan table in `app/plan/page.tsx`.
 
 ## 8. Cross-references
-- Related: [card](../molecules/card.md), [page-layout](../patterns/page-layout.md)
+- Related: [card](../molecules/card.md), page-layout (Storybook → Patterns/Page Layout)

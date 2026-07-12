@@ -22,7 +22,7 @@ export function StepForm({ defaultSteps }: { defaultSteps?: number }) {
           defaultValue={defaultSteps ?? ""}
           placeholder="z. B. 8500"
           required
-          className="w-32 rounded-control border border-line-strong bg-surface px-3 py-2 text-sm"
+          className="w-32 rounded-control border border-line-strong bg-surface px-3 py-2 text-base"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -31,7 +31,7 @@ export function StepForm({ defaultSteps }: { defaultSteps?: number }) {
           name="date"
           type="date"
           defaultValue={today}
-          className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm"
+          className="rounded-control border border-line-strong bg-surface px-3 py-2 text-base"
         />
       </label>
       <label className="flex flex-1 flex-col gap-1 text-sm">
@@ -40,7 +40,7 @@ export function StepForm({ defaultSteps }: { defaultSteps?: number }) {
           name="note"
           type="text"
           placeholder="optional"
-          className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm"
+          className="rounded-control border border-line-strong bg-surface px-3 py-2 text-base"
         />
       </label>
       <button

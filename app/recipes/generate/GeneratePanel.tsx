@@ -39,7 +39,7 @@ export function GeneratePanel() {
                 : ""
             }
             placeholder="z. B. Levantinisches Rezept mit Linsen, wenig Zeit, eiweißreich"
-            className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm"
+            className="rounded-control border border-line-strong bg-surface px-3 py-2 text-base"
           />
         </label>
 

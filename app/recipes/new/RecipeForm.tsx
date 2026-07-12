@@ -105,7 +105,7 @@ function Field({
       <span className="text-ink-muted">{label}</span>
       <input
         {...rest}
-        className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm"
+        className="rounded-control border border-line-strong bg-surface px-3 py-2 text-base"
       />
       {hint && <span className="text-xs text-ink-subtle">{hint}</span>}
     </label>
@@ -125,7 +125,7 @@ function TextArea({
       <span className="text-ink-muted">{label}</span>
       <textarea
         {...rest}
-        className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm font-mono"
+        className="rounded-control border border-line-strong bg-surface px-3 py-2 text-base font-mono"
       />
       {hint && <span className="text-xs text-ink-subtle">{hint}</span>}
     </label>

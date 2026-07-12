@@ -125,7 +125,7 @@ function Field(props: React.InputHTMLAttributes<HTMLInputElement> & {
       <span className="text-ink-muted">{label}</span>
       <input
         {...rest}
-        className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm shadow-sm focus:border-contrast focus:outline-none"
+        className="rounded-control border border-line-strong bg-surface px-3 py-2 text-base shadow-sm focus:border-contrast focus:outline-none"
       />
     </label>
   );
@@ -148,7 +148,7 @@ function Select({
       <select
         name={name}
         defaultValue={defaultValue}
-        className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm shadow-sm focus:border-contrast focus:outline-none"
+        className="rounded-control border border-line-strong bg-surface px-3 py-2 text-base shadow-sm focus:border-contrast focus:outline-none"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

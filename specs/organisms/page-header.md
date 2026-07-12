@@ -38,4 +38,4 @@ None.
 ```
 
 ## 8. Cross-references
-- Related: [progress-bar](../atoms/progress-bar.md), [page-layout](../patterns/page-layout.md)
+- Related: [progress-bar](../atoms/progress-bar.md), page-layout (Storybook → Patterns/Page Layout)

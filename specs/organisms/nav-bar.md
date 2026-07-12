@@ -37,4 +37,4 @@ Tabs come from the `TABS` const; a new page = a new entry there, nothing else.
 See `components/NavBar.tsx`.
 
 ## 8. Cross-references
-- Related: [button](../atoms/button.md), [page-layout](../patterns/page-layout.md)
+- Related: [button](../atoms/button.md), page-layout (Storybook → Patterns/Page Layout)

@@ -4,22 +4,44 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 # Typography
 
-Tailwind's built-in type scale IS the token set — but only these steps are in
-the system. UI text is German, informal "du".
+**Typeface:** Figtree (`--font-sans`, loaded in `app/layout.tsx` via
+`next/font`). Geometric-humanist, tuned for UI sizes; real 500/600 weights (no
+faux-bold). Monospace is Geist Mono (`--font-mono`) for recipe/step text only.
+UI text is German, informal "du".
 
-| Step | Utility | Use | Preview |
-|------|---------|-----|---------|
-| Page title | `text-3xl font-semibold tracking-tight` | exactly one `<h1>` per page | <span style={{fontSize: '1.875rem', fontWeight: 600, letterSpacing: '-0.025em'}}>Heute</span> |
-| Auth title | `text-2xl font-semibold tracking-tight` | login/register only | <span style={{fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.025em'}}>Anmelden</span> |
-| Stat value | `text-lg`–`text-xl font-semibold` | large numbers on dashboards | <span style={{fontSize: '1.25rem', fontWeight: 600}}>1.850 kcal</span> |
-| Body / default | `text-sm` | almost everything: labels, rows, buttons, inputs, prose | <span style={{fontSize: '0.875rem'}}>3 von 7 erledigt</span> |
-| Meta | `text-xs` | captions, units, secondary line in a row, table headers | <span style={{fontSize: '0.75rem', color: 'var(--og-ink-subtle)'}}>wöchentlich · offen</span> |
+The scale is **mobile-first**: it targets a 375px phone first, and the page
+title scales up fluidly on wider screens. Only these steps are in the system.
 
-- `text-base` is effectively unused — reach for `text-sm`.
-- **Weights: only `font-medium` and `font-semibold`.** Medium = labels, row
-  titles, buttons. Semibold = headings and stat values. Never `font-bold`.
+| Step | Utility | Size | Use | Preview |
+|------|---------|------|-----|---------|
+| Page title | `text-3xl font-semibold tracking-tight` | fluid 26→30px | exactly one `<h1>` per page | <span style={{fontSize: '1.75rem', fontWeight: 600, letterSpacing: '-0.025em'}}>Heute</span> |
+| Auth title | `text-2xl font-semibold tracking-tight` | 24px | login/register only | <span style={{fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.025em'}}>Anmelden</span> |
+| Stat value | `text-lg`–`text-xl font-semibold` | 18–20px | large numbers on dashboards | <span style={{fontSize: '1.25rem', fontWeight: 600}}>1.850 kcal</span> |
+| Form control | `text-base` | 16px | inputs/selects/textareas ONLY | <span style={{fontSize: '1rem'}}>82,4</span> |
+| Body / default | `text-sm` | 15px | labels, rows, buttons, prose | <span style={{fontSize: '0.9375rem'}}>3 von 7 erledigt</span> |
+| Meta | `text-xs` | 13px | captions, units, secondary row line, table headers | <span style={{fontSize: '0.8125rem', color: 'var(--og-ink-subtle)'}}>wöchentlich · offen</span> |
+
+## Rules
+
+- **Form controls use `text-base` (16px), never `text-sm`.** Inputs below 16px
+  make iOS Safari auto-zoom on focus — a real mobile bug, not a preference. The
+  label above the control stays `text-sm`. See [input](../../?path=/docs/atoms).
+- `text-base` is reserved for controls — don't use it for body prose (that's
+  `text-sm`).
+- **Weights: only `font-medium` (500) and `font-semibold` (600).** Medium =
+  labels, row titles, buttons. Semibold = headings and stat values. Never
+  `font-bold`.
 - Section headings inside a page are NOT h-scale: use
   `text-sm font-medium text-ink-subtle` (see the "Routinen" heading pattern).
 - Table headers: `text-xs font-medium uppercase tracking-wide text-ink-subtle`.
-- Font family comes from the layout (`--font-sans`); never set `font-family`
-  or a `font-[…]` arbitrary value in a component.
+- Digits that line up in columns (kcal, grams, weights) get
+  `font-variant-numeric: tabular-nums` via the `tabular-nums` utility.
+- Never set `font-family` or a `font-[…]` arbitrary value in a component — the
+  family comes from `--font-sans`.
+
+## Where the sizes live
+
+`text-xs` (13px), `text-sm` (15px), and `text-3xl` (fluid) are redefined in the
+`@theme` block of `app/tokens.css`, so every existing usage picks up the
+mobile-first scale with no markup change. `text-base`, `text-lg`, `text-xl`,
+`text-2xl` keep Tailwind's defaults (16/18/20/24px).

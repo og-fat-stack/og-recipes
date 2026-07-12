@@ -78,7 +78,7 @@ export function GeneratePlanButton({
               name="useUpIngredients"
               type="text"
               placeholder="z.B. Zucchini, Hähnchenschenkel, Spinat"
-              className="w-full rounded-control border border-line-strong bg-surface px-2 py-1 text-sm"
+              className="w-full rounded-control border border-line-strong bg-surface px-2 py-1 text-base"
             />
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -87,7 +87,7 @@ export function GeneratePlanButton({
               <select
                 name="startDay"
                 defaultValue={String(minDay)}
-                className="ml-2 rounded-control border border-line-strong bg-surface px-2 py-1 text-sm"
+                className="ml-2 rounded-control border border-line-strong bg-surface px-2 py-1 text-base"
               >
                 {dayOptions.map((d) => (
                   <option key={d.value} value={d.value}>
@@ -101,7 +101,7 @@ export function GeneratePlanButton({
               <select
                 name="endDay"
                 defaultValue="6"
-                className="ml-2 rounded-control border border-line-strong bg-surface px-2 py-1 text-sm"
+                className="ml-2 rounded-control border border-line-strong bg-surface px-2 py-1 text-base"
               >
                 {dayOptions.map((d) => (
                   <option key={d.value} value={d.value}>

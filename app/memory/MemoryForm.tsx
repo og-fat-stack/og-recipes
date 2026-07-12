@@ -29,7 +29,7 @@ export function MemoryForm({
           rows={14}
           maxLength={8000}
           placeholder="z. B. Vorlieben, Abneigungen, Allergien, Ausstattung (Topf-/Pfannengröße), Lieblingsküchen ..."
-          className="rounded-control border border-line-strong bg-surface px-3 py-2 font-mono text-sm leading-relaxed shadow-sm focus:border-contrast focus:outline-none"
+          className="rounded-control border border-line-strong bg-surface px-3 py-2 font-mono text-base leading-relaxed shadow-sm focus:border-contrast focus:outline-none"
         />
       </label>
 
