@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "../../lib/db";
+import { requireUserId } from "../../lib/auth";
 import { dayKey } from "../../lib/weight";
 import { computeMacros } from "../../lib/macros";
 import { planActivityKcalPerDay } from "../../lib/training";
@@ -29,11 +30,12 @@ export async function logWeight(
     return { error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
 
+  const userId = await requireUserId();
   const date = dayKey(parsed.data.date ? new Date(parsed.data.date) : new Date());
 
   await db.weightEntry.upsert({
-    where: { date },
-    create: { date, kg: parsed.data.kg, note: parsed.data.note ?? null },
+    where: { userId_date: { userId, date } },
+    create: { userId, date, kg: parsed.data.kg, note: parsed.data.note ?? null },
     update: { kg: parsed.data.kg, note: parsed.data.note ?? null },
   });
 
@@ -46,9 +48,10 @@ export async function deleteWeight(
   _prev: LogWeightState,
   formData: FormData,
 ): Promise<LogWeightState> {
+  const userId = await requireUserId();
   const id = Number(formData.get("id"));
   if (!Number.isFinite(id)) return { error: "Invalid id" };
-  await db.weightEntry.delete({ where: { id } });
+  await db.weightEntry.deleteMany({ where: { id, userId } });
   revalidatePath("/weight");
   revalidatePath("/");
   return { ok: true };
@@ -59,10 +62,12 @@ export async function deleteWeight(
  * bodyweight input, then store that weight as `lastMacroWeightKg`.
  */
 export async function refreshMacrosFromAvg(): Promise<LogWeightState> {
-  const profile = await db.profile.findUnique({ where: { id: 1 } });
+  const userId = await requireUserId();
+  const profile = await db.profile.findUnique({ where: { userId } });
   if (!profile) return { error: "Profile not set" };
 
   const entries = await db.weightEntry.findMany({
+    where: { userId },
     orderBy: { date: "desc" },
     take: 7,
   });
@@ -70,7 +75,7 @@ export async function refreshMacrosFromAvg(): Promise<LogWeightState> {
   const avg =
     entries.reduce((s, e) => s + e.kg, 0) / entries.length;
 
-  const bodyFatPct = await getLatestBodyFatPct();
+  const bodyFatPct = await getLatestBodyFatPct(userId);
   const macros = computeMacros({
     heightCm: profile.heightCm,
     weightKg: avg,
@@ -84,7 +89,7 @@ export async function refreshMacrosFromAvg(): Promise<LogWeightState> {
   });
 
   await db.profile.update({
-    where: { id: 1 },
+    where: { userId },
     data: {
       weightKg: avg,
       kcalTarget: macros.kcalTarget,

@@ -12,8 +12,33 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  name         String
+  /// Leer ("") = Konto ohne gesetztes Passwort: das beim ersten Login
+  /// eingegebene Passwort wird gesetzt (Konto-Claim).
+  passwordHash String   @default("")
+  createdAt    DateTime @default(now())
+
+  profile      Profile?
+  claudeMemory ClaudeMemory?
+  mealPlans    MealPlan[]
+  expenses     WeeklyExpense[]
+  weights      WeightEntry[]
+  measurements MeasurementEntry[]
+  steps        StepEntry[]
+  dailyChecks  DailyCheck[]
+  cookSessions CookSession[]
+  recipes      Recipe[]
+}
+
 model Profile {
-  id             Int      @id @default(1)
+  id             Int      @id @default(autoincrement())
+  // DB-Default 1 hält die noch deployte Single-User-Version während des
+  // Migrationsfensters lauffähig (alles landet beim Alt-Konto).
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int      @unique @default(1)
   heightCm       Float
   weightKg       Float
   goalWeightKg   Float?
@@ -33,7 +58,9 @@ model Profile {
 }
 
 model ClaudeMemory {
-  id        Int      @id @default(1)
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int      @unique @default(1)
   content   String
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
@@ -41,6 +68,8 @@ model ClaudeMemory {
 
 model Recipe {
   id               Int            @id @default(autoincrement())
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           Int            @default(1)
   title            String
   cuisine          String
   portions         Int
@@ -57,24 +86,34 @@ model Recipe {
   updatedAt        DateTime       @updatedAt
   plannedMeals     PlannedMeal[]
   cookSessions     CookSession[]
+
+  @@index([userId])
 }
 
 model MealPlan {
   id            Int                 @id @default(autoincrement())
-  weekStart     DateTime            @unique
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int                 @default(1)
+  weekStart     DateTime
   notes         String?
   createdAt     DateTime            @default(now())
   meals         PlannedMeal[]
   shoppingState ShoppingItemState[]
+
+  @@unique([userId, weekStart])
 }
 
 model WeeklyExpense {
   id          Int      @id @default(autoincrement())
-  weekStart   DateTime @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int      @default(1)
+  weekStart   DateTime
   amountCents Int
   note        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@unique([userId, weekStart])
 }
 
 model ShoppingItemState {
@@ -104,65 +143,67 @@ model PlannedMeal {
 
 model CookSession {
   id           Int         @id @default(autoincrement())
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int         @default(1)
   date         DateTime
   recipe       Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   recipeId     Int
   portionsMade Int
   createdAt    DateTime    @default(now())
-  reflection   Reflection?
 
   @@index([date])
-}
-
-model Reflection {
-  id            Int         @id @default(autoincrement())
-  cookSession   CookSession @relation(fields: [cookSessionId], references: [id], onDelete: Cascade)
-  cookSessionId Int         @unique
-  wentWell      String?
-  wentWrong     String?
-  rating        Int
-  claudeNotes   Json
-  createdAt     DateTime    @default(now())
+  @@index([userId])
 }
 
 model WeightEntry {
   id        Int      @id @default(autoincrement())
-  date      DateTime @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int      @default(1)
+  date      DateTime
   kg        Float
   note      String?
   createdAt DateTime @default(now())
 
+  @@unique([userId, date])
   @@index([date])
 }
 
 model MeasurementEntry {
   id         Int      @id @default(autoincrement())
-  date       DateTime @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int      @default(1)
+  date       DateTime
   waistCm    Float?
   hipCm      Float?
   bodyFatPct Float?
   note       String?
   createdAt  DateTime @default(now())
 
+  @@unique([userId, date])
   @@index([date])
 }
 
 model StepEntry {
   id        Int      @id @default(autoincrement())
-  date      DateTime @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int      @default(1)
+  date      DateTime
   steps     Int
   note      String?
   createdAt DateTime @default(now())
 
+  @@unique([userId, date])
   @@index([date])
 }
 
 model DailyCheck {
   id      Int      @id @default(autoincrement())
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  Int      @default(1)
   date    DateTime
   itemKey String
   checked Boolean  @default(false)
 
-  @@unique([date, itemKey])
+  @@unique([userId, date, itemKey])
   @@index([date])
 }

@@ -12,6 +12,7 @@ import {
   resolvePlanVariant,
   weeklyActiveMinutes,
 } from "../../lib/training";
+import { requireUserId } from "../../lib/auth";
 import { StepForm } from "./StepForm";
 
 function fmtDate(d: Date | null) {
@@ -39,8 +40,9 @@ export default async function TrainingPage({
   searchParams: Promise<{ plan?: string }>;
 }) {
   await connection();
-  const stats = await getStepStats();
-  const entries = await getStepEntries(14);
+  const userId = await requireUserId();
+  const stats = await getStepStats(userId);
+  const entries = await getStepEntries(userId, 14);
   const todayIdx = berlinTodayIndex();
   const variant = resolvePlanVariant((await searchParams).plan);
   const weeklyPlan = PLAN_VARIANTS[variant].plan;

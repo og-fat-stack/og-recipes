@@ -52,10 +52,13 @@ export function parseTags(raw: string): string[] {
     .filter(Boolean);
 }
 
-export async function getRecipes() {
-  return db.recipe.findMany({ orderBy: { updatedAt: "desc" } });
+export async function getRecipes(userId: number) {
+  return db.recipe.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+  });
 }
 
-export async function getRecipe(id: number) {
-  return db.recipe.findUnique({ where: { id } });
+export async function getRecipe(userId: number, id: number) {
+  return db.recipe.findFirst({ where: { id, userId } });
 }

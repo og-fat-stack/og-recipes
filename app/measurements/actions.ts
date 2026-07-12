@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "../../lib/db";
+import { requireUserId } from "../../lib/auth";
 import { dayKey } from "../../lib/weight";
 import { computeMacros } from "../../lib/macros";
 import { planActivityKcalPerDay } from "../../lib/training";
@@ -43,6 +44,7 @@ export async function saveMeasurement(
     return { error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
 
+  const userId = await requireUserId();
   const date = dayKey(
     parsed.data.date ? new Date(parsed.data.date) : new Date(),
   );
@@ -54,8 +56,8 @@ export async function saveMeasurement(
   };
 
   await db.measurementEntry.upsert({
-    where: { date },
-    create: { date, ...data },
+    where: { userId_date: { userId, date } },
+    create: { userId, date, ...data },
     update: data,
   });
 
@@ -63,7 +65,7 @@ export async function saveMeasurement(
   // calc, recompute macros so kcal (Katch-McArdle) and protein (LBM-based)
   // pick up the new composition.
   if (parsed.data.bodyFatPct != null) {
-    const profile = await db.profile.findUnique({ where: { id: 1 } });
+    const profile = await db.profile.findUnique({ where: { userId } });
     if (profile) {
       const last = profile.lastMacroBodyFatPct;
       if (last == null || Math.abs(parsed.data.bodyFatPct - last) >= 1) {
@@ -79,7 +81,7 @@ export async function saveMeasurement(
           exerciseKcalPerDay: planActivityKcalPerDay(profile.weightKg),
         });
         await db.profile.update({
-          where: { id: 1 },
+          where: { userId },
           data: {
             kcalTarget: macros.kcalTarget,
             proteinG: macros.proteinG,
@@ -103,9 +105,10 @@ export async function deleteMeasurement(
   _prev: SaveMeasurementState,
   formData: FormData,
 ): Promise<SaveMeasurementState> {
+  const userId = await requireUserId();
   const id = Number(formData.get("id"));
   if (!Number.isFinite(id)) return { error: "Invalid id" };
-  await db.measurementEntry.delete({ where: { id } });
+  await db.measurementEntry.deleteMany({ where: { id, userId } });
   revalidatePath("/");
   revalidatePath("/measurements");
   revalidatePath("/profile");

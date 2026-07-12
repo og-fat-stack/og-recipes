@@ -23,8 +23,9 @@ function avg(nums: number[]): number | null {
   return nums.reduce((a, b) => a + b, 0) / nums.length;
 }
 
-export async function getWeightEntries(limit = 90) {
+export async function getWeightEntries(userId: number, limit = 90) {
   return db.weightEntry.findMany({
+    where: { userId },
     orderBy: { date: "desc" },
     take: limit,
   });
@@ -42,11 +43,13 @@ export async function getWeightEntries(limit = 90) {
  * kcal deficit (~0.4 kg/week at -500 kcal).
  */
 export async function getWeightStats(
+  userId: number,
   goalWeightKg: number | null,
   assumedWeeklyLossKg = 0.4,
   lastMacroWeightKg: number | null = null,
 ): Promise<WeightStats> {
   const entries = await db.weightEntry.findMany({
+    where: { userId },
     orderBy: { date: "desc" },
     take: 30,
   });

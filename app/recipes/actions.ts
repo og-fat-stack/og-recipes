@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "../../lib/db";
+import { requireUserId } from "../../lib/auth";
 import { parseIngredients, parseLines, parseTags } from "../../lib/recipe";
 
 const RecipeSchema = z.object({
@@ -31,9 +32,11 @@ export async function createRecipe(
   if (!parsed.success) {
     return { error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
+  const userId = await requireUserId();
   const d = parsed.data;
   const recipe = await db.recipe.create({
     data: {
+      userId,
       title: d.title,
       cuisine: d.cuisine,
       portions: d.portions,
@@ -53,7 +56,8 @@ export async function createRecipe(
 }
 
 export async function deleteRecipe(id: number): Promise<void> {
-  await db.recipe.delete({ where: { id } });
+  const userId = await requireUserId();
+  await db.recipe.deleteMany({ where: { id, userId } });
   revalidatePath("/recipes");
   revalidatePath("/plan");
   revalidatePath("/");

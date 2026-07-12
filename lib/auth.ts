@@ -1,20 +1,32 @@
 import { cookies } from "next/headers";
-import { timingSafeEqual } from "node:crypto";
+import { redirect } from "next/navigation";
 import {
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_SECONDS,
   encodeSession,
-  isSessionValueValid,
+  parseSessionValue,
 } from "./auth-core";
 
-export async function hasValidSession(): Promise<boolean> {
+/** userId der aktuellen Session, sonst null. */
+export async function getSessionUserId(): Promise<number | null> {
   const jar = await cookies();
-  return isSessionValueValid(jar.get(SESSION_COOKIE_NAME)?.value);
+  return parseSessionValue(jar.get(SESSION_COOKIE_NAME)?.value);
 }
 
-export async function setSession(): Promise<void> {
+export async function hasValidSession(): Promise<boolean> {
+  return (await getSessionUserId()) !== null;
+}
+
+/** userId der Session — ohne gültige Session Redirect auf /login. */
+export async function requireUserId(): Promise<number> {
+  const userId = await getSessionUserId();
+  if (userId == null) redirect("/login");
+  return userId;
+}
+
+export async function setSession(userId: number): Promise<void> {
   const expiresAt = Date.now() + SESSION_MAX_AGE_SECONDS * 1000;
-  const value = encodeSession(expiresAt);
+  const value = encodeSession(userId, expiresAt);
   const jar = await cookies();
   jar.set(SESSION_COOKIE_NAME, value, {
     httpOnly: true,
@@ -28,13 +40,4 @@ export async function setSession(): Promise<void> {
 export async function clearSession(): Promise<void> {
   const jar = await cookies();
   jar.delete(SESSION_COOKIE_NAME);
-}
-
-export function checkPassword(input: string): boolean {
-  const expected = process.env.APP_PASSWORD;
-  if (!expected) throw new Error("APP_PASSWORD is not set");
-  const a = Buffer.from(input);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { requireUserId } from "../../lib/auth";
 import { getProfile } from "../../lib/profile";
 import { getLatestMeasurement } from "../../lib/measurements";
 import {
@@ -12,8 +13,9 @@ import { ProfileForm } from "./ProfileForm";
 
 export default async function ProfilePage() {
   await connection();
-  const profile = await getProfile();
-  const latest = profile ? await getLatestMeasurement() : null;
+  const userId = await requireUserId();
+  const profile = await getProfile(userId);
+  const latest = profile ? await getLatestMeasurement(userId) : null;
   const energy = profile
     ? computeMacros({
         heightCm: profile.heightCm,

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "../../lib/db";
+import { requireUserId } from "../../lib/auth";
 import { computeMacros } from "../../lib/macros";
 import { planActivityKcalPerDay } from "../../lib/training";
 import { getLatestBodyFatPct } from "../../lib/measurements";
@@ -39,7 +40,8 @@ export async function saveProfile(
     return { error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
 
-  const bodyFatPct = await getLatestBodyFatPct();
+  const userId = await requireUserId();
+  const bodyFatPct = await getLatestBodyFatPct(userId);
   const macros = computeMacros({
     ...parsed.data,
     activityLevel: ACTIVITY_BASELINE,
@@ -60,8 +62,8 @@ export async function saveProfile(
   };
 
   await db.profile.upsert({
-    where: { id: 1 },
-    create: { id: 1, ...data },
+    where: { userId },
+    create: { userId, ...data },
     update: data,
   });
 

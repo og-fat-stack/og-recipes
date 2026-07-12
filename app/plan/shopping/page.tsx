@@ -6,6 +6,7 @@ import {
   getPlanWithIngredientsForWeek,
 } from "../../../lib/shopping";
 import { parseWeekSel } from "../../../lib/plan";
+import { requireUserId } from "../../../lib/auth";
 import { ShoppingRow } from "./ShoppingRow";
 import { ResetButton } from "./ResetButton";
 import { CopyMarkdownButton } from "./CopyMarkdownButton";
@@ -16,9 +17,10 @@ export default async function ShoppingPage({
   searchParams: Promise<{ week?: string }>;
 }) {
   await connection();
+  const userId = await requireUserId();
   const week = parseWeekSel((await searchParams).week);
   const planHref = week === "next" ? "/plan?week=next" : "/plan";
-  const plan = await getPlanWithIngredientsForWeek(week);
+  const plan = await getPlanWithIngredientsForWeek(userId, week);
 
   if (!plan) {
     return (

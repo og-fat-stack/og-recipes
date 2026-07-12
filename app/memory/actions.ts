@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "../../lib/db";
+import { requireUserId } from "../../lib/auth";
 
 const MemorySchema = z.object({
   content: z.string().trim().max(8000),
@@ -22,11 +23,12 @@ export async function saveClaudeMemory(
     return { error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
 
+  const userId = await requireUserId();
   const { content } = parsed.data;
 
   await db.claudeMemory.upsert({
-    where: { id: 1 },
-    create: { id: 1, content },
+    where: { userId },
+    create: { userId, content },
     update: { content },
   });
 

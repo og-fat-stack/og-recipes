@@ -35,9 +35,9 @@ export const SLOT_LABELS: Record<Slot, string> = {
   dinner: "Abend",
 };
 
-export async function getPlanForWeek(ws: Date) {
+export async function getPlanForWeek(userId: number, ws: Date) {
   return db.mealPlan.findUnique({
-    where: { weekStart: ws },
+    where: { userId_weekStart: { userId, weekStart: ws } },
     include: {
       meals: {
         include: { recipe: true },
@@ -47,8 +47,8 @@ export async function getPlanForWeek(ws: Date) {
   });
 }
 
-export async function getCurrentPlan() {
-  return getPlanForWeek(weekStart());
+export async function getCurrentPlan(userId: number) {
+  return getPlanForWeek(userId, weekStart());
 }
 
 /**
@@ -58,13 +58,15 @@ export async function getCurrentPlan() {
  * Falls back to least-recently-updated if not enough candidates.
  */
 export async function pickKnownMainMealRecipes(
+  userId: number,
   desired: number,
   recentDays = 14,
 ): Promise<{ id: number; title: string; portions: number; kcalPerPortion: number; proteinG: number; carbG: number; fatG: number; ingredients: unknown; steps: unknown; techniques: unknown; batchStorageDays: number; cuisine: string; notes: string | null }[]> {
-  const recentTitles = new Set(await getRecentMealTitles(recentDays));
+  const recentTitles = new Set(await getRecentMealTitles(userId, recentDays));
 
   const pool = await db.recipe.findMany({
     where: {
+      userId,
       portions: { gte: 3 },
       NOT: { cuisine: "Frühstück" },
     },
@@ -76,10 +78,13 @@ export async function pickKnownMainMealRecipes(
   return picked;
 }
 
-export async function getRecentMealTitles(daysBack = 14): Promise<string[]> {
+export async function getRecentMealTitles(
+  userId: number,
+  daysBack = 14,
+): Promise<string[]> {
   const since = addDays(startOfDay(), -daysBack);
   const plans = await db.mealPlan.findMany({
-    where: { weekStart: { gte: since } },
+    where: { userId, weekStart: { gte: since } },
     include: { meals: { include: { recipe: { select: { title: true } } } } },
   });
   const titles = new Set<string>();

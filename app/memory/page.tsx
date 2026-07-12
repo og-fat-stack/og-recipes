@@ -1,14 +1,13 @@
 import { connection } from "next/server";
-import {
-  getClaudeMemory,
-  DEFAULT_CLAUDE_MEMORY,
-} from "../../lib/claudeMemory";
+import { requireUserId } from "../../lib/auth";
+import { getClaudeMemory } from "../../lib/claudeMemory";
 import { MemoryForm } from "./MemoryForm";
 
 export default async function MemoryPage() {
   await connection();
-  const memory = await getClaudeMemory();
-  const content = memory?.content ?? DEFAULT_CLAUDE_MEMORY;
+  const userId = await requireUserId();
+  const memory = await getClaudeMemory(userId);
+  const content = memory?.content ?? "";
 
   return (
     <div className="space-y-8">
@@ -23,8 +22,8 @@ export default async function MemoryPage() {
 
       {!memory && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
-          Noch nichts gespeichert — gezeigt werden die Standard-Notizen. Mit
-          „Memory speichern“ machst du sie zu deinen eigenen.
+          Noch nichts gespeichert — Claude kennt bisher keine Vorlieben von
+          dir. Trag ein, was beim Kochen und Planen berücksichtigt werden soll.
         </p>
       )}
 

@@ -180,12 +180,6 @@ export type GeneratePlanArgs = {
   profile: Profile;
   recentMealTitles: string[];
   knownMainRecipes: KnownRecipeSummary[];
-  reflectionDigests?: {
-    recipeTitle: string;
-    rating: number;
-    summary: string;
-    nextTimeTry: string[];
-  }[];
   dayRange?: { start: number; end: number };
   useUpIngredients?: string[];
   claudeMemory?: string | null;
@@ -197,7 +191,6 @@ export async function generatePlanDraft({
   profile,
   recentMealTitles,
   knownMainRecipes,
-  reflectionDigests = [],
   dayRange = { start: 0, end: 6 },
   useUpIngredients = [],
   claudeMemory,
@@ -256,7 +249,7 @@ ${mainBatchHint} Generiere alle benötigten Hauptmahl-Rezepte neu + die Frühst�
     ? `Zutaten zum Aufbrauchen (priorisieren in NEUEN Rezepten, damit sie nicht schlecht werden — wenn möglich in mehreren Rezepten verteilt verwenden): ${useUpIngredients.map((i) => `"${i}"`).join(", ")}.`
     : "";
 
-  const latestMeasurement = await getLatestMeasurement();
+  const latestMeasurement = await getLatestMeasurement(profile.userId);
   const compositionBlock = latestMeasurement
     ? compositionSummaryForPrompt({
         waistCm: latestMeasurement.waistCm,
@@ -294,18 +287,6 @@ recentMeals (nicht für NEUE Rezepte verwenden): ${
     recentMealTitles.length
       ? recentMealTitles.map((t) => `"${t}"`).join(", ")
       : "keine"
-  }
-
-${
-    reflectionDigests.length
-      ? `Feedback aus bisherigen Kochsessions — nutze diese Hinweise, um bekannte Rezepte evtl. zu ersetzen und bei neuen Rezepten diese Fehler zu vermeiden:
-${reflectionDigests
-  .map(
-    (r) =>
-      `  • "${r.recipeTitle}" (${r.rating}/5): ${r.summary}${r.nextTimeTry.length ? " [Nächstes Mal: " + r.nextTimeTry.join("; ") + "]" : ""}`,
-  )
-  .join("\n")}`
-      : "Keine vergangenen Reflexionen verfügbar."
   }
 
 Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day ${startDay}..${endDay}).`;

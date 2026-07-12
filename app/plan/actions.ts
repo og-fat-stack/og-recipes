@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "../../lib/db";
+import { requireUserId } from "../../lib/auth";
 import { getProfile } from "../../lib/profile";
 import {
   getRecentMealTitles,
@@ -12,7 +13,6 @@ import {
 } from "../../lib/plan";
 import { berlinWeekdayIndex } from "../../lib/time";
 import { generatePlanDraft } from "../../lib/ai/generatePlan";
-import { getReflectionDigests } from "../../lib/reflection";
 import { getClaudeMemoryText } from "../../lib/claudeMemory";
 
 export type GeneratePlanState =
@@ -21,6 +21,10 @@ export type GeneratePlanState =
   | { status: "error"; error: string };
 
 function parseDay(v: FormDataEntryValue | null, fallback: number): number {
+  // Fehlt das Feld (Optionen eingeklappt), ist v null/"" — dann den Fallback nehmen.
+  // Wichtig: Number(null) und Number("") sind 0, würden also fälschlich als gültiger
+  // Tag 0 (Montag) durchgehen und den Bereich auf einen Tag zusammenschrumpfen.
+  if (v == null || v === "") return fallback;
   const n = Number(v);
   return Number.isInteger(n) && n >= 0 && n <= 6 ? n : fallback;
 }
@@ -29,7 +33,8 @@ export async function generateWeeklyPlan(
   _prev: GeneratePlanState,
   formData: FormData,
 ): Promise<GeneratePlanState> {
-  const profile = await getProfile();
+  const userId = await requireUserId();
+  const profile = await getProfile(userId);
   if (!profile) {
     return { status: "error", error: "Zuerst das Profil ausfüllen." };
   }
@@ -50,13 +55,11 @@ export async function generateWeeklyPlan(
     .filter(Boolean);
 
   try {
-    const [recentTitles, knownMainPool, reflectionDigests, claudeMemory] =
-      await Promise.all([
-        getRecentMealTitles(14),
-        pickKnownMainMealRecipes(2),
-        getReflectionDigests(6),
-        getClaudeMemoryText(),
-      ]);
+    const [recentTitles, knownMainPool, claudeMemory] = await Promise.all([
+      getRecentMealTitles(userId, 14),
+      pickKnownMainMealRecipes(userId, 2),
+      getClaudeMemoryText(userId),
+    ]);
 
     const knownSummaries = knownMainPool.map((r) => ({
       title: r.title,
@@ -73,23 +76,18 @@ export async function generateWeeklyPlan(
       profile,
       recentMealTitles: recentTitles,
       knownMainRecipes: knownSummaries,
-      reflectionDigests: reflectionDigests.map((r) => ({
-        recipeTitle: r.recipeTitle,
-        rating: r.rating,
-        summary: r.summary,
-        nextTimeTry: r.nextTimeTry,
-      })),
       dayRange: { start: startDay, end: endDay },
       useUpIngredients,
       claudeMemory,
     });
 
-    await db.mealPlan.deleteMany({ where: { weekStart: ws } });
+    await db.mealPlan.deleteMany({ where: { userId, weekStart: ws } });
 
     const newRecipeIds: number[] = [];
     for (const r of draft.newRecipes) {
       const created = await db.recipe.create({
         data: {
+          userId,
           title: r.title,
           cuisine: r.cuisine,
           portions: r.portions,
@@ -117,6 +115,7 @@ export async function generateWeeklyPlan(
 
     await db.mealPlan.create({
       data: {
+        userId,
         weekStart: ws,
         notes: draft.weekNotes ?? null,
         meals: {
@@ -143,8 +142,9 @@ export async function generateWeeklyPlan(
 }
 
 export async function deleteCurrentPlan(): Promise<void> {
+  const userId = await requireUserId();
   const ws = weekStart();
-  await db.mealPlan.deleteMany({ where: { weekStart: ws } });
+  await db.mealPlan.deleteMany({ where: { userId, weekStart: ws } });
   revalidatePath("/plan");
   revalidatePath("/plan/shopping");
   revalidatePath("/");

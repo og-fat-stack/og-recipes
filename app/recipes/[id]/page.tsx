@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
+import { requireUserId } from "../../../lib/auth";
 import { getRecipe, type Ingredient } from "../../../lib/recipe";
 import { planCookSessions } from "../../../lib/cookPlan";
 import { DeleteRecipeButton } from "./DeleteRecipeButton";
@@ -12,10 +13,11 @@ export default async function RecipePage({
   params: Promise<{ id: string }>;
 }) {
   await connection();
+  const userId = await requireUserId();
   const { id } = await params;
   const recipeId = Number(id);
   if (!Number.isFinite(recipeId)) notFound();
-  const recipe = await getRecipe(recipeId);
+  const recipe = await getRecipe(userId, recipeId);
   if (!recipe) notFound();
 
   const ingredients = (recipe.ingredients as unknown as Ingredient[]) ?? [];

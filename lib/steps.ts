@@ -26,8 +26,9 @@ export function stepsKcal(steps: number, weightKg: number): number {
   return Math.round(0.5 * weightKg * km);
 }
 
-export async function getStepEntries(limit = 60) {
+export async function getStepEntries(userId: number, limit = 60) {
   return db.stepEntry.findMany({
+    where: { userId },
     orderBy: { date: "desc" },
     take: limit,
   });
@@ -38,8 +39,9 @@ function avg(nums: number[]): number | null {
   return nums.reduce((a, b) => a + b, 0) / nums.length;
 }
 
-export async function getStepStats(): Promise<StepStats> {
+export async function getStepStats(userId: number): Promise<StepStats> {
   const entries = await db.stepEntry.findMany({
+    where: { userId },
     orderBy: { date: "desc" },
     take: 30,
   });

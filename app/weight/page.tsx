@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { requireUserId } from "../../lib/auth";
 import { getProfile } from "../../lib/profile";
 import { getWeightEntries, getWeightStats } from "../../lib/weight";
 import { WeightForm } from "./WeightForm";
@@ -19,9 +20,11 @@ function fmtDate(d: Date | null) {
 
 export default async function WeightPage() {
   await connection();
-  const profile = await getProfile();
-  const entries = await getWeightEntries(60);
+  const userId = await requireUserId();
+  const profile = await getProfile(userId);
+  const entries = await getWeightEntries(userId, 60);
   const stats = await getWeightStats(
+    userId,
     profile?.goalWeightKg ?? null,
     0.4,
     profile?.lastMacroWeightKg ?? null,

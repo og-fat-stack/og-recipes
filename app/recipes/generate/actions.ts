@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "../../../lib/db";
+import { requireUserId } from "../../../lib/auth";
 import { getProfile } from "../../../lib/profile";
 import { getClaudeMemoryText } from "../../../lib/claudeMemory";
 import {
@@ -28,9 +29,10 @@ export async function generateRecipe(
     };
   }
   try {
+    const userId = await requireUserId();
     const [profile, claudeMemory] = await Promise.all([
-      getProfile(),
-      getClaudeMemoryText(),
+      getProfile(userId),
+      getClaudeMemoryText(userId),
     ]);
     const draft = await generateRecipeDraft({ prompt, profile, claudeMemory });
     return { status: "ok", draft, prompt };
@@ -46,9 +48,11 @@ export async function generateRecipe(
 export async function saveGeneratedRecipe(
   draftJson: string,
 ): Promise<void> {
+  const userId = await requireUserId();
   const draft = JSON.parse(draftJson);
   const recipe = await db.recipe.create({
     data: {
+      userId,
       title: draft.title,
       cuisine: draft.cuisine,
       portions: draft.portions,

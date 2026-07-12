@@ -9,28 +9,33 @@ function getSecret(): string {
   return s;
 }
 
-function sign(expiresAt: number): string {
-  return createHmac("sha256", getSecret())
-    .update(String(expiresAt))
-    .digest("base64url");
+function sign(payload: string): string {
+  return createHmac("sha256", getSecret()).update(payload).digest("base64url");
 }
 
-export function encodeSession(expiresAt: number): string {
-  return `${expiresAt}.${sign(expiresAt)}`;
+/** Session-Wert: `userId.expiresAt.signatur`. */
+export function encodeSession(userId: number, expiresAt: number): string {
+  const payload = `${userId}.${expiresAt}`;
+  return `${payload}.${sign(payload)}`;
+}
+
+/** Liefert die userId einer gültigen Session, sonst null. */
+export function parseSessionValue(value: string | undefined): number | null {
+  if (!value) return null;
+  const parts = value.split(".");
+  if (parts.length !== 3) return null;
+  const [uidStr, expStr, sig] = parts;
+  const userId = Number(uidStr);
+  const expiresAt = Number(expStr);
+  if (!Number.isInteger(userId) || userId < 1) return null;
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return null;
+  const expected = sign(`${uidStr}.${expStr}`);
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return null;
+  return timingSafeEqual(a, b) ? userId : null;
 }
 
 export function isSessionValueValid(value: string | undefined): boolean {
-  if (!value) return false;
-  const dot = value.indexOf(".");
-  if (dot < 1) return false;
-  const expStr = value.slice(0, dot);
-  const sig = value.slice(dot + 1);
-  const expiresAt = Number(expStr);
-  if (!Number.isFinite(expiresAt)) return false;
-  if (expiresAt <= Date.now()) return false;
-  const expected = sign(expiresAt);
-  const a = Buffer.from(sig);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
+  return parseSessionValue(value) !== null;
 }

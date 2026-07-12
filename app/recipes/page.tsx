@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { requireUserId } from "../../lib/auth";
 import { getRecipes } from "../../lib/recipe";
 
 export default async function RecipesPage() {
   await connection();
-  const recipes = await getRecipes();
+  const userId = await requireUserId();
+  const recipes = await getRecipes(userId);
 
   return (
     <div className="space-y-6">

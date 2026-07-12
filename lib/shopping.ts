@@ -245,9 +245,12 @@ function normalize(name: string): string {
     .trim();
 }
 
-export async function getPlanWithIngredientsForWeek(sel: WeekSel = "this") {
+export async function getPlanWithIngredientsForWeek(
+  userId: number,
+  sel: WeekSel = "this",
+) {
   return db.mealPlan.findUnique({
-    where: { weekStart: weekStartFor(sel) },
+    where: { userId_weekStart: { userId, weekStart: weekStartFor(sel) } },
     include: {
       meals: { include: { recipe: true } },
       shoppingState: true,
@@ -255,8 +258,8 @@ export async function getPlanWithIngredientsForWeek(sel: WeekSel = "this") {
   });
 }
 
-export async function getCurrentPlanWithIngredients() {
-  return getPlanWithIngredientsForWeek("this");
+export async function getCurrentPlanWithIngredients(userId: number) {
+  return getPlanWithIngredientsForWeek(userId, "this");
 }
 
 type PlanWithMeals = NonNullable<

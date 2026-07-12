@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { requireUserId } from "../lib/auth";
 import { getProfile } from "../lib/profile";
 import { getTodayChecklist } from "../lib/checklist";
 import { getRoutines } from "../lib/routines";
@@ -7,10 +8,11 @@ import { TodayChecklist } from "./TodayChecklist";
 
 export default async function Home() {
   await connection();
-  const profile = await getProfile();
+  const userId = await requireUserId();
+  const profile = await getProfile(userId);
   const [checklist, routines] = await Promise.all([
-    getTodayChecklist(),
-    getRoutines(profile),
+    getTodayChecklist(userId),
+    getRoutines(userId, profile),
   ]);
 
   const todayLabel = checklist.dateKey.toLocaleDateString("de-DE", {

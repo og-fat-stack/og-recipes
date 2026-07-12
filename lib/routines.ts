@@ -26,11 +26,15 @@ function daysAgo(date: Date): number {
  * (Maße messen, Wochenplan, Makro-Neuberechnung). Wo möglich mit letztem
  * Stand und Fälligkeit aus den Daten.
  */
-export async function getRoutines(profile: Profile | null): Promise<Routine[]> {
+export async function getRoutines(
+  userId: number,
+  profile: Profile | null,
+): Promise<Routine[]> {
   const [measurement, plan, stats] = await Promise.all([
-    getLatestMeasurement(),
-    getCurrentPlan(),
+    getLatestMeasurement(userId),
+    getCurrentPlan(userId),
     getWeightStats(
+      userId,
       profile?.goalWeightKg ?? null,
       0.4,
       profile?.lastMacroWeightKg ?? null,

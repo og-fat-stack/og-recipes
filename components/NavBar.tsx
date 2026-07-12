@@ -11,14 +11,13 @@ const TABS = [
   { href: "/training", label: "Training" },
   { href: "/weight", label: "Gewicht" },
   { href: "/measurements", label: "Maße" },
-  { href: "/history", label: "Verlauf" },
   { href: "/memory", label: "Memory" },
   { href: "/profile", label: "Profil" },
 ] as const;
 
-export function NavBar() {
+export function NavBar({ userName }: { userName: string | null }) {
   const pathname = usePathname();
-  if (pathname === "/login") return null;
+  if (pathname === "/login" || pathname === "/register") return null;
 
   return (
     <nav className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -42,7 +41,12 @@ export function NavBar() {
             </Link>
           );
         })}
-        <form action={logout} className="ml-auto">
+        <form action={logout} className="ml-auto flex items-center gap-2">
+          {userName && (
+            <span className="hidden whitespace-nowrap text-sm text-zinc-500 sm:inline">
+              {userName}
+            </span>
+          )}
           <button
             type="submit"
             className="rounded-full px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"

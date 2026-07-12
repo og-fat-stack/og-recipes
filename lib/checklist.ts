@@ -28,19 +28,23 @@ function berlinTodayIndex(): number {
  * erkannt (Wiegen, Schritte), der Rest sind manuelle Haken, deren Status pro
  * Tag in `DailyCheck` gespeichert wird.
  */
-export async function getTodayChecklist(): Promise<{
+export async function getTodayChecklist(userId: number): Promise<{
   items: ChecklistItem[];
   doneCount: number;
   total: number;
   dateKey: Date;
 }> {
   const today = dayKey();
-  const profile = await getProfile();
+  const profile = await getProfile(userId);
 
   const [weightToday, stepToday, checks] = await Promise.all([
-    db.weightEntry.findUnique({ where: { date: today } }),
-    db.stepEntry.findUnique({ where: { date: today } }),
-    db.dailyCheck.findMany({ where: { date: today } }),
+    db.weightEntry.findUnique({
+      where: { userId_date: { userId, date: today } },
+    }),
+    db.stepEntry.findUnique({
+      where: { userId_date: { userId, date: today } },
+    }),
+    db.dailyCheck.findMany({ where: { userId, date: today } }),
   ]);
 
   const checkedKeys = new Set(

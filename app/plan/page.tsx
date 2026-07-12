@@ -10,6 +10,7 @@ import {
   weekStartFor,
 } from "../../lib/plan";
 import { berlinWeekdayIndex } from "../../lib/time";
+import { requireUserId } from "../../lib/auth";
 import { getProfile } from "../../lib/profile";
 import { GeneratePlanButton } from "./GeneratePlanButton";
 
@@ -28,9 +29,13 @@ export default async function PlanPage({
   searchParams: Promise<{ week?: string }>;
 }) {
   await connection();
+  const userId = await requireUserId();
   const week = parseWeekSel((await searchParams).week);
   const ws = weekStartFor(week);
-  const [profile, plan] = await Promise.all([getProfile(), getPlanForWeek(ws)]);
+  const [profile, plan] = await Promise.all([
+    getProfile(userId),
+    getPlanForWeek(userId, ws),
+  ]);
   // In der laufenden Woche werden vergangene Tage nicht (mehr) verplant.
   const minDay = week === "this" ? berlinWeekdayIndex() : 0;
 
@@ -124,7 +129,7 @@ export default async function PlanPage({
         <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
           <p className="text-zinc-600 dark:text-zinc-400">
             Noch kein Plan für {week === "next" ? "nächste" : "diese"} Woche.
-            Klick oben auf „Woche generieren".
+            Klick oben auf „Woche generieren“.
           </p>
         </div>
       )}
