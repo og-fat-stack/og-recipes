@@ -258,6 +258,7 @@ ${mainBatchHint} Generiere alle benötigten Hauptmahl-Rezepte neu + die Frühst�
         heightCm: profile.heightCm,
         weightKg: profile.weightKg,
         sex: profile.sex as "male" | "female",
+        age: profile.age,
       })
     : null;
 

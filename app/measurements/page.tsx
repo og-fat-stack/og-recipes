@@ -4,6 +4,7 @@ import { requireUserId } from "../../lib/auth";
 import { getProfile } from "../../lib/profile";
 import { getMeasurementEntries } from "../../lib/measurements";
 import {
+  bfTarget,
   bodyFatStatus,
   idealWeightBandKg,
   whr,
@@ -118,7 +119,7 @@ function CurrentBands({
   profile,
   latest,
 }: {
-  profile: { heightCm: number; weightKg: number; sex: string };
+  profile: { heightCm: number; weightKg: number; sex: string; age: number };
   latest: {
     waistCm: number | null;
     hipCm: number | null;
@@ -126,12 +127,14 @@ function CurrentBands({
   };
 }) {
   const sex = profile.sex as "male" | "female";
+  const bfBand = bfTarget(sex, profile.age);
   const ideal =
     latest.bodyFatPct != null
       ? idealWeightBandKg({
           weightKg: profile.weightKg,
           bodyFatPct: latest.bodyFatPct,
           sex,
+          age: profile.age,
         })
       : null;
 
@@ -174,17 +177,18 @@ function CurrentBands({
           <BandRow
             label="KFA"
             value={`${latest.bodyFatPct.toFixed(1)} %`}
-            target={sex === "female" ? "18–25 %" : "10–18 %"}
+            target={`${bfBand.greenMin}–${bfBand.greenMax} % (altersgerecht)`}
             status={bodyFatStatus({
               bodyFatPct: latest.bodyFatPct,
               sex,
+              age: profile.age,
             })}
           />
         )}
         {ideal && (
           <li className="pt-2 text-zinc-600 dark:text-zinc-400">
-            Persönliches Idealgewicht (bei aktueller Magermasse,{" "}
-            {sex === "female" ? "18–25" : "10–18"} % KFA):{" "}
+            Persönliches Idealgewicht (bei aktueller Magermasse, altersgerechtes
+            Zielband {bfBand.greenMin}–{bfBand.greenMax} % KFA):{" "}
             <span className="font-semibold text-zinc-900 dark:text-zinc-100">
               {ideal.minKg.toFixed(1)}–{ideal.maxKg.toFixed(1)} kg
             </span>
