@@ -24,6 +24,7 @@
   --og-surface-subtle: var(--color-slate-100, #f1f5f9); /* chips, kbd, hover fills, neutral notices */
   --og-surface-hover: var(--color-slate-50, #f8fafc); /* list-row hover */
   --og-surface-inset: var(--color-slate-200, #e2e8f0); /* progress + toggle tracks */
+  --og-scrim: color-mix(in oklab, var(--color-slate-950, #020617) 55%, transparent); /* dim behind overlays/sheets — dark in both themes */
 
   /* Text — three steps only */
   --og-ink: var(--color-slate-900, #0f172a); /* headings, primary text */
@@ -98,6 +99,7 @@
     --og-surface-subtle: var(--color-slate-800, #1e293b);
     --og-surface-hover: color-mix(in oklab, var(--color-slate-800, #1e293b) 50%, transparent);
     --og-surface-inset: var(--color-slate-800, #1e293b);
+    --og-scrim: color-mix(in oklab, var(--color-slate-950, #020617) 70%, transparent);
 
     --og-ink: var(--color-slate-100, #f1f5f9);
     --og-ink-muted: var(--color-slate-400, #94a3b8);
@@ -152,6 +154,7 @@
   --color-surface-subtle: var(--og-surface-subtle);
   --color-surface-hover: var(--og-surface-hover);
   --color-surface-inset: var(--og-surface-inset);
+  --color-scrim: var(--og-scrim);
 
   --color-ink: var(--og-ink);
   --color-ink-muted: var(--og-ink-muted);

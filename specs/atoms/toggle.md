@@ -3,7 +3,7 @@
 ## 1. Metadata
 - **Name:** Toggle
 - **Category:** atom
-- **Status:** stable (see `components/ActivityToggle.tsx`, `components/BudgetToggle.tsx`)
+- **Status:** stable (`components/Toggle.tsx`; `ActivityToggle`/`BudgetToggle` are wrappers). Storybook → Atoms/Toggle.
 
 ## 2. Overview
 **When to use:** a boolean setting that takes effect immediately (server action
@@ -27,7 +27,10 @@ value) · switch track (`h-6 w-11`) · knob (`h-5 w-5`)
 | Prop | Type | Notes |
 |------|------|-------|
 | enabled | boolean | server state |
-| onClick | server action in `useTransition`, row `disabled` while pending |
+| title | ReactNode | label line |
+| description | ReactNode | consequence of the current value |
+| onToggle | () => void | usually a server action wrapped in `useTransition` |
+| pending | boolean? | row `disabled` + dimmed while the action runs |
 
 ## 6. States
 - on → track `bg-accent`, knob translated
@@ -35,7 +38,9 @@ value) · switch track (`h-6 w-11`) · knob (`h-5 w-5`)
 - pending → `disabled:opacity-60`
 
 ## 7. Code example
-See `components/ActivityToggle.tsx` — copy that structure for new toggles.
+Use the shared `components/Toggle.tsx` directly; for a new setting write a thin
+wrapper that owns the `useTransition` + server action (see
+`components/ActivityToggle.tsx`, `components/BudgetToggle.tsx`).
 
 ## 8. Cross-references
 - Related: [card](../molecules/card.md), [button](./button.md)

@@ -40,7 +40,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-surface-page text-ink">
         <NavBar userName={user?.name ?? null} />
-        <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">
+        <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-6 pb-28 md:py-8">
           {children}
         </main>
       </body>
