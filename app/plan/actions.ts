@@ -107,6 +107,17 @@ export async function generateWeeklyPlan(
         budgetConscious: profile.budgetConscious,
       });
 
+      // Abbruch-Check: Wurde die Generierung inzwischen abgebrochen (Zeile
+      // gelöscht/verändert, z. B. über cancelPlanGeneration), während Claude
+      // noch gearbeitet hat? Dann NICHTS übernehmen — der bestehende Plan
+      // bleibt unangetastet.
+      const stillWanted = await db.planGeneration.findUnique({
+        where: { userId_weekStart: { userId, weekStart: ws } },
+      });
+      if (!stillWanted || stillWanted.status !== "generating") {
+        return;
+      }
+
       await db.mealPlan.deleteMany({ where: { userId, weekStart: ws } });
 
       const newRecipeIds: number[] = [];
@@ -173,6 +184,20 @@ export async function generateWeeklyPlan(
   });
 
   return { status: "started" };
+}
+
+/**
+ * Bricht eine laufende Hintergrund-Generierung für die gewählte Woche ab.
+ * Löscht nur die Tracking-Zeile — ein bereits laufender Claude-Call lässt sich
+ * nicht abbrechen, aber der Abschluss-Check in generateWeeklyPlan() (oben)
+ * verwirft dessen Ergebnis, sobald diese Zeile fehlt, statt den bestehenden
+ * Plan zu überschreiben.
+ */
+export async function cancelPlanGeneration(week: string): Promise<void> {
+  const userId = await requireUserId();
+  const ws = weekStartFor(parseWeekSel(week));
+  await db.planGeneration.deleteMany({ where: { userId, weekStart: ws } });
+  revalidatePath("/plan");
 }
 
 export async function deleteCurrentPlan(): Promise<void> {

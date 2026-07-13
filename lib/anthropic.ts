@@ -1,15 +1,16 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-// Claude 4.6 family (+ Haiku 4.5). Use `planner` for heavy reasoning
-// (weekly plan generation), `smart` as the default, `fast` for cheap
-// on-demand calls like step tips and tag explainers.
+// `planner` (Claude Sonnet 5) für die Wochenplan-Generierung — läuft im
+// Hintergrund (siehe app/plan/actions.ts, `after()`), `smart` (Sonnet 4.6) als
+// Standard, `fast` (Haiku 4.5) für günstige On-Demand-Aufrufe.
 export const MODELS = {
-  planner: "claude-opus-4-6",
+  planner: "claude-sonnet-5",
   smart: "claude-sonnet-4-6",
   fast: "claude-haiku-4-5-20251001",
 } as const;
 
 type ModelKey = keyof typeof MODELS;
+export type Effort = "low" | "medium" | "high" | "max";
 
 let client: Anthropic | null = null;
 
@@ -29,7 +30,12 @@ export type CallClaudeInput = {
   system: string;
   messages: Anthropic.MessageParam[];
   maxTokens?: number;
+  /** Claude Sonnet 5 (und die 4.7/4.8-Opus-Familie) lehnen nicht-default
+   * Sampling-Parameter ab — nur setzen, wenn das Zielmodell sie unterstützt
+   * (Sonnet 4.6 / Haiku 4.5). Weglassen statt eines Default-Werts. */
   temperature?: number;
+  /** Denktiefe/Token-Aufwand (Claude Sonnet 5 und neuere Opus-Modelle). */
+  effort?: Effort;
 };
 
 /**
@@ -41,12 +47,14 @@ export async function callClaude({
   system,
   messages,
   maxTokens = 2048,
-  temperature = 0.7,
+  temperature,
+  effort,
 }: CallClaudeInput): Promise<Anthropic.Message> {
   return anthropic().messages.create({
     model: MODELS[model],
     max_tokens: maxTokens,
-    temperature,
+    ...(temperature !== undefined ? { temperature } : {}),
+    ...(effort ? { output_config: { effort } } : {}),
     system: [
       {
         type: "text",

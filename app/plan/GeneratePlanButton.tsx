@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { WeekSel } from "../../lib/plan";
 import {
+  cancelPlanGeneration,
   generateWeeklyPlan,
   type GeneratePlanState,
 } from "./actions";
@@ -39,6 +40,7 @@ export function GeneratePlanButton({
     FormData
   >(generateWeeklyPlan, { status: "idle" });
   const [showOptions, setShowOptions] = useState(false);
+  const [cancelling, startCancel] = useTransition();
   const router = useRouter();
 
   // Solange im Hintergrund geplant wird, in Intervallen sanft aktualisieren
@@ -70,13 +72,29 @@ export function GeneratePlanButton({
         >
           {label}
         </button>
-        <button
-          type="button"
-          onClick={() => setShowOptions((s) => !s)}
-          className="whitespace-nowrap rounded-full border border-line-strong px-3 py-2 text-xs text-ink-muted hover:bg-surface-subtle"
-        >
-          {showOptions ? "Optionen verbergen" : "Optionen"}
-        </button>
+        {generating ? (
+          <button
+            type="button"
+            disabled={cancelling}
+            onClick={() =>
+              startCancel(async () => {
+                await cancelPlanGeneration(week);
+                router.refresh();
+              })
+            }
+            className="whitespace-nowrap rounded-full border border-line-strong px-3 py-2 text-xs text-ink-muted hover:bg-surface-subtle disabled:opacity-50"
+          >
+            {cancelling ? "Bricht ab …" : "Abbrechen"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowOptions((s) => !s)}
+            className="whitespace-nowrap rounded-full border border-line-strong px-3 py-2 text-xs text-ink-muted hover:bg-surface-subtle"
+          >
+            {showOptions ? "Optionen verbergen" : "Optionen"}
+          </button>
+        )}
       </div>
 
       {showOptions && (

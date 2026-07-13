@@ -153,14 +153,21 @@ Liste und ersetze Verstöße durch eine passende Alternative, bevor du antwortes
     ],
   });
 
+  if (msg.stop_reason === "max_tokens") {
+    throw new Error(
+      "Claudes Antwort wurde bei maxTokens abgeschnitten — bitte erneut versuchen.",
+    );
+  }
+
   const text = stripCodeFences(extractText(msg));
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
+    const snippet = text.length > 400 ? `${text.slice(0, 200)} … ${text.slice(-200)}` : text;
     throw new Error(
-      "Claude hat kein gültiges JSON geliefert. Bitte erneut versuchen.",
+      `Claude hat kein gültiges JSON geliefert (stop_reason: ${msg.stop_reason}). Antwortanfang/-ende: ${snippet}`,
     );
   }
 

@@ -311,17 +311,32 @@ Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day $
   const msg = await callClaude({
     model: "planner",
     system: SYSTEM_PROMPT,
-    maxTokens: 10000,
-    temperature: 0.85,
+    // Läuft im Hintergrund (kein Nutzer wartet) — großzügig bemessen, damit ein
+    // voller Wochenplan mit mehreren neuen Rezepten nicht mitten im JSON
+    // abgeschnitten wird (das führt sonst zu "kein gültiges JSON").
+    maxTokens: 16000,
+    // Claude Sonnet 5 lehnt nicht-default temperature ab — effort statt dessen
+    // als Dreh für Denktiefe/Tempo (medium: guter Kompromiss aus Tempo und
+    // Qualität für die Wochenplanung).
+    effort: "medium",
     messages: [{ role: "user", content: userMsg }],
   });
+
+  if (msg.stop_reason === "max_tokens") {
+    throw new Error(
+      "Claudes Antwort wurde bei maxTokens abgeschnitten (Plan zu umfangreich) — bitte kürzeren Tagesbereich wählen oder erneut versuchen.",
+    );
+  }
 
   const text = stripCodeFences(extractText(msg));
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error("Claude hat kein gültiges JSON geliefert.");
+    const snippet = text.length > 400 ? `${text.slice(0, 200)} … ${text.slice(-200)}` : text;
+    throw new Error(
+      `Claude hat kein gültiges JSON geliefert (stop_reason: ${msg.stop_reason}). Antwortanfang/-ende: ${snippet}`,
+    );
   }
   const result = PlanDraftSchema.safeParse(parsed);
   if (!result.success) {
