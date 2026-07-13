@@ -100,7 +100,7 @@ export async function generateWeeklyPlan(
           ingredients: r.ingredients,
           steps: r.steps,
           techniques: r.techniques,
-          notes: r.notes ?? null,
+          notes: null,
         },
       });
       newRecipeIds.push(created.id);
@@ -118,7 +118,7 @@ export async function generateWeeklyPlan(
       data: {
         userId,
         weekStart: ws,
-        notes: draft.weekNotes ?? null,
+        notes: null,
         meals: {
           create: assignments.map((a) => ({
             day: a.day,

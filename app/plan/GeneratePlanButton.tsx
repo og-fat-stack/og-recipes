@@ -34,15 +34,12 @@ export function GeneratePlanButton({
 
   const dayOptions = DAY_OPTIONS.filter((d) => d.value >= minDay);
   const nextWeek = week === "next";
+  // Kurz halten (die aktive Wochen-Registerkarte zeigt schon, welche Woche).
   const label = pending
-    ? "Claude plant..."
-    : nextWeek
-      ? hasPlan
-        ? "Nächste Woche neu generieren"
-        : "✨ Nächste Woche generieren"
-      : hasPlan
-        ? "Woche neu generieren"
-        : "✨ Woche generieren";
+    ? "Claude plant …"
+    : hasPlan
+      ? "Neu generieren"
+      : "✨ Generieren";
 
   return (
     <form action={action} className="space-y-2">
@@ -51,14 +48,14 @@ export function GeneratePlanButton({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover disabled:opacity-50"
+          className="flex-1 whitespace-nowrap rounded-full bg-accent px-5 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover disabled:opacity-50 sm:flex-none"
         >
           {label}
         </button>
         <button
           type="button"
           onClick={() => setShowOptions((s) => !s)}
-          className="rounded-full border border-line-strong px-3 py-2 text-xs text-ink-muted hover:bg-surface-subtle"
+          className="whitespace-nowrap rounded-full border border-line-strong px-3 py-2 text-xs text-ink-muted hover:bg-surface-subtle"
         >
           {showOptions ? "Optionen verbergen" : "Optionen"}
         </button>

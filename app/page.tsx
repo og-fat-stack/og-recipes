@@ -6,6 +6,7 @@ import { getTodayChecklist } from "../lib/checklist";
 import { getRoutines } from "../lib/routines";
 import { planActivityKcalPerDay } from "../lib/training";
 import { ActivityToggle } from "../components/ActivityToggle";
+import { ProgressBar } from "../components/ProgressBar";
 import { TodayChecklist } from "./TodayChecklist";
 
 export default async function Home() {
@@ -38,14 +39,12 @@ export default async function Home() {
             ? "Alles erledigt — stark. 💪"
             : `${checklist.doneCount} von ${checklist.total} erledigt`}
         </p>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-inset">
-          <div
-            className="h-full rounded-full bg-accent transition-all"
-            style={{
-              width: `${(checklist.doneCount / checklist.total) * 100}%`,
-            }}
-          />
-        </div>
+        <ProgressBar
+          value={checklist.doneCount}
+          max={checklist.total}
+          label="Tagesfortschritt"
+          className="mt-3"
+        />
       </header>
 
       <TodayChecklist items={checklist.items} />

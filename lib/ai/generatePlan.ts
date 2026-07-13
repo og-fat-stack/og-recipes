@@ -14,7 +14,6 @@ export const PlanAssignmentSchema = z.object({
 export const PlanDraftSchema = z.object({
   newRecipes: z.array(RecipeDraftSchema).min(1).max(6),
   assignments: z.array(PlanAssignmentSchema).min(3).max(21),
-  weekNotes: z.string().max(2000).optional().nullable(),
 });
 
 export type PlanDraft = z.infer<typeof PlanDraftSchema>;
@@ -79,13 +78,17 @@ alle Mahlzeiten zusammen):
   Geflügel bzw. Fisch. So bleibt die 300-g-Grenze automatisch eingehalten.
 
 Vorgaben für JEDES neue Rezept:
-- DER NUTZER HAT KEINE KÜCHENWAAGE. Mengen nur in: Stück, Tassen (1 Tasse ≈ 200 ml), EL, TL,
-  Handvoll (≈ 30 g), Becher (500 g), Packung, Schale (250 g), Glas, mittel, faustgroß.
-  Gramm-Werte nur in Klammern als Referenz.
+- MENGEN AUSSCHLIESSLICH IN EXAKTEN STANDARDEINHEITEN: g (Gramm) und ml (Milliliter) für
+  Gewicht/Flüssigkeit, Stück für Zählbares (Eier, Zwiebeln, Zitronen). Für kleine Mengen
+  (Gewürze, Öl, Säure) sind EL und TL erlaubt. KEINE ungefähren Haushaltsmaße — NICHT
+  Handvoll, Glas, Becher, Schale, Tasse, Packung, faustgroß, tennisballgroß, mittel o. Ä.
+  Jede Zutat bekommt eine konkrete Zahl + Einheit (z. B. 200 g rote Linsen, 400 ml
+  Gemüsebrühe, 2 Stück Eier, 1 EL Olivenöl).
 - Anfängerfreundliche Schritte mit optischen Garchecks (keine Kerntemperaturen).
 - Eiweißreich: Hauptmahlzeiten ≥ 35 g pro Portion. Frühstück ≥ 25 g pro Portion.
-- In den Notizen eine kurze "Maße ohne Waage"-Sektion.
 - Techniken als deutsche Tags (max 5).
+- KEINE Notizen erzeugen: Lass das Feld "notes" bei jedem Rezept komplett weg und gib
+  auch KEIN "weekNotes" aus.
 - MENGEN IN DEN SCHRITTEN WIEDERHOLEN: Jeder Zubereitungsschritt nennt die konkreten Mengen
   inline ("die 2 gehackten Zwiebeln und 4 gepressten Knoblauchzehen anbraten"), inkl. Salz, Fett,
   Säure ("1 TL grobes Meersalz", "Saft einer halben Zitrone", "1 EL Olivenöl"). Aus den Schritten
@@ -121,7 +124,7 @@ Antworte AUSSCHLIESSLICH mit validem JSON (kein Markdown, keine Code-Fences).
 
 FELDNAMEN SIND VERBINDLICH. Jedes RecipeDraft enthält EXAKT diese Schlüssel:
   title, cuisine, portions, kcalPerPortion, proteinG, carbG, fatG, batchStorageDays,
-  ingredients, steps, techniques, notes
+  ingredients, steps, techniques
 
 RECIPE-INDEX-KODIERUNG in "assignments":
 - Die knownMainRecipes werden zuerst indexiert: index 0, 1, ... (in der Reihenfolge aus dem
@@ -146,10 +149,9 @@ Konkretes Beispiel-Antwort-Skelett:
       "carbG": 55,
       "fatG": 16,
       "batchStorageDays": 4,
-      "ingredients": [{ "name": "...", "qty": 1, "unit": "Tasse" }],
+      "ingredients": [{ "name": "Rote Linsen", "qty": 200, "unit": "g" }],
       "steps": ["..."],
-      "techniques": ["..."],
-      "notes": "Maße ohne Waage: ..."
+      "techniques": ["..."]
     }
   ],
   "assignments": [
@@ -157,8 +159,7 @@ Konkretes Beispiel-Antwort-Skelett:
     { "day": 0, "slot": "lunch", "recipeIndex": 0 },
     { "day": 0, "slot": "dinner", "recipeIndex": 0 }
     // ... insgesamt 21 Einträge
-  ],
-  "weekNotes": "Kurzer Kommentar inkl. grober Kostenschätzung pro Portion."
+  ]
 }
 
 Pflicht:

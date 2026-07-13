@@ -6,6 +6,7 @@ import { AuthShell } from "../../components/auth/AuthShell";
 import { FloatingField } from "../../components/auth/FloatingField";
 import { PasswordField } from "../../components/auth/PasswordField";
 import { AuthSubmit } from "../../components/auth/AuthSubmit";
+import { ProgressBar } from "../../components/ProgressBar";
 import type { MascotState } from "../../components/mascot/Mascot";
 import { register, type RegisterState } from "./actions";
 
@@ -87,19 +88,11 @@ export function RegisterForm() {
               {validCount}/3
             </span>
           </div>
-          <div
-            className="h-2 overflow-hidden rounded-full bg-surface-inset"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={3}
-            aria-valuenow={validCount}
-            aria-label="Registrierungsfortschritt"
-          >
-            <div
-              className="h-full rounded-full bg-accent transition-all duration-300"
-              style={{ width: `${(validCount / 3) * 100}%` }}
-            />
-          </div>
+          <ProgressBar
+            value={validCount}
+            max={3}
+            label="Registrierungsfortschritt"
+          />
         </div>
 
         <div className="flex flex-col gap-3">

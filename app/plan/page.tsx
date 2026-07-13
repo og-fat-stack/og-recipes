@@ -4,6 +4,7 @@ import {
   DAYS,
   SLOT_LABELS,
   SLOTS,
+  type Slot,
   addDays,
   getPlanForWeek,
   parseWeekSel,
@@ -12,12 +13,38 @@ import {
 import { berlinWeekdayIndex } from "../../lib/time";
 import { requireUserId } from "../../lib/auth";
 import { getProfile } from "../../lib/profile";
+import { ProgressBar } from "../../components/ProgressBar";
 import { GeneratePlanButton } from "./GeneratePlanButton";
 
 const WEEK_TABS = [
   { sel: "this" as const, label: "Diese Woche", href: "/plan" },
   { sel: "next" as const, label: "Nächste Woche", href: "/plan?week=next" },
 ];
+
+const FULL_DAYS = [
+  "Montag",
+  "Dienstag",
+  "Mittwoch",
+  "Donnerstag",
+  "Freitag",
+  "Samstag",
+  "Sonntag",
+] as const;
+
+const SLOT_ICON: Record<Slot, string> = {
+  breakfast: "🌅",
+  lunch: "☀️",
+  dinner: "🌙",
+};
+
+type Cell = {
+  recipeId: number;
+  title: string;
+  kcal: number;
+  protein: number;
+  carb: number;
+  fat: number;
+};
 
 function fmtDate(d: Date) {
   return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
@@ -36,14 +63,10 @@ export default async function PlanPage({
     getProfile(userId),
     getPlanForWeek(userId, ws),
   ]);
-  // In der laufenden Woche werden vergangene Tage nicht (mehr) verplant.
-  const minDay = week === "this" ? berlinWeekdayIndex() : 0;
+  const todayIdx = week === "this" ? berlinWeekdayIndex() : -1;
 
-  // Build a 7×2 grid keyed by `${day}-${slot}`.
-  const grid = new Map<
-    string,
-    { recipeId: number; title: string; kcal: number; protein: number; carb: number; fat: number }
-  >();
+  // Belegung je (Tag, Slot).
+  const grid = new Map<string, Cell>();
   if (plan) {
     for (const m of plan.meals) {
       grid.set(`${m.day}-${m.slot}`, {
@@ -57,21 +80,20 @@ export default async function PlanPage({
     }
   }
 
-  // Daily totals.
-  const dailyTotals = DAYS.map((_, day) => {
-    const cells = SLOTS.map((s) => grid.get(`${day}-${s}`)).filter(Boolean) as {
-      kcal: number;
-      protein: number;
-      carb: number;
-      fat: number;
-    }[];
-    return {
-      kcal: cells.reduce((s, c) => s + c.kcal, 0),
-      protein: cells.reduce((s, c) => s + c.protein, 0),
-      carb: cells.reduce((s, c) => s + c.carb, 0),
-      fat: cells.reduce((s, c) => s + c.fat, 0),
-    };
-  });
+  // Kochtage: ein Tag ist ein Kochtag, wenn hier ein NEUES Hauptmahl-Rezept
+  // startet (Batch-Rhythmus, aus den Daten abgeleitet statt fix Mo/Mi/Fr).
+  const cookDays = new Set<number>();
+  let lastMain: number | null = null;
+  for (let day = 0; day < 7; day++) {
+    const main = grid.get(`${day}-lunch`) ?? grid.get(`${day}-dinner`);
+    if (main && main.recipeId !== lastMain) {
+      cookDays.add(day);
+      lastMain = main.recipeId;
+    }
+  }
+
+  const target = profile?.kcalTarget ?? 0;
+  const plannedCount = grid.size;
 
   return (
     <div className="space-y-6">
@@ -79,21 +101,26 @@ export default async function PlanPage({
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Wochenplan</h1>
           <p className="mt-1 text-ink-muted">
-            Woche vom {fmtDate(ws)} bis {fmtDate(addDays(ws, 6))}. Gekocht wird
-            Mo / Mi / Fr in 3 Batches.
+            Woche vom {fmtDate(ws)} bis {fmtDate(addDays(ws, 6))}
+            {plan && plannedCount > 0
+              ? ` · ${plannedCount} Mahlzeiten geplant`
+              : " · gekocht wird in 3 Batches"}
+            .
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           {plan && (
             <Link
-              href={week === "next" ? "/plan/shopping?week=next" : "/plan/shopping"}
-              className="rounded-full border border-line-strong px-4 py-2 text-sm font-medium text-ink-muted hover:bg-surface-subtle"
+              href={
+                week === "next" ? "/plan/shopping?week=next" : "/plan/shopping"
+              }
+              className="flex items-center justify-center gap-1 whitespace-nowrap rounded-full border border-line-strong px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-subtle"
             >
               🛒 Einkaufsliste
             </Link>
           )}
           {profile && (
-            <GeneratePlanButton hasPlan={!!plan} week={week} minDay={minDay} />
+            <GeneratePlanButton hasPlan={!!plan} week={week} minDay={todayIdx < 0 ? 0 : todayIdx} />
           )}
         </div>
       </header>
@@ -106,7 +133,7 @@ export default async function PlanPage({
               key={t.sel}
               href={t.href}
               className={
-                "rounded-full px-4 py-1.5 text-sm font-medium transition " +
+                "rounded-full px-4 py-1.5 text-sm font-medium transition-colors " +
                 (active
                   ? "bg-contrast text-on-contrast"
                   : "text-ink-muted hover:text-ink")
@@ -120,7 +147,10 @@ export default async function PlanPage({
 
       {!profile && (
         <div className="rounded-card border border-dashed border-line-strong p-4 text-sm">
-          Zuerst <Link href="/profile" className="underline">Profil</Link>{" "}
+          Zuerst{" "}
+          <Link href="/profile" className="underline">
+            Profil
+          </Link>{" "}
           ausfüllen, damit Claude die Makros pro Mahlzeit berechnen kann.
         </div>
       )}
@@ -135,88 +165,157 @@ export default async function PlanPage({
       )}
 
       {plan && (
-        <>
-          {plan.notes && (
-            <aside className="rounded-card border border-line bg-surface-page p-4 text-sm text-ink-muted">
-              <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">
-                Notizen zur Woche
-              </h2>
-              <p className="whitespace-pre-wrap">{plan.notes}</p>
-            </aside>
-          )}
-
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-separate border-spacing-0 text-sm">
-              <thead>
-                <tr>
-                  <th className="sticky left-0 bg-surface-page px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-ink-subtle">
-                    Slot
-                  </th>
-                  {DAYS.map((d, i) => (
-                    <th
-                      key={d}
-                      className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wide text-ink-subtle"
-                    >
-                      {d} {fmtDate(addDays(ws, i))}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {SLOTS.map((slot) => (
-                  <tr key={slot}>
-                    <td className="sticky left-0 bg-surface-page px-2 py-2 align-top text-xs font-medium text-ink-subtle">
-                      {SLOT_LABELS[slot]}
-                    </td>
-                    {DAYS.map((_, day) => {
-                      const cell = grid.get(`${day}-${slot}`);
-                      return (
-                        <td
-                          key={day}
-                          className="min-w-[140px] border border-line p-2 align-top"
-                        >
-                          {cell ? (
-                            <Link
-                              href={`/recipes/${cell.recipeId}`}
-                              className="block space-y-1 hover:underline"
-                            >
-                              <div className="text-sm font-medium leading-snug">
-                                {cell.title}
-                              </div>
-                              <div className="text-xs text-ink-subtle">
-                                {cell.kcal} kcal · {cell.protein}E ·{" "}
-                                {cell.carb}K · {cell.fat}F
-                              </div>
-                            </Link>
-                          ) : (
-                            <span className="text-xs text-ink-subtle">—</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-                <tr>
-                  <td className="sticky left-0 bg-surface-page px-2 py-2 text-xs font-medium text-ink-subtle">
-                    Tagessumme
-                  </td>
-                  {dailyTotals.map((t, i) => (
-                    <td
-                      key={i}
-                      className="border border-line p-2 text-xs"
-                    >
-                      <div className="font-semibold">{t.kcal} kcal</div>
-                      <div className="text-ink-subtle">
-                        {t.protein}E · {t.carb}K · {t.fat}F
-                      </div>
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {DAYS.map((_, day) => (
+            <DayCard
+              key={day}
+              label={FULL_DAYS[day]}
+              dateStr={fmtDate(addDays(ws, day))}
+              meals={SLOTS.map((slot) => ({ slot, cell: grid.get(`${day}-${slot}`) }))}
+              target={target}
+              isToday={day === todayIdx}
+              isPast={todayIdx >= 0 && day < todayIdx}
+              isCookDay={cookDays.has(day)}
+            />
+          ))}
+        </div>
       )}
     </div>
+  );
+}
+
+function DayCard({
+  label,
+  dateStr,
+  meals,
+  target,
+  isToday,
+  isPast,
+  isCookDay,
+}: {
+  label: string;
+  dateStr: string;
+  meals: { slot: Slot; cell?: Cell }[];
+  target: number;
+  isToday: boolean;
+  isPast: boolean;
+  isCookDay: boolean;
+}) {
+  const kcal = meals.reduce((s, m) => s + (m.cell?.kcal ?? 0), 0);
+  const protein = meals.reduce((s, m) => s + (m.cell?.protein ?? 0), 0);
+  const carb = meals.reduce((s, m) => s + (m.cell?.carb ?? 0), 0);
+  const fat = meals.reduce((s, m) => s + (m.cell?.fat ?? 0), 0);
+  const hasAny = meals.some((m) => m.cell);
+
+  return (
+    <section
+      className={
+        "rounded-card border bg-surface p-4 transition-colors " +
+        (isToday
+          ? "border-accent ring-1 ring-accent"
+          : "border-line") +
+        (isPast ? " opacity-60" : "")
+      }
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 className="text-sm font-semibold tracking-tight">{label}</h2>
+          <span className="text-xs text-ink-subtle">{dateStr}</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {isCookDay && (
+            <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-[11px] font-medium text-ink-muted">
+              🍳 Kochtag
+            </span>
+          )}
+          {isToday && (
+            <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-on-accent">
+              Heute
+            </span>
+          )}
+        </div>
+      </div>
+
+      {hasAny && kcal > 0 && (
+        <div className="mt-3">
+          <div className="flex items-baseline justify-between text-xs">
+            <span className="text-ink-muted">
+              {protein} E · {carb} K · {fat} F
+            </span>
+            <span className="font-semibold tabular-nums">
+              {kcal}
+              {target > 0 && (
+                <span className="font-normal text-ink-subtle">
+                  {" "}
+                  / {target} kcal
+                </span>
+              )}
+            </span>
+          </div>
+          {target > 0 && (
+            <ProgressBar
+              value={kcal}
+              max={target}
+              size="sm"
+              label={`${kcal} von ${target} kcal`}
+              className="mt-1.5"
+            />
+          )}
+        </div>
+      )}
+
+      {hasAny ? (
+        <div className="mt-3 space-y-1">
+          {meals.map(({ slot, cell }) =>
+            cell ? (
+              <Link
+                key={slot}
+                href={`/recipes/${cell.recipeId}`}
+                className="flex items-center gap-3 rounded-control px-2 py-2 transition-colors hover:bg-surface-hover"
+              >
+                <span aria-hidden className="text-lg leading-none">
+                  {SLOT_ICON[slot]}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
+                    {SLOT_LABELS[slot]}
+                  </span>
+                  <span className="block truncate text-sm font-medium">
+                    {cell.title}
+                  </span>
+                </span>
+                <span className="shrink-0 text-right text-xs text-ink-subtle">
+                  <span className="block font-medium text-ink-muted">
+                    {cell.kcal} kcal
+                  </span>
+                  <span className="block">{cell.protein} g E</span>
+                </span>
+              </Link>
+            ) : (
+              <div
+                key={slot}
+                className="flex items-center gap-3 rounded-control px-2 py-2"
+              >
+                <span aria-hidden className="text-lg leading-none opacity-30">
+                  {SLOT_ICON[slot]}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
+                    {SLOT_LABELS[slot]}
+                  </span>
+                  <span className="block text-sm text-ink-subtle">
+                    — noch offen
+                  </span>
+                </span>
+              </div>
+            ),
+          )}
+        </div>
+      ) : (
+        <p className="mt-3 rounded-control bg-surface-subtle px-3 py-4 text-center text-sm text-ink-subtle">
+          Diese Woche nicht verplant
+        </p>
+      )}
+    </section>
   );
 }
