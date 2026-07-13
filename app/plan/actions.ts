@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { db } from "../../lib/db";
 import { requireUserId } from "../../lib/auth";
 import { getProfile } from "../../lib/profile";
@@ -17,7 +18,7 @@ import { getClaudeMemoryText } from "../../lib/claudeMemory";
 
 export type GeneratePlanState =
   | { status: "idle" }
-  | { status: "ok" }
+  | { status: "started" }
   | { status: "error"; error: string };
 
 function parseDay(v: FormDataEntryValue | null, fallback: number): number {
@@ -54,98 +55,131 @@ export async function generateWeeklyPlan(
     .map((s) => s.trim())
     .filter(Boolean);
 
-  try {
-    const [recentTitles, knownMainPool, claudeMemory] = await Promise.all([
-      getRecentMealTitles(userId, 14),
-      pickKnownMainMealRecipes(userId, 2),
-      getClaudeMemoryText(userId),
-    ]);
+  // Nicht doppelt loslegen, wenn für diese Woche schon eine Generierung läuft.
+  const existingJob = await db.planGeneration.findUnique({
+    where: { userId_weekStart: { userId, weekStart: ws } },
+  });
+  if (existingJob?.status === "generating") {
+    return {
+      status: "error",
+      error: "Für diese Woche läuft bereits eine Generierung — bitte kurz warten.",
+    };
+  }
 
-    const knownSummaries = knownMainPool.map((r) => ({
-      title: r.title,
-      cuisine: r.cuisine,
-      portions: r.portions,
-      kcalPerPortion: r.kcalPerPortion,
-      proteinG: r.proteinG,
-      carbG: r.carbG,
-      fatG: r.fatG,
-      batchStorageDays: r.batchStorageDays,
-    }));
+  await db.planGeneration.upsert({
+    where: { userId_weekStart: { userId, weekStart: ws } },
+    create: { userId, weekStart: ws, status: "generating", error: null },
+    update: { status: "generating", error: null },
+  });
+  revalidatePath("/plan");
 
-    const draft = await generatePlanDraft({
-      profile,
-      recentMealTitles: recentTitles,
-      knownMainRecipes: knownSummaries,
-      dayRange: { start: startDay, end: endDay },
-      useUpIngredients,
-      claudeMemory,
-      budgetConscious: profile.budgetConscious,
-    });
+  // Die eigentliche Arbeit (Claude-Call + DB-Schreiben) läuft NACH der Antwort
+  // an den Browser weiter (Next.js `after()`, per waitUntil auch ohne offene
+  // Verbindung) — der Nutzer muss nicht warten und kann die App normal nutzen,
+  // während im Hintergrund geplant wird. Der bestehende Plan bleibt sichtbar,
+  // bis der neue fertig ist (Löschen/Ersetzen passiert erst danach).
+  after(async () => {
+    try {
+      const [recentTitles, knownMainPool, claudeMemory] = await Promise.all([
+        getRecentMealTitles(userId, 14),
+        pickKnownMainMealRecipes(userId, 2),
+        getClaudeMemoryText(userId),
+      ]);
 
-    await db.mealPlan.deleteMany({ where: { userId, weekStart: ws } });
+      const knownSummaries = knownMainPool.map((r) => ({
+        title: r.title,
+        cuisine: r.cuisine,
+        portions: r.portions,
+        kcalPerPortion: r.kcalPerPortion,
+        proteinG: r.proteinG,
+        carbG: r.carbG,
+        fatG: r.fatG,
+        batchStorageDays: r.batchStorageDays,
+      }));
 
-    const newRecipeIds: number[] = [];
-    for (const r of draft.newRecipes) {
-      const created = await db.recipe.create({
+      const draft = await generatePlanDraft({
+        profile,
+        recentMealTitles: recentTitles,
+        knownMainRecipes: knownSummaries,
+        dayRange: { start: startDay, end: endDay },
+        useUpIngredients,
+        claudeMemory,
+        budgetConscious: profile.budgetConscious,
+      });
+
+      await db.mealPlan.deleteMany({ where: { userId, weekStart: ws } });
+
+      const newRecipeIds: number[] = [];
+      for (const r of draft.newRecipes) {
+        const created = await db.recipe.create({
+          data: {
+            userId,
+            title: r.title,
+            cuisine: r.cuisine,
+            portions: r.portions,
+            kcalPerPortion: r.kcalPerPortion,
+            proteinG: r.proteinG,
+            carbG: r.carbG,
+            fatG: r.fatG,
+            batchStorageDays: r.batchStorageDays,
+            ingredients: r.ingredients,
+            steps: r.steps,
+            techniques: r.techniques,
+            notes: null,
+          },
+        });
+        newRecipeIds.push(created.id);
+      }
+
+      const allIds = [...knownMainPool.map((r) => r.id), ...newRecipeIds];
+
+      // Sicherheitsnetz: nie etwas außerhalb des erlaubten Bereichs anlegen —
+      // insbesondere keine vergangenen Tage der laufenden Woche.
+      const assignments = draft.assignments.filter(
+        (a) => a.day >= startDay && a.day <= endDay,
+      );
+
+      await db.mealPlan.create({
         data: {
           userId,
-          title: r.title,
-          cuisine: r.cuisine,
-          portions: r.portions,
-          kcalPerPortion: r.kcalPerPortion,
-          proteinG: r.proteinG,
-          carbG: r.carbG,
-          fatG: r.fatG,
-          batchStorageDays: r.batchStorageDays,
-          ingredients: r.ingredients,
-          steps: r.steps,
-          techniques: r.techniques,
+          weekStart: ws,
           notes: null,
+          meals: {
+            create: assignments.map((a) => ({
+              day: a.day,
+              slot: a.slot,
+              recipeId: allIds[a.recipeIndex],
+            })),
+          },
         },
       });
-      newRecipeIds.push(created.id);
-    }
 
-    const allIds = [...knownMainPool.map((r) => r.id), ...newRecipeIds];
-
-    // Sicherheitsnetz: nie etwas außerhalb des erlaubten Bereichs anlegen —
-    // insbesondere keine vergangenen Tage der laufenden Woche.
-    const assignments = draft.assignments.filter(
-      (a) => a.day >= startDay && a.day <= endDay,
-    );
-
-    await db.mealPlan.create({
-      data: {
-        userId,
-        weekStart: ws,
-        notes: null,
-        meals: {
-          create: assignments.map((a) => ({
-            day: a.day,
-            slot: a.slot,
-            recipeId: allIds[a.recipeIndex],
-          })),
+      await db.planGeneration.delete({
+        where: { userId_weekStart: { userId, weekStart: ws } },
+      });
+    } catch (e) {
+      await db.planGeneration.update({
+        where: { userId_weekStart: { userId, weekStart: ws } },
+        data: {
+          status: "error",
+          error: e instanceof Error ? e.message : "Unbekannter Fehler",
         },
-      },
-    });
-
+      });
+    }
     revalidatePath("/plan");
     revalidatePath("/plan/shopping");
     revalidatePath("/");
     revalidatePath("/recipes");
-    return { status: "ok" };
-  } catch (e) {
-    return {
-      status: "error",
-      error: e instanceof Error ? e.message : "Unbekannter Fehler",
-    };
-  }
+  });
+
+  return { status: "started" };
 }
 
 export async function deleteCurrentPlan(): Promise<void> {
   const userId = await requireUserId();
   const ws = weekStart();
   await db.mealPlan.deleteMany({ where: { userId, weekStart: ws } });
+  await db.planGeneration.deleteMany({ where: { userId, weekStart: ws } });
   revalidatePath("/plan");
   revalidatePath("/plan/shopping");
   revalidatePath("/");

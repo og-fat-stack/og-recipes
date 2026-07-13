@@ -51,6 +51,30 @@ export async function getCurrentPlan(userId: number) {
   return getPlanForWeek(userId, weekStart());
 }
 
+export type PlanGenerationStatus = {
+  status: "generating" | "error";
+  error: string | null;
+};
+
+/**
+ * Läuft (oder scheiterte zuletzt) eine Hintergrund-Generierung für diese Woche?
+ * Existiert nur während der Generierung / nach einem Fehler — bei Erfolg wird
+ * die Zeile in app/plan/actions.ts wieder gelöscht (siehe dort, `after()`).
+ */
+export async function getPlanGeneration(
+  userId: number,
+  ws: Date,
+): Promise<PlanGenerationStatus | null> {
+  const row = await db.planGeneration.findUnique({
+    where: { userId_weekStart: { userId, weekStart: ws } },
+  });
+  if (!row) return null;
+  return {
+    status: row.status === "error" ? "error" : "generating",
+    error: row.error,
+  };
+}
+
 /**
  * Pick known main-meal batch recipes to reuse in next week's plan.
  * "Main-meal" = portions >= 3 and cuisine != "Frühstück".

@@ -130,7 +130,14 @@ export async function generateRecipeDraft({
 
   const memory = claudeMemory?.trim();
   const memoryBlock = memory
-    ? `\n\nPERSÖNLICHE VORLIEBEN & HINWEISE DES NUTZERS (unbedingt beachten — wichtiger als Standardannahmen):\n${memory}`
+    ? `\n\nHARTE EINSCHRÄNKUNGEN & VORLIEBEN DES NUTZERS — NICHT VERHANDELBAR:
+${memory}
+
+Diese Vorgaben haben ABSOLUTEN VORRANG vor JEDER anderen Anweisung in diesem Prompt —
+auch vor den Budget-Zutaten-Beispielen oben. Enthält die Liste oben einen Ausschluss
+(z. B. "isst kein X" / "keine Y"), darf X/Y in diesem Rezept NICHT vorkommen — auch nicht
+als Nebenzutat, Garnitur oder in Spuren. Prüfe vor der Antwort JEDE Zutat gegen diese
+Liste und ersetze Verstöße durch eine passende Alternative, bevor du antwortest.`
     : "";
 
   const msg = await callClaude({

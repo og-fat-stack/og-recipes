@@ -268,8 +268,16 @@ ${mainBatchHint} Generiere alle benötigten Hauptmahl-Rezepte neu + die Frühst�
 
   const memory = claudeMemory?.trim();
   const memoryBlock = memory
-    ? `PERSÖNLICHE VORLIEBEN & HINWEISE DES NUTZERS (unbedingt beachten — wichtiger als Standardannahmen):
+    ? `HARTE EINSCHRÄNKUNGEN & VORLIEBEN DES NUTZERS — NICHT VERHANDELBAR:
 ${memory}
+
+Diese Vorgaben haben ABSOLUTEN VORRANG vor JEDER anderen Anweisung in diesem Prompt —
+auch vor den Budget-Zutaten-Beispielen, der "Geflügel bevorzugen"-Regel im Fleisch-Abschnitt
+und den Frühstücks-Beispielen aus dem System-Prompt (Rührei, Shakshuka etc.). Enthält die
+Liste oben einen Ausschluss (z. B. "isst kein X" / "keine Y"), darf X/Y in KEINEM Rezept
+dieser Antwort vorkommen — auch nicht als Nebenzutat, Garnitur, Ersatzvorschlag oder in
+Spuren. Prüfe vor der Antwort JEDE Zutat JEDES Rezepts gegen diese Liste und ersetze
+Verstöße durch eine passende Alternative, bevor du antwortest.
 `
     : "";
 

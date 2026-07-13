@@ -7,6 +7,7 @@ import {
   type Slot,
   addDays,
   getPlanForWeek,
+  getPlanGeneration,
   parseWeekSel,
   weekStartFor,
 } from "../../lib/plan";
@@ -59,11 +60,13 @@ export default async function PlanPage({
   const userId = await requireUserId();
   const week = parseWeekSel((await searchParams).week);
   const ws = weekStartFor(week);
-  const [profile, plan] = await Promise.all([
+  const [profile, plan, generation] = await Promise.all([
     getProfile(userId),
     getPlanForWeek(userId, ws),
+    getPlanGeneration(userId, ws),
   ]);
   const todayIdx = week === "this" ? berlinWeekdayIndex() : -1;
+  const isGenerating = generation?.status === "generating";
 
   // Belegung je (Tag, Slot).
   const grid = new Map<string, Cell>();
@@ -120,7 +123,12 @@ export default async function PlanPage({
             </Link>
           )}
           {profile && (
-            <GeneratePlanButton hasPlan={!!plan} week={week} minDay={todayIdx < 0 ? 0 : todayIdx} />
+            <GeneratePlanButton
+              hasPlan={!!plan}
+              week={week}
+              minDay={todayIdx < 0 ? 0 : todayIdx}
+              generating={isGenerating}
+            />
           )}
         </div>
       </header>
@@ -155,7 +163,31 @@ export default async function PlanPage({
         </div>
       )}
 
-      {profile && !plan && (
+      {isGenerating && (
+        <div className="flex items-center gap-3 rounded-card bg-accent-surface px-4 py-3 text-sm text-accent-surface-ink">
+          <span
+            aria-hidden
+            className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-surface-inset border-t-accent-surface-ink"
+          />
+          <p>
+            Claude plant im Hintergrund weiter — du kannst die App in der
+            Zwischenzeit ganz normal nutzen. Diese Seite aktualisiert sich von
+            selbst, sobald der Plan fertig ist.
+          </p>
+        </div>
+      )}
+
+      {!isGenerating && generation?.status === "error" && (
+        <div className="rounded-card border border-danger-line bg-danger-surface px-4 py-3 text-sm text-danger-surface-ink">
+          <p className="font-medium">Die letzte Generierung ist fehlgeschlagen.</p>
+          <p className="mt-0.5">
+            {generation.error ?? "Unbekannter Fehler."} — einfach nochmal auf
+            „Neu generieren“ klicken.
+          </p>
+        </div>
+      )}
+
+      {profile && !plan && !isGenerating && (
         <div className="rounded-card border border-dashed border-line-strong p-8 text-center">
           <p className="text-ink-muted">
             Noch kein Plan für {week === "next" ? "nächste" : "diese"} Woche.

@@ -24,6 +24,7 @@ model User {
   profile      Profile?
   claudeMemory ClaudeMemory?
   mealPlans    MealPlan[]
+  planGenerations PlanGeneration[]
   expenses     WeeklyExpense[]
   weights      WeightEntry[]
   measurements MeasurementEntry[]
@@ -108,6 +109,24 @@ model MealPlan {
   createdAt     DateTime            @default(now())
   meals         PlannedMeal[]
   shoppingState ShoppingItemState[]
+
+  @@unique([userId, weekStart])
+}
+
+/// Verfolgt eine im Hintergrund laufende Plan-Generierung (siehe `after()` in
+/// app/plan/actions.ts), damit die Seite "läuft noch" / "fehlgeschlagen"
+/// anzeigen kann, ohne die Anfrage auf Claudes Antwort warten zu lassen.
+/// Existiert nur, während eine Generierung läuft oder zuletzt fehlgeschlagen
+/// ist — bei Erfolg wird die Zeile wieder gelöscht.
+model PlanGeneration {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int      @default(1)
+  weekStart DateTime
+  status    String   @default("generating")
+  error     String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 
   @@unique([userId, weekStart])
 }
