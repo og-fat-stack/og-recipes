@@ -32,8 +32,8 @@ content cards/sections, separated by the parent's `space-y-6`.
 6. Server components + server actions by default; `"use client"` only for
    interactivity (toggles, `useTransition` buttons).
 7. Every personal query scoped via `requireUserId()` (see CLAUDE.md).
-8. `node scripts/token-audit.mjs` flags any raw value and names the right token
-   (runs continuously alongside `npm run storybook`; otherwise run manually).
+8. Use only semantic token utilities (`bg-surface`, `text-ink-muted`, …); never
+   inline a raw palette utility, hex/rgb/hsl value, or color `dark:` variant.
 
 ## Responsive
 

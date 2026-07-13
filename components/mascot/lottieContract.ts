@@ -17,7 +17,6 @@ export const LOTTIE_MARKERS: Record<MascotState, string> = {
   watching: "watching",
   peeking: "peeking",
   peekingOpen: "peekingOpen",
-  celebrate: "celebrate",
   error: "error",
 };
 

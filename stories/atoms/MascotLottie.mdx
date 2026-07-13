@@ -1,6 +1,6 @@
 import { Meta } from "@storybook/addon-docs/blocks";
 
-<Meta title="Components/Mascot (Pott)/Lottie-Setup" />
+<Meta title="Atoms/Mascot (Pott)/Lottie-Setup" />
 
 # Pott als Lottie — Aufbau & Contract
 
@@ -34,10 +34,14 @@ mehr; Lottie ist die alleinige Darstellung.
 |--------|---------|--------|----------|
 | `idle` | Ruhe | 0–45 | loopt |
 | `watching` | Benutzername-Fokus | 50–95 | loopt |
-| `peeking` | Passwort-Fokus | 100–145 | loopt |
-| `celebrate` | erfolgreicher Login | 150–200 | einmal, hält |
-| `error` | falsche Eingabe | 205–245 | einmal, dann zurück zu `idle` |
+| `peeking` | Passwort verdeckt (Hände von unten über beide Augen) | 100–145 | einmal, hält |
+| `peekingOpen` | Passwort sichtbar (rechte Hand zur Seite, rechtes Auge lugt) | 150–195 | einmal, hält |
+| `error` | falsche Eingabe | 255–295 | einmal, dann zurück zu `idle` |
 
+Nur `idle` und `watching` loopen (siehe `LOOP_STATES`); die übrigen spielen einmal
+und halten die Endpose. Ein interner Marker `peekingHold` (130–145) zeigt die
+gedeckte Haltung ohne Wiedereinschieben — der Runtime spielt ihn beim Schließen
+des Spalts (`peekingOpen → peeking`), damit die Hände nicht erneut hereinfahren.
 Segmente/Marker sind im Generator (`SEG`) definiert; wer sie ändert, ändert
 beides an einer Stelle.
 
@@ -51,10 +55,10 @@ Alles im Generator, Koordinatensystem 200×210 (wie eine SVG-Viewbox):
   Shapes weiter vorne, die Liste wird beim Bauen umgedreht). Pro Gruppe **ein**
   Fill; mehrteilige Teile aus `sub()`-Gruppen.
 - **Posen/Bewegung:** Keyframe-Helfer `hold()` (stufig, für Pose-Umschaltung) und
-  `ease()` (weich, für Blinzeln/Hüpfer/Shake/Funken).
+  `ease()` (weich, für Blinzeln/Hüpfer/Shake/Funken/Hände).
 
-Nach jeder Änderung neu generieren und headless prüfen (`scripts/renderLottie`
-o. ä.) — so wurde das aktuelle Aussehen iteriert.
+Nach jeder Änderung neu generieren und headless prüfen — so wurde das aktuelle
+Aussehen iteriert.
 
 ## Grenzen von Lottie (bewusst)
 
@@ -62,9 +66,9 @@ Lottie ist scripted, nicht parametrisch — kein Live-Input. Zwei Ideen aus dem
 früheren Prototyp gibt es daher **nicht**:
 
 - **Cursor-Eye-Tracking** (Pupillen folgen der Maus).
-- **Stufenlose `warmth`** (Dampf/Lächeln nach gefüllten Feldern). Die Login-Seite
-  übergibt `warmth` noch, es bleibt aber ohne Wirkung. Wer den Effekt will,
-  modelliert ihn als eigene Marker (`idle`, `idle_warm`).
+- **Stufenlose `warmth`** (Dampf/Lächeln nach gefüllten Feldern). Die Komponente
+  akzeptiert `warmth` noch als optionales Prop, es bleibt aber ohne Wirkung. Wer
+  den Effekt will, modelliert ihn als eigene Marker (`idle`, `idle_warm`).
 
 Farben leben in der Datei (nicht in Tokens) — Dark Mode bräuchte eine zweite
 Variante. Die `--og-mascot-*` Tokens bleiben die Referenz für die Zielfarben.

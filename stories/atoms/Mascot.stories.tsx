@@ -9,14 +9,14 @@ import type { MascotState } from "../../components/mascot/types";
  * jeder Zustand spielt sein Marker-Segment. Siehe „Lottie-Setup" für den Contract.
  */
 const meta = {
-  title: "Components/Mascot (Pott)",
+  title: "Atoms/Mascot (Pott)",
   component: LottieMascot,
   tags: ["autodocs"],
   parameters: { layout: "centered" },
   argTypes: {
     state: {
       control: "select",
-      options: ["idle", "watching", "peeking", "celebrate", "error"],
+      options: ["idle", "watching", "peeking", "peekingOpen", "error"],
       description: "Zustand → spielt das gleichnamige Marker-Segment",
     },
     title: { control: "text" },
@@ -40,14 +40,20 @@ export const Playground: Story = {};
 export const Idle: Story = { args: { state: "idle" } };
 /** Schaut nach unten aufs Feld — Benutzername-Fokus. */
 export const Watching: Story = { args: { state: "watching" } };
-/** Augen mit Ofenhandschuhen verdeckt — Passwort-Fokus. */
+/** Hände kommen von unten und bedecken beide Augen — Passwort verdeckt. */
 export const Peeking: Story = { args: { state: "peeking" } };
-/** Hüpfer + Funken — erfolgreicher Login. */
-export const Celebrate: Story = { args: { state: "celebrate" } };
+/** Rechte Hand zur Seite, das rechte Auge lugt — Passwort sichtbar. */
+export const PeekingOpen: Story = { args: { state: "peekingOpen" } };
 /** Kopfschütteln + Stirnrunzeln — falsche Eingabe. */
 export const ErrorState: Story = { args: { state: "error" } };
 
-const STATES: MascotState[] = ["idle", "watching", "peeking", "celebrate", "error"];
+const STATES: MascotState[] = [
+  "idle",
+  "watching",
+  "peeking",
+  "peekingOpen",
+  "error",
+];
 
 /** Alle Zustände nebeneinander (jeder spielt sein Segment). */
 export const AllStates: Story = {

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "og-recipes",
+  title: "OG Recipes",
   description: "Persönliche Koch- und Abnehm-App",
 };
 

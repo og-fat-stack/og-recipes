@@ -31,7 +31,6 @@ const SEG = {
   watching: [50, 95],
   peeking: [100, 145],
   peekingOpen: [150, 195],
-  celebrate: [200, 250],
   error: [255, 295],
 };
 // Gedeckte Teil-Haltung von peeking: Hände liegen ruhig auf den Augen, ohne das
@@ -48,7 +47,6 @@ const C = {
   body: rgb("#0d9488"), bodyShade: rgb("#115e59"), bodyLight: rgb("#2dd4bf"),
   lid: rgb("#0f766e"), rim: rgb("#f8fafc"), cheek: rgb("#fda4af"),
   face: rgb("#0f172a"), sclera: rgb("#ffffff"), steam: rgb("#cbd5e1"),
-  sparkle: rgb("#fbbf24"),
   // Ofenhandschuhe (peeking): warm, kontrastreich gegen Teal-Gesicht & weiße Augen.
   mitt: rgb("#f59e0b"), mittCuff: rgb("#fcd34d"), mittSeam: rgb("#b45309"),
 };
@@ -102,9 +100,8 @@ const handRp = ease([
   [0, [0, 70]], [SEG.peeking[0], [0, 70]], [SEG.peeking[0] + 8, [0, 0]],
   [SEG.peekingOpen[0], [0, 0]], [SEG.peekingOpen[0] + 9, [26, 0]], [SEG.peekingOpen[1], [26, 0]],
 ]);
-// Münder: smile Standard; open bei celebrate; frown bei error.
-const smileO = hold([[0, 100], [SEG.celebrate[0], 0]]);
-const openO = hold([[0, 0], [SEG.celebrate[0], 100], [SEG.celebrate[1] + 1, 0]]);
+// Münder: smile Standard, frown bei error (smile blendet dann aus).
+const smileO = hold([[0, 100], [SEG.error[0], 0]]);
 const frownO = hold([[0, 0], [SEG.error[0], 100]]);
 // Pupillen: runter bei watching; die RECHTE lugt bei peekingOpen zur Seite (peek).
 const pupilL = hold([[0, [0, 0]], [SEG.watching[0], [0, 4]], [SEG.watching[1] + 1, [0, 0]]]);
@@ -150,10 +147,6 @@ const potShapes = [
   // Münder
   group("mouth-smile", [path(false, [[89, 137], [100, 148], [111, 137]], [[0, 0], [-6, 0], [0, 0]], [[0, 0], [6, 0], [0, 0]]), stroke(C.face, 4)], tr({ o: smileO })),
   group("mouth-frown", [path(false, [[88, 146], [100, 136], [112, 146]], [[0, 0], [-6, 0], [0, 0]], [[0, 0], [6, 0], [0, 0]]), stroke(C.face, 4)], tr({ o: frownO })),
-  group("mouth-open", [
-    sub("tongue", ellipse(100, 147, 4, 3), fill(C.cheek)),
-    sub("hole", ellipse(100, 143, 8, 7), fill(C.face)),
-  ], tr({ o: openO })),
   // Augen (Blinzeln um Augenmitte; Pupille/Catch mit Blickrichtung)
   group("eye-l", [
     sub("catch", ellipse(77, 116, 2.2, 2.2), fill(C.sclera), tr({ p: pupilL })),
@@ -174,44 +167,23 @@ const potShapes = [
 const steamWisp = (x) =>
   group(`steam-${x}`, [path(false, [[0, 0], [4, -12], [-4, -26], [0, -40]]), stroke(C.steam, 5, 70)], tr({ p: { a: 0, k: [x, 64] } }));
 
-function starPath() {
-  return path(true, [[0, -8], [2.2, -2.2], [8, 0], [2.2, 2.2], [0, 8], [-2.2, 2.2], [-8, 0], [-2.2, -2.2]]);
-}
-
 const layer = (ind, nm, shapes, ks) => ({ ddd: 0, ind, ty: 4, nm, sr: 1, ks, ao: 0, shapes, ip: 0, op: OP, st: 0, bm: 0 });
 
-// Pott-Ebene: Hüpfer (p) bei celebrate, Shake (r) bei error, Pivot [100,120].
+// Pott-Ebene: Shake (r) bei error, Pivot [100,120].
 const pottKs = {
   o: { a: 0, k: 100 },
   r: ease([
     [0, 0], [SEG.error[0], 0], [SEG.error[0] + 7, -4], [SEG.error[0] + 15, 4],
     [SEG.error[0] + 23, -3], [SEG.error[0] + 31, 3], [SEG.error[1], 0],
   ]),
-  p: ease([
-    [0, [100, 120, 0]], [SEG.celebrate[0], [100, 120, 0]], [SEG.celebrate[0] + 12, [100, 104, 0]],
-    [SEG.celebrate[0] + 26, [100, 120, 0]], [SEG.celebrate[0] + 36, [100, 114, 0]], [SEG.celebrate[1], [100, 120, 0]],
-  ]),
-  a: { a: 0, k: [100, 120, 0] }, s: { a: 0, k: [100, 100, 100] },
-};
-// Funken-Ebene: nur bei celebrate ein-/ausblenden.
-const sparkKs = {
-  o: ease([
-    [0, 0], [SEG.celebrate[0], 0], [SEG.celebrate[0] + 10, 100],
-    [SEG.celebrate[1] - 12, 100], [SEG.celebrate[1], 0],
-  ]),
-  r: { a: 0, k: 0 }, p: { a: 0, k: [100, 120, 0] }, a: { a: 0, k: [100, 120, 0] }, s: { a: 0, k: [100, 100, 100] },
+  p: { a: 0, k: [100, 120, 0] }, a: { a: 0, k: [100, 120, 0] }, s: { a: 0, k: [100, 100, 100] },
 };
 const staticKs = { o: { a: 0, k: 100 }, r: { a: 0, k: 0 }, p: { a: 0, k: [100, 120, 0] }, a: { a: 0, k: [100, 120, 0] }, s: { a: 0, k: [100, 100, 100] } };
 
 const layers = [
-  layer(1, "sparkles", [
-    group("spark-1", [starPath(), fill(C.sparkle)], tr({ p: { a: 0, k: [58, 74] } })),
-    group("spark-2", [starPath(), fill(C.sparkle)], tr({ p: { a: 0, k: [142, 68] } })),
-    group("spark-3", [starPath(), fill(C.sparkle)], tr({ p: { a: 0, k: [100, 46] } })),
-  ], sparkKs),
-  layer(2, "pott", [...potShapes].reverse(), pottKs),
-  layer(3, "steam", [steamWisp(84), steamWisp(100), steamWisp(116)], staticKs),
-  layer(4, "shadow", [group("shadow", [ellipse(100, 193, 50, 7), fill(C.face, 10)])], staticKs),
+  layer(1, "pott", [...potShapes].reverse(), pottKs),
+  layer(2, "steam", [steamWisp(84), steamWisp(100), steamWisp(116)], staticKs),
+  layer(3, "shadow", [group("shadow", [ellipse(100, 193, 50, 7), fill(C.face, 10)])], staticKs),
 ];
 
 const doc = {

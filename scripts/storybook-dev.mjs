@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// `npm run storybook` — starts Storybook AND watches alongside it:
-//  - scripts/token-audit.mjs --watch reports design-token drift live
+// `npm run storybook` — starts Storybook and watches alongside it:
 //  - changes under .storybook/ restart the Storybook server (story/MDX edits
 //    hot-reload on their own; config edits normally require a manual restart)
 import { spawn } from 'node:child_process';
@@ -12,11 +11,6 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2); // extra flags go to `storybook dev`
 const PORT = 6006;
-
-const audit = spawn(process.execPath, [join(root, 'scripts/token-audit.mjs'), '--watch'], {
-  cwd: root,
-  stdio: 'inherit',
-});
 
 let storybook = null;
 let restarting = false;
@@ -83,7 +77,6 @@ watch(join(root, '.storybook'), (_event, filename) => {
 
 function shutdown(code) {
   shuttingDown = true;
-  audit.kill();
   killGroup(storybook);
   process.exit(code);
 }

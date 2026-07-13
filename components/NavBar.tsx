@@ -22,7 +22,7 @@ export function NavBar({ userName }: { userName: string | null }) {
   return (
     <nav className="border-b border-line bg-surface">
       <div className="mx-auto flex max-w-4xl items-center gap-1 overflow-x-auto px-4 py-3">
-        <span className="mr-4 font-semibold tracking-tight">og-recipes</span>
+        <span className="mr-4 font-semibold tracking-tight">OG Recipes</span>
         {TABS.map((t) => {
           const active =
             t.href === "/" ? pathname === "/" : pathname.startsWith(t.href);

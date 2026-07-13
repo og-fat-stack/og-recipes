@@ -1,0 +1,42 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Konventionen" />
+
+# Storybook-Konventionen
+
+**Storybook dokumentiert nur GETEILTE, wiederverwendbare Komponenten.** Was nur
+auf genau einer Seite vorkommt, gehört nicht hierher.
+
+## Was in Storybook gehört
+
+Geteilte UI-Bausteine, kategorisiert nach **Atomic Design**:
+
+- **Atoms** — kleinste Bausteine ohne Unterteile: Button, Icon, das Maskottchen,
+  der Absende-Button.
+- **Molecules** — kleine Kompositionen aus Atoms: ein Feld mit Floating-Label,
+  das Passwortfeld mit Auge-Button.
+- **Organisms** — größere, eigenständige Abschnitte: das Auth-Bühnenbild
+  (Karte + Maskottchen + Hintergrund).
+
+Die Story-Titel spiegeln das: `Atoms/*`, `Molecules/*`, `Organisms/*`. Sie
+entsprechen den maschinenlesbaren Specs unter `specs/{atoms,molecules,organisms}/`.
+
+## Was NICHT in Storybook gehört
+
+- **Seiten und seitenspezifische Kompositionen** — z. B. die Login- oder
+  Registrierungsseite selbst. Diese entstehen, indem man die geteilten
+  Komponenten zusammensetzt (`components/auth/*`); die Seite ist kein
+  wiederverwendbarer Baustein.
+- Einmalige Einbau-Varianten, die nirgends sonst auftauchen.
+
+## Referenz-Seiten (keine Komponenten)
+
+`Foundations/*`, `Tokens/*` und `Patterns/*` sind bewusst keine Komponenten,
+sondern Design-System-Referenz (Farben, Typografie, Abstände, Token-Nachschlag,
+Layout-Konventionen). Sie bleiben als MDX bestehen.
+
+## Neue geteilte Komponente hinzufügen
+
+1. Komponente in `components/…` bauen (nur semantische Token-Utilities).
+2. Passende Spec unter `specs/{atoms,molecules,organisms}/` anlegen/aktualisieren.
+3. Story unter `stories/{atoms,molecules,organisms}/` mit Titel `Kategorie/Name`.

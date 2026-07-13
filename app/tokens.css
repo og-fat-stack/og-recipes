@@ -14,7 +14,7 @@
  *
  * Palette: slate neutrals + teal accent + amber (warn) + red (danger).
  * This is the only stylesheet allowed to contain raw color values.
- * Enforced by scripts/token-audit.mjs. Reference: stories/tokens/TokenReference.mdx
+ * Reference: stories/tokens/TokenReference.mdx
  */
 
 :root {

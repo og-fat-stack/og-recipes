@@ -43,10 +43,13 @@ UI code:
    `stories/tokens/TokenReference.mdx` — do not inline a raw value.
 3. **Respect "when to use / when NOT to use"** in each component spec. Don't
    invent a new component or recipe when an existing spec covers the case.
-4. The token audit (`node scripts/token-audit.mjs`) is run manually by the
-   user from time to time — do NOT run it automatically before commits. Its
-   output names the exact token to use when it flags something.
-5. When a component changes, update its spec file in the same change.
+4. When a component changes, update its spec file in the same change.
+5. **Storybook documents only SHARED, reusable components** (atoms, molecules,
+   organisms) — story titles are grouped `Atoms/*`, `Molecules/*`,
+   `Organisms/*`. Do NOT add stories for page-specific compositions (e.g. the
+   login or register pages themselves); those are built by composing the shared
+   components. Foundations/Tokens/Patterns MDX pages stay as design-system
+   reference.
 
 Source code shows what was built; the specs describe how to build the next
 thing. Follow the specs, not your priors.

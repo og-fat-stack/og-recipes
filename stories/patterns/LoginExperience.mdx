@@ -10,7 +10,7 @@ eines nüchternen Formulars reagiert Pott live auf das, was du gerade tust —
 das macht den Login freundlich und gibt beiläufig Feedback.
 
 <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-end", margin: "1.5rem 0" }}>
-  {["idle", "watching", "peeking", "celebrate", "error"].map((s) => (
+  {["idle", "watching", "peeking", "peekingOpen", "error"].map((s) => (
     <figure key={s} style={{ margin: 0, textAlign: "center", width: 104 }}>
       <div style={{ width: 104, height: 112 }}>
         <LottieMascot state={s} className="h-full w-full" />
@@ -26,12 +26,13 @@ das macht den Login freundlich und gibt beiläufig Feedback.
 |---------|------------------------------|-----------|
 | `idle` | nichts fokussiert | ruhiges Blinzeln, Dampf, Loop |
 | `watching` | Benutzername-Feld fokussiert | schaut nach unten aufs Feld |
-| `peeking` | Passwort-Feld fokussiert | hält sich die Ofenhandschuhe vor die Augen — „ich schau nicht beim Passwort zu" |
-| `celebrate` | Formular wird abgeschickt (`pending`) | Hüpfer + Funken |
+| `peeking` | Passwort-Feld fokussiert, verdeckt | Hände kommen von unten über beide Augen — „ich schau nicht beim Passwort zu" |
+| `peekingOpen` | Passwort sichtbar geschaltet | rechte Hand zur Seite, das rechte Auge lugt hervor |
 | `error` | Rückkehr mit `?error=1` | schüttelt kurz (~1,5 s) den Kopf, runzelt die Stirn, dann zurück zu idle |
 
-Die Zustandslogik lebt in `app/login/LoginForm.tsx`; das Maskottchen selbst ist
-rein präsentativ (siehe [Components/Mascot](/docs/components-mascot-pott--docs)).
+Die Zustandslogik lebt in `app/login/LoginForm.tsx` (zusammengesetzt aus den
+geteilten `components/auth/*`-Komponenten); das Maskottchen selbst ist rein
+präsentativ (siehe [Atoms/Mascot](/docs/atoms-mascot-pott--docs)).
 
 ## Mikro-Interaktionen im Formular
 
