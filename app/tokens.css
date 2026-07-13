@@ -66,6 +66,28 @@
   --og-tag-strength-ink: var(--color-indigo-800, #3730a3);
   --og-tag-cardio: var(--color-sky-100, #e0f2fe);
   --og-tag-cardio-ink: var(--color-sky-800, #075985);
+
+  /* Maskottchen "Pott" — Emaille-Bräter mit Gesicht. Ziel-Illustrationspalette
+   * (Light + Dark). Referenz für scripts/buildPottLottie.mjs, das die Hex-Werte
+   * ins Lottie (public/mascot/pott.json) einbäckt. Dark Mode zieht nur mit, wenn
+   * eine zweite JSON-Variante gebaut wird. */
+  --og-mascot-body: var(--color-teal-600, #0d9488);
+  --og-mascot-body-shade: var(--color-teal-800, #115e59);
+  --og-mascot-body-light: var(--color-teal-400, #2dd4bf);
+  --og-mascot-lid: var(--color-teal-700, #0f766e);
+  --og-mascot-rim: var(--color-slate-50, #f8fafc);
+  --og-mascot-cheek: var(--color-rose-300, #fda4af);
+  --og-mascot-face: var(--color-slate-900, #0f172a);
+  --og-mascot-sclera: var(--color-white, #ffffff);
+  --og-mascot-steam: var(--color-slate-300, #cbd5e1);
+  --og-mascot-sparkle: var(--color-amber-400, #fbbf24);
+
+  /* Motion — Dauern & Easings. Nicht theme-abhängig. */
+  --dur-quick: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 440ms;
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.22, 1.28, 0.36, 1);
 }
 
 /* Dark theme — overrides Layer 2 only; components never change. */
@@ -107,6 +129,17 @@
     --og-tag-strength-ink: var(--color-indigo-300, #a5b4fc);
     --og-tag-cardio: color-mix(in oklab, var(--color-sky-950, #082f49) 40%, transparent);
     --og-tag-cardio-ink: var(--color-sky-300, #7dd3fc);
+
+    --og-mascot-body: var(--color-teal-500, #14b8a6);
+    --og-mascot-body-shade: var(--color-teal-700, #0f766e);
+    --og-mascot-body-light: var(--color-teal-300, #5eead4);
+    --og-mascot-lid: var(--color-teal-600, #0d9488);
+    --og-mascot-rim: var(--color-slate-200, #e2e8f0);
+    --og-mascot-cheek: var(--color-rose-400, #fb7185);
+    --og-mascot-face: var(--color-slate-950, #020617);
+    --og-mascot-sclera: var(--color-white, #ffffff);
+    --og-mascot-steam: var(--color-slate-500, #64748b);
+    --og-mascot-sparkle: var(--color-amber-400, #fbbf24);
   }
 }
 

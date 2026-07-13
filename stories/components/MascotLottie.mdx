@@ -1,0 +1,70 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Components/Mascot (Pott)/Lottie-Setup" />
+
+# Pott als Lottie — Aufbau & Contract
+
+Das Maskottchen ist ein **Lottie** (`public/mascot/pott.json`) und wird nicht
+von Hand als JSON gepflegt, sondern von einem **Generator** erzeugt:
+`scripts/buildPottLottie.mjs`. Dort stehen Formen, Farben und Bewegung als
+kompakter Code — neu bauen mit:
+
+```
+node scripts/buildPottLottie.mjs
+```
+
+## Aufbau
+
+```
+components/mascot/
+  Mascot.tsx        ← öffentliche Komponente (lädt LottieMascot client-only)
+  LottieMascot.tsx  ← lädt pott.json, spielt pro state das Marker-Segment
+  lottieContract.ts ← Marker-Namen & Loop-Zustände (Wahrheit für Code + Datei)
+  types.ts          ← MascotState
+scripts/buildPottLottie.mjs ← erzeugt public/mascot/pott.json
+```
+
+Der Runtime liest die Marker beim Laden aus dem JSON und mappt Name → Frames —
+im Code stehen **keine Frame-Nummern**. Ein SVG-Fallback existiert bewusst nicht
+mehr; Lottie ist die alleinige Darstellung.
+
+## Contract — Marker & Segmente
+
+| Marker | Zustand | Frames | Playback |
+|--------|---------|--------|----------|
+| `idle` | Ruhe | 0–45 | loopt |
+| `watching` | Benutzername-Fokus | 50–95 | loopt |
+| `peeking` | Passwort-Fokus | 100–145 | loopt |
+| `celebrate` | erfolgreicher Login | 150–200 | einmal, hält |
+| `error` | falsche Eingabe | 205–245 | einmal, dann zurück zu `idle` |
+
+Segmente/Marker sind im Generator (`SEG`) definiert; wer sie ändert, ändert
+beides an einer Stelle.
+
+## Aussehen anpassen
+
+Alles im Generator, Koordinatensystem 200×210 (wie eine SVG-Viewbox):
+
+- **Farben:** Objekt `C` (aus der `--og-mascot-*` Palette, Light-Theme, als Hex
+  eingebacken).
+- **Formen:** `potShapes` — hinten→vorne definiert (Lottie rendert frühere
+  Shapes weiter vorne, die Liste wird beim Bauen umgedreht). Pro Gruppe **ein**
+  Fill; mehrteilige Teile aus `sub()`-Gruppen.
+- **Posen/Bewegung:** Keyframe-Helfer `hold()` (stufig, für Pose-Umschaltung) und
+  `ease()` (weich, für Blinzeln/Hüpfer/Shake/Funken).
+
+Nach jeder Änderung neu generieren und headless prüfen (`scripts/renderLottie`
+o. ä.) — so wurde das aktuelle Aussehen iteriert.
+
+## Grenzen von Lottie (bewusst)
+
+Lottie ist scripted, nicht parametrisch — kein Live-Input. Zwei Ideen aus dem
+früheren Prototyp gibt es daher **nicht**:
+
+- **Cursor-Eye-Tracking** (Pupillen folgen der Maus).
+- **Stufenlose `warmth`** (Dampf/Lächeln nach gefüllten Feldern). Die Login-Seite
+  übergibt `warmth` noch, es bleibt aber ohne Wirkung. Wer den Effekt will,
+  modelliert ihn als eigene Marker (`idle`, `idle_warm`).
+
+Farben leben in der Datei (nicht in Tokens) — Dark Mode bräuchte eine zweite
+Variante. Die `--og-mascot-*` Tokens bleiben die Referenz für die Zielfarben.

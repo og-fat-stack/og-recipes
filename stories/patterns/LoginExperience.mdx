@@ -1,0 +1,64 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import { LottieMascot } from "../../components/mascot/LottieMascot";
+
+<Meta title="Patterns/Login-Erlebnis" />
+
+# Login-Erlebnis
+
+Die Anmeldeseite ist die erste Begegnung mit **Pott**, dem Maskottchen. Statt
+eines nüchternen Formulars reagiert Pott live auf das, was du gerade tust —
+das macht den Login freundlich und gibt beiläufig Feedback.
+
+<div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-end", margin: "1.5rem 0" }}>
+  {["idle", "watching", "peeking", "celebrate", "error"].map((s) => (
+    <figure key={s} style={{ margin: 0, textAlign: "center", width: 104 }}>
+      <div style={{ width: 104, height: 112 }}>
+        <LottieMascot state={s} className="h-full w-full" />
+      </div>
+      <figcaption style={{ fontSize: 12, opacity: 0.7 }}>{s}</figcaption>
+    </figure>
+  ))}
+</div>
+
+## Zustände & Auslöser
+
+| Zustand | Auslöser auf der Login-Seite | Verhalten |
+|---------|------------------------------|-----------|
+| `idle` | nichts fokussiert | ruhiges Blinzeln, Dampf, Loop |
+| `watching` | Benutzername-Feld fokussiert | schaut nach unten aufs Feld |
+| `peeking` | Passwort-Feld fokussiert | hält sich die Ofenhandschuhe vor die Augen — „ich schau nicht beim Passwort zu" |
+| `celebrate` | Formular wird abgeschickt (`pending`) | Hüpfer + Funken |
+| `error` | Rückkehr mit `?error=1` | schüttelt kurz (~1,5 s) den Kopf, runzelt die Stirn, dann zurück zu idle |
+
+Die Zustandslogik lebt in `app/login/LoginForm.tsx`; das Maskottchen selbst ist
+rein präsentativ (siehe [Components/Mascot](/docs/components-mascot-pott--docs)).
+
+## Mikro-Interaktionen im Formular
+
+- **Floating Labels** — Label sitzt als Platzhalter und wandert beim Fokus/Füllen
+  nach oben (`peer-placeholder-shown` / `peer-focus`).
+- **Fokus-Unterstrich** — eine teal Linie wächst unter dem aktiven Feld
+  (`scale-x-0 → scale-x-100`).
+- **Button** — hebt sich beim Hover leicht (`-translate-y-0.5`), senkt sich beim
+  Druck (`active:scale-95`); im `pending`-Zustand „Wird angemeldet …".
+- **Ambiente** — zwei weiche Farbwolken (`bg-accent-surface`, `bg-warn-surface`,
+  stark `blur`) hinter der Karte. Bewusst statisch — Pott ist der Star.
+
+## Barrierefreiheit & Reduced Motion
+
+- Das Maskottchen ist dekorativ: `aria-hidden` (außer man setzt `title`, dann
+  `role="img"` mit Label — so in den Stories).
+- Fehlermeldungen sind `role="alert"`; die Meldung bleibt sichtbar, bis der
+  Nutzer tippt (nicht schon beim Autofokus verworfen).
+- Bei `prefers-reduced-motion: reduce` animiert Pott nicht, sondern hält je
+  Zustand eine statische Pose (Segmentanfang) — die bedeutungstragende Geste
+  (z. B. Augen zu bei Passwort) bleibt sichtbar, nur ohne Bewegung. Umgesetzt in
+  `LottieMascot.tsx`.
+
+## Farben
+
+Potts Farben leben eingebacken in `public/mascot/pott.json` (aus der
+`--og-mascot-*` Palette, Light-Theme, als Hex im Generator gesetzt). Lottie
+zieht nicht automatisch mit dem Dark Mode mit — dafür bräuchte es eine zweite
+Variante der Datei. Die `--og-mascot-*` Tokens bleiben die Referenz für die
+Zielfarben.
