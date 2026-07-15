@@ -1,7 +1,6 @@
 import { db } from "./db";
 import { dayKey } from "./weight";
 import { getProfile } from "./profile";
-import { STEP_GOAL_MIN, STEP_GOAL_MAX } from "./steps";
 import { WEEKLY_PLAN, KIND_META } from "./training";
 
 export type ChecklistItem = {
@@ -25,8 +24,8 @@ function berlinTodayIndex(): number {
 
 /**
  * Baut die Heute-Checkliste: ein paar Punkte werden automatisch aus den Daten
- * erkannt (Wiegen, Schritte), der Rest sind manuelle Haken, deren Status pro
- * Tag in `DailyCheck` gespeichert wird.
+ * erkannt (Wiegen), der Rest sind manuelle Haken, deren Status pro Tag in
+ * `DailyCheck` gespeichert wird.
  */
 export async function getTodayChecklist(userId: number): Promise<{
   items: ChecklistItem[];
@@ -37,11 +36,8 @@ export async function getTodayChecklist(userId: number): Promise<{
   const today = dayKey();
   const profile = await getProfile(userId);
 
-  const [weightToday, stepToday, checks] = await Promise.all([
+  const [weightToday, checks] = await Promise.all([
     db.weightEntry.findUnique({
-      where: { userId_date: { userId, date: today } },
-    }),
-    db.stepEntry.findUnique({
       where: { userId_date: { userId, date: today } },
     }),
     db.dailyCheck.findMany({ where: { userId, date: today } }),
@@ -53,7 +49,6 @@ export async function getTodayChecklist(userId: number): Promise<{
 
   const todayPlan = WEEKLY_PLAN[berlinTodayIndex()];
   const isRestDay = todayPlan?.kind === "rest";
-  const steps = stepToday?.steps ?? 0;
 
   const items: ChecklistItem[] = [
     {
@@ -65,14 +60,6 @@ export async function getTodayChecklist(userId: number): Promise<{
       auto: true,
       done: weightToday != null,
       href: "/weight",
-    },
-    {
-      key: "steps",
-      label: `${STEP_GOAL_MIN.toLocaleString("de-DE")}–${STEP_GOAL_MAX.toLocaleString("de-DE")} Schritte`,
-      sublabel: `${steps.toLocaleString("de-DE")} / ${STEP_GOAL_MIN.toLocaleString("de-DE")}`,
-      auto: true,
-      done: steps >= STEP_GOAL_MIN,
-      href: "/training",
     },
     {
       key: "training",
