@@ -2,6 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { requireUserId } from "../../lib/auth";
 import { getRecipes } from "../../lib/recipe";
+import { LikeButtons } from "./[id]/LikeButtons";
 
 export default async function RecipesPage() {
   await connection();
@@ -10,23 +11,23 @@ export default async function RecipesPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Rezepte</h1>
           <p className="mt-1 text-ink-muted">
             Dein persönliches Kochbuch. Meal-Prep-tauglich und makro-getrackt.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <Link
             href="/recipes/generate"
-            className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover"
+            className="flex items-center justify-center gap-1 whitespace-nowrap rounded-full bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover"
           >
             ✨ Mit KI
           </Link>
           <Link
             href="/recipes/new"
-            className="rounded-full bg-contrast px-4 py-2 text-sm font-medium text-on-contrast hover:bg-contrast-hover"
+            className="flex items-center justify-center gap-1 whitespace-nowrap rounded-full bg-contrast px-4 py-2 text-sm font-medium text-on-contrast hover:bg-contrast-hover"
           >
             + Neues Rezept
           </Link>
@@ -76,6 +77,9 @@ export default async function RecipesPage() {
                     </div>
                   )}
                 </Link>
+                <div className="mt-3 border-t border-line pt-3">
+                  <LikeButtons recipeId={r.id} liked={r.liked} />
+                </div>
               </li>
             );
           })}

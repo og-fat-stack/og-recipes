@@ -92,6 +92,7 @@ model Recipe {
   steps            Json
   techniques       Json
   notes            String?
+  liked            Boolean?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   plannedMeals     PlannedMeal[]

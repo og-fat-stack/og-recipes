@@ -78,6 +78,8 @@ export async function getPlanGeneration(
 /**
  * Pick known main-meal batch recipes to reuse in next week's plan.
  * "Main-meal" = portions >= 3 and cuisine != "Frühstück".
+ * Only liked recipes are eligible for reuse — disliked/unrated recipes are
+ * never picked, so a recipe must be explicitly liked before it comes back.
  * Preference: recipes NOT used in the recent window (to rotate), oldest-updated first.
  * Falls back to least-recently-updated if not enough candidates.
  */
@@ -93,6 +95,7 @@ export async function pickKnownMainMealRecipes(
       userId,
       portions: { gte: 3 },
       NOT: { cuisine: "Frühstück" },
+      liked: true,
     },
     orderBy: { updatedAt: "asc" },
   });

@@ -62,3 +62,14 @@ export async function deleteRecipe(id: number): Promise<void> {
   revalidatePath("/plan");
   revalidatePath("/");
 }
+
+/** liked = true (like) | false (dislike) | null (zurücksetzen). */
+export async function setRecipeLiked(
+  id: number,
+  liked: boolean | null,
+): Promise<void> {
+  const userId = await requireUserId();
+  await db.recipe.updateMany({ where: { id, userId }, data: { liked } });
+  revalidatePath("/recipes");
+  revalidatePath(`/recipes/${id}`);
+}

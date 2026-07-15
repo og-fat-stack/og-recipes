@@ -6,6 +6,7 @@ import { getRecipe, type Ingredient } from "../../../lib/recipe";
 import { planCookSessions } from "../../../lib/cookPlan";
 import { DeleteRecipeButton } from "./DeleteRecipeButton";
 import { CookedButton } from "./CookedButton";
+import { LikeButtons } from "./LikeButtons";
 
 export default async function RecipePage({
   params,
@@ -34,7 +35,7 @@ export default async function RecipePage({
         >
           ← Rezepte
         </Link>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">
               {recipe.title}
@@ -44,7 +45,8 @@ export default async function RecipePage({
               {recipe.batchStorageDays} Tage
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <LikeButtons recipeId={recipe.id} liked={recipe.liked} />
             <CookedButton recipeId={recipe.id} />
             <DeleteRecipeButton id={recipe.id} />
           </div>
