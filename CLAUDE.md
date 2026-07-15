@@ -26,24 +26,28 @@ profile, targets, recipes, plans, and tracking data.
 
 ## Design system — read before writing UI
 
-This project has an LLM-readable design system. Before writing or modifying ANY
-UI code:
+This project has an LLM-readable design system, documented entirely in
+Storybook (there is no `specs/` directory — don't create one). Before writing
+or modifying ANY UI code:
 
-1. **Read the relevant spec** — the component file under
-   `specs/{atoms,molecules,organisms}/`, and the Storybook docs pages:
-   foundations in `stories/foundations/*.mdx` (Color, Typography, Spacing &
-   Layout, Shape/Elevation/Motion), layout conventions in
-   `stories/patterns/PageLayout.mdx`, and the value lookup in
-   `stories/tokens/TokenReference.mdx`.
+1. **Read the Storybook docs pages** — foundations in
+   `stories/foundations/*.mdx` (Color, Typography, Spacing & Layout,
+   Shape/Elevation/Motion), layout conventions in
+   `stories/patterns/PageLayout.mdx`, the value lookup in
+   `stories/tokens/TokenReference.mdx`, and any existing story for a component
+   you're touching (`stories/{atoms,molecules,organisms}/*.stories.tsx`).
 2. **Use only semantic token utilities** from `app/tokens.css` (`bg-surface`,
    `text-ink-muted`, `border-line`, `bg-accent`, `rounded-card`, …). Never write
    a raw palette utility (`bg-slate-100`, `text-teal-600`), a hex/rgb/hsl
    value, or a `dark:` variant for a color — dark mode is resolved inside the
    token layer. If no token fits, add one to `app/tokens.css` **and**
    `stories/tokens/TokenReference.mdx` — do not inline a raw value.
-3. **Respect "when to use / when NOT to use"** in each component spec. Don't
-   invent a new component or recipe when an existing spec covers the case.
-4. When a component changes, update its spec file in the same change.
+3. Don't invent a new component or one-off styling when an existing shared
+   component (or established className pattern already used elsewhere in the
+   app, e.g. the page-header or button pill conventions in `app/*/page.tsx`)
+   covers the case — grep for how other pages already solved it first.
+4. When a shared component (`components/*.tsx`) changes, update its Storybook
+   story in the same change.
 5. **Storybook documents only SHARED, reusable components** (atoms, molecules,
    organisms) — story titles are grouped `Atoms/*`, `Molecules/*`,
    `Organisms/*`. Do NOT add stories for page-specific compositions (e.g. the
@@ -51,8 +55,8 @@ UI code:
    components. Foundations/Tokens/Patterns MDX pages stay as design-system
    reference.
 
-Source code shows what was built; the specs describe how to build the next
-thing. Follow the specs, not your priors.
+Source code shows what was built; Storybook describes how to build the next
+thing. Follow it, not your priors.
 
 ## Commands
 
