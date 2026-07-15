@@ -135,7 +135,9 @@ export default async function ProfilePage() {
               />
               <Stat
                 label="Datum"
-                value={latest.date.toLocaleDateString("de-DE")}
+                value={latest.date.toLocaleDateString("de-DE", {
+                  timeZone: "Europe/Berlin",
+                })}
               />
             </div>
           ) : (

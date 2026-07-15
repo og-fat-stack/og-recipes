@@ -48,7 +48,11 @@ type Cell = {
 };
 
 function fmtDate(d: Date) {
-  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  return d.toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Europe/Berlin",
+  });
 }
 
 export default async function PlanPage({

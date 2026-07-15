@@ -15,7 +15,9 @@ function fmtDelta(kg: number | null) {
   return `${sign}${kg.toFixed(2)} kg`;
 }
 function fmtDate(d: Date | null) {
-  return d ? d.toLocaleDateString("de-DE") : "—";
+  return d
+    ? d.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })
+    : "—";
 }
 
 export default async function WeightPage() {

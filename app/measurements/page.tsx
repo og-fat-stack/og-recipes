@@ -17,7 +17,7 @@ import {
 import { MeasurementForm } from "./MeasurementForm";
 
 function fmtDate(d: Date) {
-  return d.toLocaleDateString("de-DE");
+  return d.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
 }
 
 export default async function MeasurementsPage() {
