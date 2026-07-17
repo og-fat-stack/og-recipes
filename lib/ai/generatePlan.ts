@@ -32,6 +32,60 @@ export type KnownRecipeSummary = {
   batchStorageDays: number;
 };
 
+/**
+ * Prüft, ob die Tagessummen des Plans die Profil-Ziele treffen: Kalorien
+ * ±15 %, Eiweiß mindestens 85 % des Ziels (Eiweiß-Überschuss ist ok).
+ * Liefert eine Problembeschreibung für den Korrektur-Prompt oder null.
+ * Exportiert für Tests.
+ */
+export function validatePlanMacros(args: {
+  draft: PlanDraft;
+  knownMainRecipes: KnownRecipeSummary[];
+  kcalTarget: number;
+  proteinTarget: number;
+}): string | null {
+  const KCAL_TOLERANCE = 0.15;
+  const PROTEIN_FLOOR = 0.85;
+
+  // Gleiche Index-Kodierung wie in den assignments: erst known, dann neu.
+  const all = [
+    ...args.knownMainRecipes.map((r) => ({
+      kcal: r.kcalPerPortion,
+      protein: r.proteinG,
+    })),
+    ...args.draft.newRecipes.map((r) => ({
+      kcal: r.kcalPerPortion,
+      protein: r.proteinG,
+    })),
+  ];
+
+  const byDay = new Map<number, { kcal: number; protein: number }>();
+  for (const a of args.draft.assignments) {
+    const r = all[a.recipeIndex];
+    if (!r) continue; // ungültige Indizes meldet die Strukturprüfung
+    const d = byDay.get(a.day) ?? { kcal: 0, protein: 0 };
+    d.kcal += r.kcal;
+    d.protein += r.protein;
+    byDay.set(a.day, d);
+  }
+
+  const problems: string[] = [];
+  for (const [day, d] of [...byDay.entries()].sort((a, b) => a[0] - b[0])) {
+    const kcalDev = (d.kcal - args.kcalTarget) / args.kcalTarget;
+    if (Math.abs(kcalDev) > KCAL_TOLERANCE) {
+      problems.push(
+        `Tag ${day}: ${d.kcal} kcal (Ziel ${args.kcalTarget}, Abweichung ${Math.round(kcalDev * 100)} %)`,
+      );
+    }
+    if (d.protein < PROTEIN_FLOOR * args.proteinTarget) {
+      problems.push(
+        `Tag ${day}: nur ${d.protein} g Eiweiß (mindestens ${Math.round(PROTEIN_FLOOR * args.proteinTarget)} g nötig, Ziel ${args.proteinTarget} g)`,
+      );
+    }
+  }
+  return problems.length ? problems.join("; ") : null;
+}
+
 const SYSTEM_PROMPT = `Du bist ein persönlicher Koch-Coach und Wochenplaner für eine
 Abnehm-App. Du planst Mahlzeiten für einen vom Nutzer gewählten Tagesbereich (meist eine
 volle Woche Mo–So mit 21 Slots, manchmal nur ein Teilbereich, z.B. Di–Sa). 3 Mahlzeiten
@@ -104,7 +158,14 @@ Vorgaben für JEDES neue Rezept:
   Jede Zutat bekommt eine konkrete Zahl + Einheit (z. B. 200 g rote Linsen, 400 ml
   Gemüsebrühe, 2 Stück Eier, 1 EL Olivenöl).
 - Anfängerfreundliche Schritte mit optischen Garchecks (keine Kerntemperaturen).
-- Eiweißreich: Hauptmahlzeiten ≥ 35 g pro Portion. Frühstück ≥ 25 g pro Portion.
+- MAKRO-TREFFSICHERHEIT — WICHTIGSTE ZAHLENREGEL: Die Summe der 3 Mahlzeiten eines Tages
+  muss die Tagesziele aus dem User-Input auf ±10 % treffen — an JEDEM Tag, vor allem bei
+  Kalorien und Eiweiß. Orientiere dich an den "Pro Mahlzeit"-Zielwerten, NICHT an den
+  Eiweiß-Mindestwerten (Mindestwerte sind Untergrenzen, KEINE Zielwerte — ein Plan, der
+  nur die Minimums trifft, ist FALSCH). Rechne vor dem Antworten für jeden Tag nach:
+  kcal-Summe und Eiweiß-Summe über die 3 Slots.
+- Eiweißreich: Die verbindlichen Eiweiß-Mindestwerte pro Mahlzeit stehen im User-Input
+  ("Eiweiß-Minimum").
 - Techniken als deutsche Tags (max 5).
 - batchStorageDays = ehrliche Schätzung, wie viele Tage sich Reste im Kühlschrank halten.
 - KEINE Rezept-Notizen erzeugen: Lass das Feld "notes" bei jedem Rezept komplett weg.
@@ -297,6 +358,7 @@ Verstöße durch eine passende Alternative, bevor du antwortest.
   const userMsg = `Profil:
 - Tagesziele: ${profile.kcalTarget} kcal · ${profile.proteinG} g E · ${profile.carbG} g K · ${profile.fatG} g F
 - Pro Mahlzeit Zielwerte: ~${perMeal.kcal} kcal · ~${perMeal.protein} g E · ~${perMeal.carb} g K · ~${perMeal.fat} g F
+- Eiweiß-Minimum pro Mahlzeit: Hauptmahlzeiten ≥ ${perMeal.protein} g, Frühstück ≥ ${Math.round(perMeal.protein * 0.7)} g (Untergrenzen — Zielwert bleibt ~${perMeal.protein} g pro Mahlzeit, Tagessumme muss ±10 % von ${profile.proteinG} g treffen)
 - Ziel: ${profile.goal}
 ${budgetLine}
 ${compositionBlock ? `\n${compositionBlock}\n` : ""}
@@ -315,82 +377,114 @@ recentMeals (nicht für NEUE Rezepte verwenden): ${
 
 Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day ${startDay}..${endDay} + weekNotes mit deiner Koch-Rhythmus-Empfehlung).`;
 
-  const msg = await callClaude({
-    model: "planner",
-    system: SYSTEM_PROMPT,
-    // Läuft im Hintergrund (kein Nutzer wartet) — großzügig bemessen, damit ein
-    // voller Wochenplan mit mehreren neuen Rezepten (bis zu 8, da der Koch-
-    // Rhythmus jetzt frei gewählt wird) nicht mitten im JSON abgeschnitten wird.
-    maxTokens: 20000,
-    // Claude Sonnet 5 lehnt nicht-default temperature ab — effort statt dessen
-    // als Dreh für Denktiefe/Tempo (medium: guter Kompromiss aus Tempo und
-    // Qualität für die Wochenplanung).
-    effort: "medium",
-    messages: [{ role: "user", content: userMsg }],
-  });
+  const messages: { role: "user" | "assistant"; content: string }[] = [
+    { role: "user", content: userMsg },
+  ];
 
-  // Roh-Antwort (unbereinigt) für die Fehlerdiagnose an jeden Fehler hängen —
-  // die Server-Action persistiert sie über lib/generationLog.ts.
-  const rawText = extractText(msg);
-  const fail = (message: string) =>
-    new GenerationError(message, {
-      rawResponse: rawText,
-      stopReason: msg.stop_reason,
+  // Bis zu 2 Versuche: Verfehlt der Plan die Tagesziele (Kalorien/Eiweiß),
+  // bekommt Claude die konkreten Abweichungen einmal zurückgespiegelt und
+  // korrigiert. Strukturfehler (JSON, Slots) brechen dagegen sofort ab.
+  const MAX_ATTEMPTS = 2;
+  for (let attempt = 1; ; attempt++) {
+    const msg = await callClaude({
+      model: "planner",
+      system: SYSTEM_PROMPT,
+      // Läuft im Hintergrund (kein Nutzer wartet) — großzügig bemessen, damit ein
+      // voller Wochenplan mit mehreren neuen Rezepten (bis zu 8, da der Koch-
+      // Rhythmus jetzt frei gewählt wird) nicht mitten im JSON abgeschnitten wird.
+      maxTokens: 20000,
+      // Claude Sonnet 5 lehnt nicht-default temperature ab — effort statt dessen
+      // als Dreh für Denktiefe/Tempo (medium: guter Kompromiss aus Tempo und
+      // Qualität für die Wochenplanung).
+      effort: "medium",
+      messages,
     });
 
-  if (msg.stop_reason === "max_tokens") {
-    throw fail(
-      "Claudes Antwort wurde bei maxTokens abgeschnitten (Plan zu umfangreich) — bitte kürzeren Tagesbereich wählen oder erneut versuchen.",
-    );
-  }
+    // Roh-Antwort (unbereinigt) für die Fehlerdiagnose an jeden Fehler hängen —
+    // die Server-Action persistiert sie über lib/generationLog.ts.
+    const rawText = extractText(msg);
+    const fail = (message: string) =>
+      new GenerationError(message, {
+        rawResponse: rawText,
+        stopReason: msg.stop_reason,
+      });
 
-  const text = stripCodeFences(rawText);
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    const snippet = text.length > 400 ? `${text.slice(0, 200)} … ${text.slice(-200)}` : text;
-    throw fail(
-      `Claude hat kein gültiges JSON geliefert (stop_reason: ${msg.stop_reason}). Antwortanfang/-ende: ${snippet}`,
-    );
-  }
-  const result = PlanDraftSchema.safeParse(parsed);
-  if (!result.success) {
-    throw fail(
-      "Plan ungültig: " +
-        result.error.issues
-          .slice(0, 5)
-          .map((i) => `${i.path.join(".")}: ${i.message}`)
-          .join("; "),
-    );
-  }
-
-  const seen = new Set<string>();
-  for (const a of result.data.assignments) {
-    if (a.day < startDay || a.day > endDay) {
+    if (msg.stop_reason === "max_tokens") {
       throw fail(
-        `Tag ${a.day} liegt außerhalb des Bereichs ${startDay}..${endDay}.`,
+        "Claudes Antwort wurde bei maxTokens abgeschnitten (Plan zu umfangreich) — bitte kürzeren Tagesbereich wählen oder erneut versuchen.",
       );
     }
-    const key = `${a.day}-${a.slot}`;
-    if (seen.has(key)) throw fail(`Doppelte Zuweisung für ${key}.`);
-    seen.add(key);
-  }
-  if (seen.size !== expectedSlots) {
-    throw fail(
-      `Plan deckt nur ${seen.size} von ${expectedSlots} Slots ab.`,
-    );
-  }
 
-  const totalIndexCount =
-    knownMainRecipes.length + result.data.newRecipes.length;
-  for (const a of result.data.assignments) {
-    if (a.recipeIndex >= totalIndexCount) {
+    const text = stripCodeFences(rawText);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      const snippet = text.length > 400 ? `${text.slice(0, 200)} … ${text.slice(-200)}` : text;
       throw fail(
-        `Ungültiger recipeIndex ${a.recipeIndex} (${totalIndexCount} Rezepte total).`,
+        `Claude hat kein gültiges JSON geliefert (stop_reason: ${msg.stop_reason}). Antwortanfang/-ende: ${snippet}`,
       );
     }
-  }
+    const result = PlanDraftSchema.safeParse(parsed);
+    if (!result.success) {
+      throw fail(
+        "Plan ungültig: " +
+          result.error.issues
+            .slice(0, 5)
+            .map((i) => `${i.path.join(".")}: ${i.message}`)
+            .join("; "),
+      );
+    }
 
-  return result.data;
+    const seen = new Set<string>();
+    for (const a of result.data.assignments) {
+      if (a.day < startDay || a.day > endDay) {
+        throw fail(
+          `Tag ${a.day} liegt außerhalb des Bereichs ${startDay}..${endDay}.`,
+        );
+      }
+      const key = `${a.day}-${a.slot}`;
+      if (seen.has(key)) throw fail(`Doppelte Zuweisung für ${key}.`);
+      seen.add(key);
+    }
+    if (seen.size !== expectedSlots) {
+      throw fail(
+        `Plan deckt nur ${seen.size} von ${expectedSlots} Slots ab.`,
+      );
+    }
+
+    const totalIndexCount =
+      knownMainRecipes.length + result.data.newRecipes.length;
+    for (const a of result.data.assignments) {
+      if (a.recipeIndex >= totalIndexCount) {
+        throw fail(
+          `Ungültiger recipeIndex ${a.recipeIndex} (${totalIndexCount} Rezepte total).`,
+        );
+      }
+    }
+
+    const macroProblem = validatePlanMacros({
+      draft: result.data,
+      knownMainRecipes,
+      kcalTarget: profile.kcalTarget,
+      proteinTarget: profile.proteinG,
+    });
+    if (!macroProblem) return result.data;
+    if (attempt >= MAX_ATTEMPTS) {
+      throw fail(
+        `Plan verfehlt die Tagesziele auch nach einem Korrekturversuch: ${macroProblem}`,
+      );
+    }
+    messages.push(
+      { role: "assistant", content: rawText },
+      {
+        role: "user",
+        content: `Dein Plan verfehlt die Tagesziele:
+${macroProblem}
+
+Erstelle den KOMPLETTEN Plan neu (gleiches JSON-Format, gleiche Slot- und Index-Vorgaben).
+Jeder Tag muss ${profile.kcalTarget} kcal ±10 % und mindestens ${Math.round(profile.proteinG * 0.9)} g Eiweiß erreichen. Erhöhe gezielt die Eiweiß-Anteile der Rezepte (mehr Magerquark/Skyr, Hülsenfrüchte, Geflügel, Thunfisch) oder passe Portionsgrößen an, statt nur Beilagen zu vergrößern. Rechne für jeden Tag nach, BEVOR du antwortest.`,
+      },
+    );
+  }
 }

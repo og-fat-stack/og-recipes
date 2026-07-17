@@ -7,4 +7,4 @@
  * Like-Quote pro Version (scripts/promptStats.ts).
  */
 export const RECIPE_PROMPT_VERSION = "recipe-1";
-export const PLAN_PROMPT_VERSION = "plan-1";
+export const PLAN_PROMPT_VERSION = "plan-2";
