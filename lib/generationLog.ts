@@ -15,6 +15,7 @@ export async function logGenerationFailure(
   userId: number,
   kind: "plan" | "recipe",
   error: unknown,
+  promptVersion?: string,
 ): Promise<void> {
   try {
     const message = error instanceof Error ? error.message : String(error);
@@ -23,6 +24,7 @@ export async function logGenerationFailure(
       data: {
         userId,
         kind,
+        promptVersion: promptVersion ?? null,
         error: message.slice(0, 4000),
         stopReason: gen?.stopReason ?? null,
         rawResponse: gen?.rawResponse

@@ -11,6 +11,7 @@
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "stats:prompts": "tsx --env-file=.env.local scripts/promptStats.ts",
     "postinstall": "prisma generate",
     "storybook": "node scripts/storybook-dev.mjs",
     "storybook:only": "storybook dev -p 6006",

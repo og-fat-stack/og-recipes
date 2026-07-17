@@ -14,6 +14,7 @@ import {
 } from "../../lib/plan";
 import { berlinWeekdayIndex } from "../../lib/time";
 import { generatePlanDraft } from "../../lib/ai/generatePlan";
+import { PLAN_PROMPT_VERSION } from "../../lib/ai/promptVersions";
 import { getClaudeMemoryText } from "../../lib/claudeMemory";
 import { logGenerationFailure } from "../../lib/generationLog";
 
@@ -138,6 +139,7 @@ export async function generateWeeklyPlan(
             steps: r.steps,
             techniques: r.techniques,
             notes: null,
+            promptVersion: PLAN_PROMPT_VERSION,
           },
         });
         newRecipeIds.push(created.id);
@@ -174,7 +176,7 @@ export async function generateWeeklyPlan(
     } catch (e) {
       // Roh-Antwort + Fehler festhalten, BEVOR der Nutzer-Status gesetzt wird —
       // das Diagnose-Material wäre sonst mit diesem Request verloren.
-      await logGenerationFailure(userId, "plan", e);
+      await logGenerationFailure(userId, "plan", e, PLAN_PROMPT_VERSION);
       await db.planGeneration.update({
         where: { userId_weekStart: { userId, weekStart: ws } },
         data: {

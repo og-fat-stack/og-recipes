@@ -97,6 +97,11 @@ model Recipe {
   /// Freitext-Notiz des Nutzers nach dem Kochen ("zu fad", "Familie fand's
   /// super", ...). Fließt als Geschmacksprofil in künftige Generierungen ein.
   feedbackNote     String?
+  /// Welche Prompt-Version dieses Rezept erzeugt hat (z. B. "plan-1",
+  /// "recipe-1", siehe lib/ai/promptVersions.ts). null = von Hand angelegt
+  /// oder vor Einführung der Versionierung. Ermöglicht Like-Quote pro
+  /// Prompt-Version (scripts/promptStats.ts).
+  promptVersion    String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   plannedMeals     PlannedMeal[]
@@ -141,14 +146,15 @@ model PlanGeneration {
 /// mit dem Fehler-String zu verlieren. Aufbewahrung: 180 Tage (wird beim
 /// Schreiben neuer Einträge gestutzt, siehe lib/generationLog.ts).
 model GenerationLog {
-  id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-  kind        String // "plan" | "recipe"
-  stopReason  String?
-  error       String
-  rawResponse String?
-  createdAt   DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int
+  kind          String // "plan" | "recipe"
+  promptVersion String?
+  stopReason    String?
+  error         String
+  rawResponse   String?
+  createdAt     DateTime @default(now())
 
   @@index([userId, createdAt])
 }

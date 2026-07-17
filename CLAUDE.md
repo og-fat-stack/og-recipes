@@ -64,6 +64,15 @@ thing. Follow it, not your priors.
 - `npm run lint` — ESLint
 - `npm run build` — runs `prisma migrate deploy`, then builds
 - `npm run db:generate` — regenerate Prisma client after schema changes
+- `npm run stats:prompts` — like rate per prompt version + failure counts
+
+## Prompt versioning
+
+When changing a system prompt in `lib/ai/generateRecipe.ts` or
+`lib/ai/generatePlan.ts`, bump the matching constant in
+`lib/ai/promptVersions.ts` (e.g. "plan-1" → "plan-2") in the same change.
+The version is stored on every generated recipe and failure log so prompt
+changes become measurable experiments (`npm run stats:prompts`).
 
 ## Database
 

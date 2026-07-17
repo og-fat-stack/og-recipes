@@ -6,6 +6,7 @@ import { db } from "../../../lib/db";
 import { requireUserId } from "../../../lib/auth";
 import { getProfile } from "../../../lib/profile";
 import { getClaudeMemoryText } from "../../../lib/claudeMemory";
+import { RECIPE_PROMPT_VERSION } from "../../../lib/ai/promptVersions";
 import { logGenerationFailure } from "../../../lib/generationLog";
 import {
   generateRecipeDraft,
@@ -40,7 +41,7 @@ export async function generateRecipe(
   } catch (e) {
     // Roh-Antwort + Fehler festhalten — sonst wäre das Diagnose-Material
     // (was Claude tatsächlich geantwortet hat) mit diesem Request verloren.
-    await logGenerationFailure(userId, "recipe", e);
+    await logGenerationFailure(userId, "recipe", e, RECIPE_PROMPT_VERSION);
     return {
       status: "error",
       error: e instanceof Error ? e.message : "Unbekannter Fehler",
@@ -69,6 +70,9 @@ export async function saveGeneratedRecipe(
       steps: draft.steps,
       techniques: draft.techniques,
       notes: draft.notes ?? null,
+      // Server-seitig gesetzt (nicht aus dem Client-JSON), damit die
+      // Like-Quote pro Prompt-Version nicht manipulierbar ist.
+      promptVersion: RECIPE_PROMPT_VERSION,
     },
   });
   revalidatePath("/recipes");
