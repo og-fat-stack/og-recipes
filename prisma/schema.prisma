@@ -32,6 +32,7 @@ model User {
   dailyChecks  DailyCheck[]
   cookSessions CookSession[]
   recipes      Recipe[]
+  generationLogs GenerationLog[]
 }
 
 model Profile {
@@ -133,6 +134,23 @@ model PlanGeneration {
   createdAt DateTime @default(now())
 
   @@unique([userId, weekStart])
+}
+
+/// Fehlgeschlagene Claude-Generierungen inkl. Roh-Antwort — Diagnose-Material,
+/// um Prompt-/Parsing-Probleme über die Zeit als Muster zu erkennen statt sie
+/// mit dem Fehler-String zu verlieren. Aufbewahrung: 180 Tage (wird beim
+/// Schreiben neuer Einträge gestutzt, siehe lib/generationLog.ts).
+model GenerationLog {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  kind        String // "plan" | "recipe"
+  stopReason  String?
+  error       String
+  rawResponse String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model WeeklyExpense {

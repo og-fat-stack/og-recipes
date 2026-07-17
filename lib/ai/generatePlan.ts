@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { callClaude, extractText } from "../anthropic";
 import type { Profile } from "../generated/prisma/client";
+import { GenerationError } from "./generationError";
 import { RecipeDraftSchema } from "./generateRecipe";
 import { getLatestMeasurement } from "../measurements";
 import { compositionSummaryForPrompt } from "../bodyComp";
@@ -328,25 +329,34 @@ Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day $
     messages: [{ role: "user", content: userMsg }],
   });
 
+  // Roh-Antwort (unbereinigt) für die Fehlerdiagnose an jeden Fehler hängen —
+  // die Server-Action persistiert sie über lib/generationLog.ts.
+  const rawText = extractText(msg);
+  const fail = (message: string) =>
+    new GenerationError(message, {
+      rawResponse: rawText,
+      stopReason: msg.stop_reason,
+    });
+
   if (msg.stop_reason === "max_tokens") {
-    throw new Error(
+    throw fail(
       "Claudes Antwort wurde bei maxTokens abgeschnitten (Plan zu umfangreich) — bitte kürzeren Tagesbereich wählen oder erneut versuchen.",
     );
   }
 
-  const text = stripCodeFences(extractText(msg));
+  const text = stripCodeFences(rawText);
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
     const snippet = text.length > 400 ? `${text.slice(0, 200)} … ${text.slice(-200)}` : text;
-    throw new Error(
+    throw fail(
       `Claude hat kein gültiges JSON geliefert (stop_reason: ${msg.stop_reason}). Antwortanfang/-ende: ${snippet}`,
     );
   }
   const result = PlanDraftSchema.safeParse(parsed);
   if (!result.success) {
-    throw new Error(
+    throw fail(
       "Plan ungültig: " +
         result.error.issues
           .slice(0, 5)
@@ -358,16 +368,16 @@ Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day $
   const seen = new Set<string>();
   for (const a of result.data.assignments) {
     if (a.day < startDay || a.day > endDay) {
-      throw new Error(
+      throw fail(
         `Tag ${a.day} liegt außerhalb des Bereichs ${startDay}..${endDay}.`,
       );
     }
     const key = `${a.day}-${a.slot}`;
-    if (seen.has(key)) throw new Error(`Doppelte Zuweisung für ${key}.`);
+    if (seen.has(key)) throw fail(`Doppelte Zuweisung für ${key}.`);
     seen.add(key);
   }
   if (seen.size !== expectedSlots) {
-    throw new Error(
+    throw fail(
       `Plan deckt nur ${seen.size} von ${expectedSlots} Slots ab.`,
     );
   }
@@ -376,7 +386,7 @@ Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day $
     knownMainRecipes.length + result.data.newRecipes.length;
   for (const a of result.data.assignments) {
     if (a.recipeIndex >= totalIndexCount) {
-      throw new Error(
+      throw fail(
         `Ungültiger recipeIndex ${a.recipeIndex} (${totalIndexCount} Rezepte total).`,
       );
     }

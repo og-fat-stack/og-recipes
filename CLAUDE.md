@@ -65,14 +65,23 @@ thing. Follow it, not your priors.
 - `npm run build` — runs `prisma migrate deploy`, then builds
 - `npm run db:generate` — regenerate Prisma client after schema changes
 
-## Database — be careful
+## Database
 
-- There is ONE Neon Postgres for local dev AND the deployed Vercel app;
-  `.env.local` points at live family data. Anything you run locally
-  (`prisma migrate deploy`, `prisma db execute`) hits production immediately.
-- Migrations must stay backward compatible with the currently deployed code
-  (e.g. new NOT NULL columns need a DB default — see the `userId DEFAULT 1`
-  pattern in `prisma/migrations/`).
+- One Neon project (`soft-union-73308079`), two branches: `main` = production
+  (referenced ONLY by Vercel env vars) and `dev` = local development.
+  `.env.local` points at the dev branch (`ep-curly-base-alb4c4lp`) — local
+  prisma commands do NOT touch family data.
+- Never run `vercel env pull` — it would overwrite `.env.local` with the
+  production DATABASE_URL again. If it happens, re-point at the dev branch
+  (`npx neonctl connection-string dev --project-id soft-union-73308079`).
+- Refresh dev to the current prod state (discards local test data):
+  `npx neonctl branches reset dev --parent --project-id soft-union-73308079`
+- Deployment path for migrations: local `npx prisma migrate deploy` applies to
+  the dev branch; production gets them when Vercel builds (`npm run build`
+  runs `prisma migrate deploy` with prod env). Between merge and deploy the
+  old code runs against the new schema, so migrations must stay backward
+  compatible with the currently deployed code (e.g. new NOT NULL columns need
+  a DB default — see the `userId DEFAULT 1` pattern in `prisma/migrations/`).
 - `prisma migrate dev` fails here (non-interactive terminal). Instead:
   1. `mkdir prisma/migrations/$(date -u +%Y%m%d%H%M%S)_<name>`
   2. `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script > <that dir>/migration.sql`

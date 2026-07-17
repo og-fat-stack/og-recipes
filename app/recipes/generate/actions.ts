@@ -6,6 +6,7 @@ import { db } from "../../../lib/db";
 import { requireUserId } from "../../../lib/auth";
 import { getProfile } from "../../../lib/profile";
 import { getClaudeMemoryText } from "../../../lib/claudeMemory";
+import { logGenerationFailure } from "../../../lib/generationLog";
 import {
   generateRecipeDraft,
   type RecipeDraft,
@@ -28,8 +29,8 @@ export async function generateRecipe(
       prompt,
     };
   }
+  const userId = await requireUserId();
   try {
-    const userId = await requireUserId();
     const [profile, claudeMemory] = await Promise.all([
       getProfile(userId),
       getClaudeMemoryText(userId),
@@ -37,6 +38,9 @@ export async function generateRecipe(
     const draft = await generateRecipeDraft({ prompt, profile, claudeMemory });
     return { status: "ok", draft, prompt };
   } catch (e) {
+    // Roh-Antwort + Fehler festhalten — sonst wäre das Diagnose-Material
+    // (was Claude tatsächlich geantwortet hat) mit diesem Request verloren.
+    await logGenerationFailure(userId, "recipe", e);
     return {
       status: "error",
       error: e instanceof Error ? e.message : "Unbekannter Fehler",

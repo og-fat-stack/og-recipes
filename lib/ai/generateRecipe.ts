@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { callClaude, extractText } from "../anthropic";
 import type { Profile } from "../generated/prisma/client";
+import { GenerationError } from "./generationError";
 
 export const RecipeDraftSchema = z.object({
   title: z.string().min(2).max(120),
@@ -166,27 +167,36 @@ Liste und ersetze Verstöße durch eine passende Alternative, bevor du antwortes
     ],
   });
 
+  // Roh-Antwort (unbereinigt) für die Fehlerdiagnose an jeden Fehler hängen —
+  // die Server-Action persistiert sie über lib/generationLog.ts.
+  const rawText = extractText(msg);
+  const fail = (message: string) =>
+    new GenerationError(message, {
+      rawResponse: rawText,
+      stopReason: msg.stop_reason,
+    });
+
   if (msg.stop_reason === "max_tokens") {
-    throw new Error(
+    throw fail(
       "Claudes Antwort wurde bei maxTokens abgeschnitten — bitte erneut versuchen.",
     );
   }
 
-  const text = stripCodeFences(extractText(msg));
+  const text = stripCodeFences(rawText);
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
     const snippet = text.length > 400 ? `${text.slice(0, 200)} … ${text.slice(-200)}` : text;
-    throw new Error(
+    throw fail(
       `Claude hat kein gültiges JSON geliefert (stop_reason: ${msg.stop_reason}). Antwortanfang/-ende: ${snippet}`,
     );
   }
 
   const result = RecipeDraftSchema.safeParse(parsed);
   if (!result.success) {
-    throw new Error(
+    throw fail(
       "Generiertes Rezept ist ungültig: " +
         result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
     );
