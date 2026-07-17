@@ -15,7 +15,7 @@ export default async function RecipesPage() {
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Rezepte</h1>
           <p className="mt-1 text-ink-muted">
-            Dein persönliches Kochbuch. Meal-Prep-tauglich und makro-getrackt.
+            Dein persönliches Kochbuch. Richtig lecker und makro-getrackt.
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">

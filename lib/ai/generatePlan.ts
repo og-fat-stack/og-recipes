@@ -12,8 +12,10 @@ export const PlanAssignmentSchema = z.object({
 });
 
 export const PlanDraftSchema = z.object({
-  newRecipes: z.array(RecipeDraftSchema).min(1).max(6),
+  newRecipes: z.array(RecipeDraftSchema).min(1).max(8),
   assignments: z.array(PlanAssignmentSchema).min(3).max(21),
+  /** Claudes Koch-Empfehlung: wann kochen, wo Reste, warum diese Abwechslung. */
+  weekNotes: z.string().min(10).max(2000),
 });
 
 export type PlanDraft = z.infer<typeof PlanDraftSchema>;
@@ -29,27 +31,43 @@ export type KnownRecipeSummary = {
   batchStorageDays: number;
 };
 
-const SYSTEM_PROMPT = `Du bist ein persönlicher Koch-Coach und Meal-Prep-Planer für eine
+const SYSTEM_PROMPT = `Du bist ein persönlicher Koch-Coach und Wochenplaner für eine
 Abnehm-App. Du planst Mahlzeiten für einen vom Nutzer gewählten Tagesbereich (meist eine
 volle Woche Mo–So mit 21 Slots, manchmal nur ein Teilbereich, z.B. Di–Sa). 3 Mahlzeiten
 pro Tag (Frühstück + Mittag + Abend). Die genaue Anzahl Slots steht im User-Input.
+Oberstes Ziel: Gerichte, die WIRKLICH schmecken — Nährwerte treffen ist Pflicht, aber
+Geschmack entscheidet, ob der Plan durchgehalten wird.
 
-Rhythmus und Struktur:
-- Der Nutzer kocht die Hauptmahlzeiten (Mittag + Abend) in 3 Batches an Mo / Mi / Fr.
-- Pro Hauptmahl-Batch: 1 Rezept mit 4–5 Portionen, das die 14 Mittag/Abend-Slots der Woche
-  abdeckt. Typische Verteilung: Batch 1 (Mo gekocht) Mo–Di, Batch 2 (Mi gekocht) Mi–Do,
-  Batch 3 (Fr gekocht) Fr–So. Haltbarkeit beachten.
-- HAUPTMAHL-REZEPT-ROTATION: Wenn in "knownMainRecipes" Einträge stehen, sind das bereits
-  vom Nutzer gekochte und bekannte Rezepte. Nutze diese als 2 der 3 Hauptmahl-Batches und
-  generiere nur 1 NEUES Hauptmahl-Rezept. Das Ziel: jede Woche 1 neues Rezept + 2 bekannte.
-  Wenn knownMainRecipes LEER ist (erste Woche), generiere alle 3 Hauptmahl-Rezepte neu.
+KOCH-RHYTHMUS — DU empfiehlst ihn (der Nutzer macht KEIN Meal-Prep):
+- Entscheide selbst, an welchen Tagen frisch gekocht wird und wo Reste vom Vortag
+  eingeplant werden. Faustregeln: Frisch schmeckt am besten. Ein Hauptgericht darf bewusst
+  mit mehr Portionen gekocht werden und den Folgetag mitversorgen — aber kein tagelanges
+  Vorkochen (Reste maximal ~2 Tage nach dem Kochen essen, batchStorageDays beachten).
+- Balanciere Aufwand und Abwechslung: nicht jeden Tag ein aufwendiges Gericht, aber auch
+  nicht die halbe Woche dasselbe Essen. Typisch sinnvoll für eine volle Woche: 3–5
+  verschiedene Hauptgerichte, jedes 1–2 Tage im Einsatz.
+- "portions" jedes Rezepts = Anzahl der Slots, die es im Plan tatsächlich abdeckt.
+- BEWÄHRTES WIEDERVERWENDEN: Wenn in "knownMainRecipes" Einträge stehen, sind das bereits
+  gekochte und vom Nutzer GEMOCHTE Rezepte. Plane 1–2 davon als Hauptgerichte ein (bewährt
+  = sicher lecker) und generiere die übrigen Hauptgerichte NEU für Abwechslung. Ist die
+  Liste leer, generiere alle Hauptgerichte neu.
 - FRÜHSTÜCK ist separat und bewusst simpel (Overnight Oats, Quark-Bowl, Rührei mit
-  Haferflocken, Skyr-Bowl, Grießbrei, Shakshuka-Style ohne Paprika etc.). 5–10 Min. aktive
-  Zeit. Portionen = 1 (wird frisch zubereitet). ABWECHSLUNG: Wie viele VERSCHIEDENE
-  Frühstücks-Rezepte du erstellst, steht im User-Input ("Frühstücks-Abwechslung"). Erstelle
-  genau so viele und verteile sie abwechselnd über die Frühstücks-Slots (nicht jeden Tag
-  dasselbe — z. B. bei 2 Rezepten tageweise im Wechsel, bei 3 Rezepten reihum). Die Frühstücke
-  sollen sich klar unterscheiden (anderes Hauptgetreide/Eiweiß/Geschmack, süß vs. herzhaft).
+  Haferflocken, Skyr-Bowl, Grießbrei etc.). 5–10 Min. aktive Zeit, wird frisch zubereitet;
+  portions = Anzahl seiner Frühstücks-Slots. Entscheide selbst, wie viele VERSCHIEDENE
+  Frühstücke sinnvoll sind (typisch 2–3 pro voller Woche, abwechselnd verteilt, nicht jeden
+  Tag dasselbe). Die Frühstücke sollen sich klar unterscheiden (anderes Hauptgetreide/
+  Eiweiß/Geschmack, süß vs. herzhaft).
+- ERKLÄRE deine Empfehlung im Pflichtfeld "weekNotes" (2–5 Sätze, Deutsch, informell "du"):
+  an welchen Tagen wird gekocht, wo werden Reste gegessen, wie viel Abwechslung und warum.
+
+ECHTE GERICHTE STATT ERFINDUNGEN — Pflicht für jedes neue Rezept:
+- Real existierende, benannte Gerichte mit klarer Herkunft (z. B. Mujadara, Shakshuka,
+  Dal Tadka, Chicken Cacciatore, Minestrone, Imam Bayildi) — KEINE frei erfundenen
+  Zutaten-Mixe, keine "Fusion-Bowls". Klassiker haben Generationen von Selektionsdruck
+  überlebt; sie schmecken bewiesenermaßen.
+- Anpassungen für Makros/Budget sind erlaubt und erwünscht (mageres Protein, mehr Gemüse,
+  weniger Öl), solange Charakter und Aromen-Basis des Gerichts erhalten bleiben. Der Titel
+  nennt das Ursprungsgericht.
 
 Reihenfolge in "newRecipes":
 - Zuerst die neuen Hauptmahl-Rezepte, dann die Frühstücks-Rezepte.
@@ -73,8 +91,8 @@ alle Mahlzeiten zusammen):
   stärksten minimieren (höchstens ~30 g/Woche) — es ist gesundheitlich am problematischsten.
 - Fisch 1–2 Portionen pro Woche einplanen (zählt NICHT zu den 300 g Fleisch), bevorzugt
   günstig: Thunfisch/Sardinen/Makrele aus der Dose.
-- Praktische Umsetzung beim Batch-Kochen: HÖCHSTENS EIN Hauptmahl-Batch der Woche darf auf
-  rotem Fleisch aufbauen; die übrigen Batches pflanzlich (Hülsenfrüchte, Eier, Tofu) oder mit
+- Praktische Umsetzung: HÖCHSTENS EIN Hauptgericht der Woche darf auf rotem Fleisch
+  aufbauen; die übrigen Hauptgerichte pflanzlich (Hülsenfrüchte, Eier, Tofu) oder mit
   Geflügel bzw. Fisch. So bleibt die 300-g-Grenze automatisch eingehalten.
 
 Vorgaben für JEDES neue Rezept:
@@ -87,8 +105,9 @@ Vorgaben für JEDES neue Rezept:
 - Anfängerfreundliche Schritte mit optischen Garchecks (keine Kerntemperaturen).
 - Eiweißreich: Hauptmahlzeiten ≥ 35 g pro Portion. Frühstück ≥ 25 g pro Portion.
 - Techniken als deutsche Tags (max 5).
-- KEINE Notizen erzeugen: Lass das Feld "notes" bei jedem Rezept komplett weg und gib
-  auch KEIN "weekNotes" aus.
+- batchStorageDays = ehrliche Schätzung, wie viele Tage sich Reste im Kühlschrank halten.
+- KEINE Rezept-Notizen erzeugen: Lass das Feld "notes" bei jedem Rezept komplett weg.
+  Das Top-Level-Feld "weekNotes" ist dagegen PFLICHT (siehe KOCH-RHYTHMUS).
 - MENGEN IN DEN SCHRITTEN WIEDERHOLEN: Jeder Zubereitungsschritt nennt die konkreten Mengen
   inline ("die 2 gehackten Zwiebeln und 4 gepressten Knoblauchzehen anbraten"), inkl. Salz, Fett,
   Säure ("1 TL grobes Meersalz", "Saft einer halben Zitrone", "1 EL Olivenöl"). Aus den Schritten
@@ -159,7 +178,8 @@ Konkretes Beispiel-Antwort-Skelett:
     { "day": 0, "slot": "lunch", "recipeIndex": 0 },
     { "day": 0, "slot": "dinner", "recipeIndex": 0 }
     // ... insgesamt 21 Einträge
-  ]
+  ],
+  "weekNotes": "Koch am Mo, Mi, Do und Sa frisch; Di und Fr isst du Reste vom Vortag. ..."
 }
 
 Pflicht:
@@ -204,13 +224,6 @@ export async function generatePlanDraft({
   const expectedSlots = dayCount * 3;
   const isFullWeek = startDay === 0 && endDay === 6;
 
-  // Frühstücks-Abwechslung: mehrere verschiedene Frühstücke über die Woche rotieren,
-  // skaliert mit der Anzahl Tage (nie mehr Rezepte als Frühstücks-Slots).
-  const breakfastVariety = Math.min(
-    dayCount,
-    dayCount >= 5 ? 3 : dayCount >= 3 ? 2 : 1,
-  );
-
   const perMeal = {
     kcal: Math.round(profile.kcalTarget / 3),
     protein: Math.round(profile.proteinG / 3),
@@ -230,14 +243,10 @@ export async function generatePlanDraft({
   const rangeBlock = isFullWeek
     ? `Tagesbereich: Mo–So (volle Woche, day 0..6, 21 Slots).`
     : `Tagesbereich: ${DAY_LABELS[startDay]}–${DAY_LABELS[endDay]} (day ${startDay}..${endDay}, ${dayCount} Tage, ${expectedSlots} Slots).
-Wichtig: An den Tagen außerhalb dieses Bereichs wird NICHT gekocht/gegessen — generiere KEINE assignments für day < ${startDay} oder day > ${endDay}. Hauptmahl-Batches passend zur Tagezahl (Mo/Mi/Fr-Rhythmus nur soweit diese Tage im Bereich liegen, sonst am ersten Bereichstag starten und Haltbarkeit beachten).`;
-
-  const mainBatchHint = isFullWeek
-    ? `Volle Woche: 3 Hauptmahl-Batches (Mo/Mi/Fr).`
-    : `Teilbereich: wähle so viele Hauptmahl-Batches, wie nötig, um die ${dayCount} Tage abzudecken (1 Batch ≈ 2 Tage Hauptmahlzeiten, Haltbarkeit beachten).`;
+Wichtig: An den Tagen außerhalb dieses Bereichs wird NICHT gekocht/gegessen — generiere KEINE assignments für day < ${startDay} oder day > ${endDay}. Empfiehl den Koch-Rhythmus passend zur Tagezahl.`;
 
   const knownBlock = knownMainRecipes.length
-    ? `knownMainRecipes (wiederverwendbar als Hauptmahl-Batches; Indizes 0..${knownMainRecipes.length - 1}):
+    ? `knownMainRecipes (bereits gekochte, GEMOCHTE Rezepte — 1–2 davon wieder einplanen; Indizes 0..${knownMainRecipes.length - 1}):
 ${knownMainRecipes
   .map(
     (r, i) =>
@@ -245,9 +254,8 @@ ${knownMainRecipes
   )
   .join("\n")}
 
-${mainBatchHint} Nutze die bekannten Rezepte für so viele Hauptmahl-Batches wie sinnvoll und ergänze fehlende Hauptmahl-Batches durch neue Rezepte. Frühstück: separate neue Rezepte (Anzahl siehe "Frühstücks-Abwechslung").`
-    : `knownMainRecipes ist leer.
-${mainBatchHint} Generiere alle benötigten Hauptmahl-Rezepte neu + die Frühstücks-Rezepte (Anzahl siehe "Frühstücks-Abwechslung").`;
+Ergänze die übrigen Hauptgerichte durch NEUE Rezepte und erstelle separate neue Frühstücks-Rezepte.`
+    : `knownMainRecipes ist leer — generiere alle Hauptgerichte und Frühstücke neu.`;
 
   const useUpBlock = useUpIngredients.length
     ? `Zutaten zum Aufbrauchen (priorisieren in NEUEN Rezepten, damit sie nicht schlecht werden — wenn möglich in mehreren Rezepten verteilt verwenden): ${useUpIngredients.map((i) => `"${i}"`).join(", ")}.`
@@ -296,8 +304,6 @@ ${rangeBlock}
 
 Fleisch-Budget (DGE, VERBINDLICH für diesen Tagesbereich von ${dayCount} Tag(en)): max. ${meatCapG} g Fleisch + Wurst INSGESAMT über alle Mahlzeiten (davon höchstens ~${processedCapG} g verarbeitet/Wurst). Weißes Fleisch (Geflügel) vor rotem Fleisch bevorzugen, rotes Fleisch minimieren. Fisch: ${fishPortions} Portion(en) einplanen (zählt NICHT zum Fleisch-Budget). Übrige Hauptmahlzeiten pflanzlich (Hülsenfrüchte, Eier, Tofu).
 
-Frühstücks-Abwechslung: Erstelle ${breakfastVariety} VERSCHIEDENE einfache Frühstücks-Rezepte und verteile sie abwechselnd über die ${dayCount} Frühstücks-Slots (day ${startDay}..${endDay}), damit nicht jeden Tag dasselbe Frühstück kommt. Die Rezepte sollen sich klar unterscheiden (anderes Hauptgetreide/Eiweiß, süß vs. herzhaft).
-
 ${knownBlock}
 ${useUpBlock ? `\n${useUpBlock}\n` : ""}
 recentMeals (nicht für NEUE Rezepte verwenden): ${
@@ -306,15 +312,15 @@ recentMeals (nicht für NEUE Rezepte verwenden): ${
       : "keine"
   }
 
-Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day ${startDay}..${endDay}).`;
+Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day ${startDay}..${endDay} + weekNotes mit deiner Koch-Rhythmus-Empfehlung).`;
 
   const msg = await callClaude({
     model: "planner",
     system: SYSTEM_PROMPT,
     // Läuft im Hintergrund (kein Nutzer wartet) — großzügig bemessen, damit ein
-    // voller Wochenplan mit mehreren neuen Rezepten nicht mitten im JSON
-    // abgeschnitten wird (das führt sonst zu "kein gültiges JSON").
-    maxTokens: 16000,
+    // voller Wochenplan mit mehreren neuen Rezepten (bis zu 8, da der Koch-
+    // Rhythmus jetzt frei gewählt wird) nicht mitten im JSON abgeschnitten wird.
+    maxTokens: 20000,
     // Claude Sonnet 5 lehnt nicht-default temperature ab — effort statt dessen
     // als Dreh für Denktiefe/Tempo (medium: guter Kompromiss aus Tempo und
     // Qualität für die Wochenplanung).

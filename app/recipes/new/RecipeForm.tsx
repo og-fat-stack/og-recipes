@@ -20,7 +20,7 @@ export function RecipeForm() {
           placeholder="Levantinisch / Mediterran / Asiatisch..."
         />
         <Field
-          label="Portionen pro Batch"
+          label="Portionen"
           name="portions"
           type="number"
           defaultValue={4}

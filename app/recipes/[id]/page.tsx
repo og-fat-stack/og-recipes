@@ -7,6 +7,7 @@ import { planCookSessions } from "../../../lib/cookPlan";
 import { DeleteRecipeButton } from "./DeleteRecipeButton";
 import { CookedButton } from "./CookedButton";
 import { LikeButtons } from "./LikeButtons";
+import { FeedbackNote } from "./FeedbackNote";
 
 export default async function RecipePage({
   params,
@@ -134,6 +135,13 @@ export default async function RecipePage({
           <p className="text-sm whitespace-pre-wrap">{recipe.notes}</p>
         </section>
       )}
+
+      <section className="rounded-card border border-line bg-surface p-4">
+        <h2 className="mb-2 text-sm font-medium text-ink-subtle">
+          Notiz nach dem Kochen
+        </h2>
+        <FeedbackNote recipeId={recipe.id} note={recipe.feedbackNote} />
+      </section>
     </div>
   );
 }

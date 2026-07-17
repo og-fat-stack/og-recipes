@@ -76,8 +76,8 @@ export async function getPlanGeneration(
 }
 
 /**
- * Pick known main-meal batch recipes to reuse in next week's plan.
- * "Main-meal" = portions >= 3 and cuisine != "Frühstück".
+ * Pick known main-meal recipes to reuse in next week's plan.
+ * "Main-meal" = cuisine != "Frühstück".
  * Only liked recipes are eligible for reuse — disliked/unrated recipes are
  * never picked, so a recipe must be explicitly liked before it comes back.
  * Preference: recipes NOT used in the recent window (to rotate), oldest-updated first.
@@ -93,7 +93,6 @@ export async function pickKnownMainMealRecipes(
   const pool = await db.recipe.findMany({
     where: {
       userId,
-      portions: { gte: 3 },
       NOT: { cuisine: "Frühstück" },
       liked: true,
     },

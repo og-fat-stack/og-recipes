@@ -63,6 +63,29 @@ export async function deleteRecipe(id: number): Promise<void> {
   revalidatePath("/");
 }
 
+export type FeedbackState = { ok?: boolean; error?: string };
+
+/** Persönliche Notiz nach dem Kochen ("zu fad", "Familie fand's super", ...). */
+export async function saveRecipeFeedback(
+  _prev: FeedbackState,
+  formData: FormData,
+): Promise<FeedbackState> {
+  const userId = await requireUserId();
+  const id = Number(formData.get("recipeId"));
+  if (!Number.isInteger(id)) return { error: "Ungültiges Rezept." };
+  const note = String(formData.get("feedbackNote") ?? "").trim();
+  if (note.length > 2000) {
+    return { error: "Notiz ist zu lang (max. 2000 Zeichen)." };
+  }
+  const updated = await db.recipe.updateMany({
+    where: { id, userId },
+    data: { feedbackNote: note || null },
+  });
+  if (updated.count === 0) return { error: "Rezept nicht gefunden." };
+  revalidatePath(`/recipes/${id}`);
+  return { ok: true };
+}
+
 /** liked = true (like) | false (dislike) | null (zurücksetzen). */
 export async function setRecipeLiked(
   id: number,

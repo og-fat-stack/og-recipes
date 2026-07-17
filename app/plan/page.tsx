@@ -88,7 +88,7 @@ export default async function PlanPage({
   }
 
   // Kochtage: ein Tag ist ein Kochtag, wenn hier ein NEUES Hauptmahl-Rezept
-  // startet (Batch-Rhythmus, aus den Daten abgeleitet statt fix Mo/Mi/Fr).
+  // startet (aus den Daten abgeleitet — den Rhythmus wählt Claude pro Woche).
   const cookDays = new Set<number>();
   let lastMain: number | null = null;
   for (let day = 0; day < 7; day++) {
@@ -109,9 +109,7 @@ export default async function PlanPage({
           <h1 className="text-3xl font-semibold tracking-tight">Wochenplan</h1>
           <p className="mt-1 text-ink-muted">
             Woche vom {fmtDate(ws)} bis {fmtDate(addDays(ws, 6))}
-            {plan && plannedCount > 0
-              ? ` · ${plannedCount} Mahlzeiten geplant`
-              : " · gekocht wird in 3 Batches"}
+            {plan && plannedCount > 0 && ` · ${plannedCount} Mahlzeiten geplant`}
             .
           </p>
         </div>
@@ -197,6 +195,13 @@ export default async function PlanPage({
             Noch kein Plan für {week === "next" ? "nächste" : "diese"} Woche.
             Klick oben auf „Woche generieren“.
           </p>
+        </div>
+      )}
+
+      {plan?.notes && (
+        <div className="rounded-card border border-line bg-surface p-4 text-sm">
+          <p className="font-medium">💡 Koch-Empfehlung für diese Woche</p>
+          <p className="mt-1 whitespace-pre-wrap text-ink-muted">{plan.notes}</p>
         </div>
       )}
 

@@ -93,6 +93,9 @@ model Recipe {
   techniques       Json
   notes            String?
   liked            Boolean?
+  /// Freitext-Notiz des Nutzers nach dem Kochen ("zu fad", "Familie fand's
+  /// super", ...). Fließt als Geschmacksprofil in künftige Generierungen ein.
+  feedbackNote     String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   plannedMeals     PlannedMeal[]

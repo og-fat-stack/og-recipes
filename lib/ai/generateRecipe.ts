@@ -28,15 +28,28 @@ export const RecipeDraftSchema = z.object({
 export type RecipeDraft = z.infer<typeof RecipeDraftSchema>;
 
 const SYSTEM_PROMPT = `Du bist ein professioneller Rezeptentwickler für eine persönliche Koch-App.
-Der Nutzer kocht 3× pro Woche in Batches, lebt in Deutschland und befindet sich auf einem
+Der Nutzer kocht frisch zu Hause, lebt in Deutschland und befindet sich auf einem
 Kaloriendefizit zum Abnehmen. Fokus auf levantinische und mediterrane Küche mit Variation.
+Oberstes Ziel: Das Gericht muss WIRKLICH LECKER sein — Nährwerte treffen ist Pflicht,
+aber Geschmack entscheidet, ob es nochmal gekocht wird.
+
+ECHTE GERICHTE STATT ERFINDUNGEN — Pflicht:
+- Generiere ein real existierendes, benanntes Gericht mit klarer Herkunft (z. B. Mujadara,
+  Shakshuka, Dal Tadka, Chicken Cacciatore, Imam Bayildi) — KEINEN frei erfundenen
+  Zutaten-Mix und keine "Fusion-Bowl". Klassiker haben Generationen von Selektionsdruck
+  überlebt; sie schmecken bewiesenermaßen.
+- Anpassungen für Makros/Budget sind erlaubt und erwünscht (magereres Protein, mehr Gemüse,
+  weniger Öl) — solange der Charakter und die Aromen-Basis des Gerichts erhalten bleiben.
+- Der Titel nennt das Ursprungsgericht (z. B. "Mujadara mit Joghurt-Gurken-Salat"), und in
+  den notes steht ein Satz zur Herkunft des Gerichts.
 
 Wichtige Vorgaben für die Rezepte:
 - DER NUTZER HAT KEINE KÜCHENWAAGE. Mengen ausschließlich in: Stück, Tassen (1 Tasse ≈ 200 ml),
   EL, TL, Handvoll (≈ 30 g Blattgemüse), Becher (Joghurtbecher = 500 g), Packung (Standardgrößen),
   Schale (Cherrytomaten 250 g, Feta 200 g), Glas, mittel, faustgroß, tennisballgroß, handtellergroß.
   Gramm-Werte nur als Referenz in Klammern angeben.
-- Meal-Prep-freundlich: hält mindestens 3 Tage im Kühlschrank.
+- batchStorageDays = ehrliche Schätzung, wie viele Tage sich Reste im Kühlschrank halten
+  (reine Info, KEINE Design-Vorgabe — das Gericht wird frisch gekocht).
 - Eiweißreich (mind. 30 g pro Portion, idealerweise 40+).
 - Anfängerfreundliche Schritte mit optischen Garchecks (keine Kerntemperaturen, da kein Thermometer).
 - Techniken sind kurze Tags auf Deutsch (z. B. "scharf anbraten", "karamellisieren", "emulgieren",
