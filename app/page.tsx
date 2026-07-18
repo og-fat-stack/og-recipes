@@ -3,7 +3,9 @@ import { connection } from "next/server";
 import { requireUserId } from "../lib/auth";
 import { getProfile } from "../lib/profile";
 import { getTodayChecklist } from "../lib/checklist";
+import { getFoodEntriesForDay, sumFoodEntries } from "../lib/foodLog";
 import { getRoutines } from "../lib/routines";
+import { startOfDay } from "../lib/time";
 import { planActivityKcalPerDay } from "../lib/training";
 import { ActivityToggle } from "../components/ActivityToggle";
 import { ProgressBar } from "../components/ProgressBar";
@@ -13,10 +15,12 @@ export default async function Home() {
   await connection();
   const userId = await requireUserId();
   const profile = await getProfile(userId);
-  const [checklist, routines] = await Promise.all([
+  const [checklist, routines, foodEntries] = await Promise.all([
     getTodayChecklist(userId),
     getRoutines(userId, profile),
+    getFoodEntriesForDay(userId, startOfDay()),
   ]);
+  const food = sumFoodEntries(foodEntries);
 
   const todayLabel = checklist.dateKey.toLocaleDateString("de-DE", {
     weekday: "long",
@@ -48,6 +52,64 @@ export default async function Home() {
       </header>
 
       <TodayChecklist items={checklist.items} />
+
+      {profile && (
+        <Link
+          href="/food"
+          className="block rounded-card border border-line bg-surface p-4 transition-colors hover:bg-surface-hover"
+        >
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-sm font-medium text-ink-subtle">
+              Ernährung heute
+            </h2>
+            <span className="text-xs text-ink-subtle">
+              {foodEntries.length === 0
+                ? "Noch nichts eingetragen →"
+                : `${foodEntries.length} ${foodEntries.length === 1 ? "Eintrag" : "Einträge"} →`}
+            </span>
+          </div>
+          <div className="mt-3 space-y-3">
+            <div>
+              <div className="flex items-baseline justify-between text-xs">
+                <span className="text-ink-muted">Kalorien</span>
+                <span className="font-semibold tabular-nums">
+                  {food.kcal}
+                  <span className="font-normal text-ink-subtle">
+                    {" "}
+                    / {profile.kcalTarget} kcal
+                  </span>
+                </span>
+              </div>
+              <ProgressBar
+                value={food.kcal}
+                max={profile.kcalTarget}
+                size="sm"
+                label={`Kalorien: ${food.kcal} von ${profile.kcalTarget}`}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <div className="flex items-baseline justify-between text-xs">
+                <span className="text-ink-muted">Eiweiß</span>
+                <span className="font-semibold tabular-nums">
+                  {food.proteinG}
+                  <span className="font-normal text-ink-subtle">
+                    {" "}
+                    / {profile.proteinG} g
+                  </span>
+                </span>
+              </div>
+              <ProgressBar
+                value={food.proteinG}
+                max={profile.proteinG}
+                size="sm"
+                label={`Eiweiß: ${food.proteinG} von ${profile.proteinG} g`}
+                className="mt-1.5"
+              />
+            </div>
+          </div>
+        </Link>
+      )}
 
       {profile && (
         <ActivityToggle

@@ -9,6 +9,7 @@ type Tab = { href: string; label: string; icon: ComponentType<{ className?: stri
 
 const TABS: Tab[] = [
   { href: "/", label: "Start", icon: HomeIcon },
+  { href: "/food", label: "Essen", icon: MealIcon },
   { href: "/plan", label: "Plan", icon: CalendarIcon },
   { href: "/recipes", label: "Rezepte", icon: BookIcon },
   { href: "/training", label: "Training", icon: DumbbellIcon },
@@ -262,6 +263,15 @@ function HomeIcon({ className }: { className?: string }) {
     <Ic className={className}>
       <path d="M3 11 12 3l9 8" />
       <path d="M5 9.5V21h5v-6h4v6h5V9.5" />
+    </Ic>
+  );
+}
+function MealIcon({ className }: { className?: string }) {
+  return (
+    <Ic className={className}>
+      <path d="M6 3v5.5a2 2 0 0 0 4 0V3" />
+      <path d="M8 3v18M8 10.5V21" />
+      <path d="M17.5 3c-1.6 2.6-2.1 5.2-2.1 7.7 0 1.6 1 2.8 2.1 2.8V21" />
     </Ic>
   );
 }

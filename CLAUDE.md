@@ -68,11 +68,12 @@ thing. Follow it, not your priors.
 
 ## Prompt versioning
 
-When changing a system prompt in `lib/ai/generateRecipe.ts` or
-`lib/ai/generatePlan.ts`, bump the matching constant in
-`lib/ai/promptVersions.ts` (e.g. "plan-1" → "plan-2") in the same change.
-The version is stored on every generated recipe and failure log so prompt
-changes become measurable experiments (`npm run stats:prompts`).
+When changing a system prompt in `lib/ai/generateRecipe.ts`,
+`lib/ai/generatePlan.ts` or `lib/ai/estimateFood.ts`, bump the matching
+constant in `lib/ai/promptVersions.ts` (e.g. "plan-1" → "plan-2") in the same
+change. The version is stored on every generated recipe, food-log entry and
+failure log so prompt changes become measurable experiments
+(`npm run stats:prompts`).
 
 ## Database
 

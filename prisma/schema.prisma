@@ -33,6 +33,7 @@ model User {
   cookSessions CookSession[]
   recipes      Recipe[]
   generationLogs GenerationLog[]
+  foodLogs     FoodLogEntry[]
 }
 
 model Profile {
@@ -152,7 +153,7 @@ model GenerationLog {
   id            Int      @id @default(autoincrement())
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        Int
-  kind          String // "plan" | "recipe"
+  kind          String // "plan" | "recipe" | "food"
   promptVersion String?
   stopReason    String?
   error         String
@@ -212,6 +213,29 @@ model CookSession {
 
   @@index([date])
   @@index([userId])
+}
+
+/// Ein gegessenes Essen als Freitext, von Claude in kcal/Makros geschätzt
+/// (lib/ai/estimateFood.ts). `items` = Aufschlüsselung der Schätzung pro
+/// Lebensmittel, `assumptions` = was die KI bei unklaren Mengen angenommen hat.
+model FoodLogEntry {
+  id            Int      @id @default(autoincrement())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int
+  /// Berliner Kalendertag (startOfDay), dem das Essen zugerechnet wird.
+  date          DateTime
+  /// Original-Eingabe des Nutzers ("2 Brötchen mit Butter und ein Cappuccino").
+  text          String
+  kcal          Int
+  proteinG      Int
+  carbG         Int
+  fatG          Int
+  items         Json
+  assumptions   String?
+  promptVersion String?
+  createdAt     DateTime @default(now())
+
+  @@index([userId, date])
 }
 
 model WeightEntry {

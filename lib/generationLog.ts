@@ -13,7 +13,7 @@ const RETENTION_DAYS = 180;
  */
 export async function logGenerationFailure(
   userId: number,
-  kind: "plan" | "recipe",
+  kind: "plan" | "recipe" | "food",
   error: unknown,
   promptVersion?: string,
 ): Promise<void> {
