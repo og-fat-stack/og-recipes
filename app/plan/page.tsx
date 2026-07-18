@@ -2,12 +2,13 @@ import Link from "next/link";
 import { connection } from "next/server";
 import {
   DAYS,
+  DISPLAY_SLOTS,
   SLOT_LABELS,
-  SLOTS,
   type Slot,
   addDays,
   getPlanForWeek,
   getPlanGeneration,
+  isSnackSlot,
   parseWeekSel,
   weekStartFor,
 } from "../../lib/plan";
@@ -34,7 +35,9 @@ const FULL_DAYS = [
 
 const SLOT_ICON: Record<Slot, string> = {
   breakfast: "🌅",
+  snack1: "🥤",
   lunch: "☀️",
+  snack2: "🥤",
   dinner: "🌙",
 };
 
@@ -212,7 +215,14 @@ export default async function PlanPage({
               key={day}
               label={FULL_DAYS[day]}
               dateStr={fmtDate(addDays(ws, day))}
-              meals={SLOTS.map((slot) => ({ slot, cell: grid.get(`${day}-${slot}`) }))}
+              meals={DISPLAY_SLOTS.map((slot) => ({
+                slot,
+                cell: grid.get(`${day}-${slot}`),
+              })).filter(
+                // Snack-Slots nur zeigen, wenn belegt — je nach Eiweißziel
+                // gibt es 0–2 davon; leere "noch offen"-Zeilen wären Rauschen.
+                (m) => m.cell || !isSnackSlot(m.slot),
+              )}
               target={target}
               isToday={day === todayIdx}
               isPast={todayIdx >= 0 && day < todayIdx}

@@ -6,5 +6,5 @@
  * So wird aus "ich glaube, der neue Prompt ist besser" eine messbare
  * Like-Quote pro Version (scripts/promptStats.ts).
  */
-export const RECIPE_PROMPT_VERSION = "recipe-1";
-export const PLAN_PROMPT_VERSION = "plan-2";
+export const RECIPE_PROMPT_VERSION = "recipe-2";
+export const PLAN_PROMPT_VERSION = "plan-3";

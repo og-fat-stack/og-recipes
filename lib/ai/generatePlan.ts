@@ -5,6 +5,7 @@ import { GenerationError } from "./generationError";
 import { RecipeDraftSchema } from "./generateRecipe";
 import { getLatestMeasurement } from "../measurements";
 import { compositionSummaryForPrompt } from "../bodyComp";
+import type { SnackPlan } from "../snacks";
 
 export const PlanAssignmentSchema = z.object({
   day: z.number().int().min(0).max(6),
@@ -35,6 +36,8 @@ export type KnownRecipeSummary = {
 /**
  * Prüft, ob die Tagessummen des Plans die Profil-Ziele treffen: Kalorien
  * ±15 %, Eiweiß mindestens 85 % des Ziels (Eiweiß-Überschuss ist ok).
+ * Feste Snacks (snackMacrosByDay) zählen zur Tagessumme dazu — Claude plant
+ * nur die 3 Mahlzeiten, die Snacks liegen bereits fest.
  * Liefert eine Problembeschreibung für den Korrektur-Prompt oder null.
  * Exportiert für Tests.
  */
@@ -43,6 +46,7 @@ export function validatePlanMacros(args: {
   knownMainRecipes: KnownRecipeSummary[];
   kcalTarget: number;
   proteinTarget: number;
+  snackMacrosByDay?: Map<number, { kcal: number; protein: number }>;
 }): string | null {
   const KCAL_TOLERANCE = 0.15;
   const PROTEIN_FLOOR = 0.85;
@@ -68,6 +72,13 @@ export function validatePlanMacros(args: {
     d.protein += r.protein;
     byDay.set(a.day, d);
   }
+  for (const [day, d] of byDay) {
+    const snack = args.snackMacrosByDay?.get(day);
+    if (snack) {
+      d.kcal += snack.kcal;
+      d.protein += snack.protein;
+    }
+  }
 
   const problems: string[] = [];
   for (const [day, d] of [...byDay.entries()].sort((a, b) => a[0] - b[0])) {
@@ -90,8 +101,38 @@ const SYSTEM_PROMPT = `Du bist ein persönlicher Koch-Coach und Wochenplaner fü
 Abnehm-App. Du planst Mahlzeiten für einen vom Nutzer gewählten Tagesbereich (meist eine
 volle Woche Mo–So mit 21 Slots, manchmal nur ein Teilbereich, z.B. Di–Sa). 3 Mahlzeiten
 pro Tag (Frühstück + Mittag + Abend). Die genaue Anzahl Slots steht im User-Input.
+Zusätzlich hat der Nutzer ggf. FESTE SNACKS (z. B. Whey-Shake, Skyr-Bowl), die die App
+bereits eingeplant hat — sie stehen im User-Input, du planst sie NICHT und ihre Makros
+sind von den Tageszielen für deine 3 Mahlzeiten schon abgezogen. Dadurch müssen deine
+Mahlzeiten KEINE extremen Eiweißmengen mehr tragen — nutze diese Freiheit für echte,
+ausgewogene Gerichte statt Eiweiß-Stopferei.
 Oberstes Ziel: Gerichte, die WIRKLICH schmecken — Nährwerte treffen ist Pflicht, aber
 Geschmack entscheidet, ob der Plan durchgehalten wird.
+
+PROTEIN-ARCHITEKTUR — Pflicht für jedes Hauptgericht (Denkweise eines Kochs, nicht
+eines Makro-Rechners):
+- ANKER ZUERST: Wähle zuerst den Protein-Anker des Gerichts (Hülsenfrüchte, Eier, Tofu/
+  Tempeh, Seitan, Paneer, Geflügel, Fisch …) und baue das Gericht um ihn herum — NICHT
+  erst ein Gericht wählen und dann Eiweiß danebenstellen.
+- MINDESTENS 2 QUELLEN: Fehlendes Eiweiß aus einer zweiten, zum Gericht passenden Quelle
+  holen (z. B. Dal + Ei obendrauf, Pasta aus Linsen statt Weizen, Ricotta in der Sauce)
+  statt EINE Quelle auf absurde Mengen zu skalieren.
+- MILCHPRODUKT-DECKEL: Quark, Skyr, Joghurt & Co. als Beilage/Dip (Raita, Tzatziki,
+  Kräuterquark) maximal 150 g pro Portion. Ein Dip, der größer ist als das Gericht
+  selbst, ist ein FEHLER — dann stattdessen den Anker vergrößern oder eine zweite
+  Quelle einbauen. Als integrale Zutat (Sauce, Marinade) gelten übliche Rezeptmengen.
+- REALISTISCHE PROPORTIONEN: Beilagen in echten Portionsgrößen (Reis/Bulgur/Couscous
+  mindestens 50 g trocken) oder bewusst ganz weglassen — keine Alibi-Mengen wie 15 g
+  Reis. Die Hauptkomponente bleibt mengenmäßig das Zentrum des Tellers.
+
+VEGETARISCH: Steht im User-Input "Ernährung: VEGETARISCH", gilt zwingend: kein Fleisch,
+kein Fisch, keine Gelatine, kein Fischsauce-/Speck-Aroma — auch nicht in Spuren. Der
+Abschnitt FLEISCH-GRENZEN entfällt dann komplett, und Fleisch-/Fisch-Beispiele aus dem
+BUDGET-Abschnitt (Hähnchenschenkel, Thunfisch, Sardinen) gelten nicht. Rotiere die Anker über die Woche:
+Eier, Paneer/Halloumi, Tofu/Tempeh, Hülsenfrüchte, Linsen-/Kichererbsenpasta, Seitan.
+Milchprodukte sind erlaubt, dürfen aber nicht der Hauptanker JEDER Mahlzeit sein.
+Bevorzugt Küchen, die vegetarisches Eiweiß nativ können (indisch, levantinisch,
+ostasiatisch, mexikanisch) — kein "Gericht X, nur ohne Fleisch".
 
 KOCH-RHYTHMUS — DU empfiehlst ihn (der Nutzer macht KEIN Meal-Prep):
 - Entscheide selbst, an welchen Tagen frisch gekocht wird und wo Reste vom Vortag
@@ -159,11 +200,13 @@ Vorgaben für JEDES neue Rezept:
   Gemüsebrühe, 2 Stück Eier, 1 EL Olivenöl).
 - Anfängerfreundliche Schritte mit optischen Garchecks (keine Kerntemperaturen).
 - MAKRO-TREFFSICHERHEIT — WICHTIGSTE ZAHLENREGEL: Die Summe der 3 Mahlzeiten eines Tages
-  muss die Tagesziele aus dem User-Input auf ±10 % treffen — an JEDEM Tag, vor allem bei
-  Kalorien und Eiweiß. Orientiere dich an den "Pro Mahlzeit"-Zielwerten, NICHT an den
+  muss die MAHLZEITEN-Tagesziele aus dem User-Input auf ±10 % treffen — an JEDEM Tag, vor
+  allem bei Kalorien und Eiweiß. (Feste Snacks sind darin bereits herausgerechnet — nicht
+  nochmal abziehen.) Orientiere dich an den "Pro Mahlzeit"-Zielwerten, NICHT an den
   Eiweiß-Mindestwerten (Mindestwerte sind Untergrenzen, KEINE Zielwerte — ein Plan, der
   nur die Minimums trifft, ist FALSCH). Rechne vor dem Antworten für jeden Tag nach:
-  kcal-Summe und Eiweiß-Summe über die 3 Slots.
+  kcal-Summe und Eiweiß-Summe über die 3 Slots. Das Eiweiß dabei nach PROTEIN-ARCHITEKTUR
+  erreichen (Anker + zweite Quelle), NIEMALS über überdimensionierte Milchprodukt-Beilagen.
 - Eiweißreich: Die verbindlichen Eiweiß-Mindestwerte pro Mahlzeit stehen im User-Input
   ("Eiweiß-Minimum").
 - Techniken als deutsche Tags (max 5).
@@ -268,6 +311,11 @@ export type GeneratePlanArgs = {
   claudeMemory?: string | null;
   /** false = ohne Budget-Einschränkung planen (Standard: true = günstig). */
   budgetConscious?: boolean;
+  /**
+   * Bereits fest eingeplante Snacks (lib/snacks.ts). Ihre Makros werden von
+   * den Tageszielen abgezogen, bevor Claude die 3 Mahlzeiten plant.
+   */
+  snackPlan?: SnackPlan;
 };
 
 const DAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
@@ -280,17 +328,39 @@ export async function generatePlanDraft({
   useUpIngredients = [],
   claudeMemory,
   budgetConscious = true,
+  snackPlan,
 }: GeneratePlanArgs): Promise<PlanDraft> {
   const { start: startDay, end: endDay } = dayRange;
   const dayCount = endDay - startDay + 1;
   const expectedSlots = dayCount * 3;
   const isFullWeek = startDay === 0 && endDay === 6;
+  const vegetarian = profile.vegetarian;
+
+  // Feste Snacks tragen einen Teil der Tagesziele — Claude plant die 3
+  // Mahlzeiten nur noch auf die Restziele. Die Snack-Makros schwanken pro Tag
+  // minimal (Rotation); für die Prompt-Zielwerte reicht der Durchschnitt, die
+  // Validierung rechnet pro Tag exakt (validatePlanMacros).
+  const snackDays = [...(snackPlan?.macrosByDay.values() ?? [])];
+  const avgSnack = snackDays.length
+    ? {
+        kcal: Math.round(snackDays.reduce((s, d) => s + d.kcal, 0) / snackDays.length),
+        protein: Math.round(snackDays.reduce((s, d) => s + d.protein, 0) / snackDays.length),
+        carb: Math.round(snackDays.reduce((s, d) => s + d.carb, 0) / snackDays.length),
+        fat: Math.round(snackDays.reduce((s, d) => s + d.fat, 0) / snackDays.length),
+      }
+    : { kcal: 0, protein: 0, carb: 0, fat: 0 };
+  const mealTargets = {
+    kcal: profile.kcalTarget - avgSnack.kcal,
+    protein: profile.proteinG - avgSnack.protein,
+    carb: Math.max(0, profile.carbG - avgSnack.carb),
+    fat: Math.max(0, profile.fatG - avgSnack.fat),
+  };
 
   const perMeal = {
-    kcal: Math.round(profile.kcalTarget / 3),
-    protein: Math.round(profile.proteinG / 3),
-    carb: Math.round(profile.carbG / 3),
-    fat: Math.round(profile.fatG / 3),
+    kcal: Math.round(mealTargets.kcal / 3),
+    protein: Math.round(mealTargets.protein / 3),
+    carb: Math.round(mealTargets.carb / 3),
+    fat: Math.round(mealTargets.fat / 3),
   };
 
   // Fleisch-Grenzen nach DGE-Richtwert 2024: max. 300 g Fleisch + Wurst pro Woche,
@@ -355,17 +425,32 @@ Verstöße durch eine passende Alternative, bevor du antwortest.
     ? "- Budget ist wichtig: günstige, alltagstaugliche Zutaten."
     : "- KEINE Budget-Einschränkung: Der Nutzer hat freie Zutatenwahl gewählt. IGNORIERE den BUDGET-Abschnitt aus dem System-Prompt vollständig — Kosten sind KEIN Auswahlkriterium. Wähle Zutaten nach Geschmack, Qualität und Nährwert (auch Lachs, Rind, Garnelen, Feta, Avocado, Nüsse sind erlaubt). Alle anderen Vorgaben (Fleisch-Grenzen, Vorlieben/Abneigungen, Eiweißziele) gelten UNVERÄNDERT weiter.";
 
+  const snackTitles = [
+    ...new Set(
+      [...(snackPlan?.byDay.values() ?? [])].flat().map((p) => p.snack.title),
+    ),
+  ];
+  const snackBlock = snackPlan && snackPlan.snacksPerDay > 0
+    ? `Feste Snacks (von der App bereits eingeplant — du planst sie NICHT, sie erscheinen NICHT in "assignments"): ${snackPlan.snacksPerDay} pro Tag, zusammen Ø ${avgSnack.kcal} kcal · ${avgSnack.protein} g E pro Tag (${snackTitles.join(", ")}). Ihre Makros sind aus den Mahlzeiten-Zielen unten schon herausgerechnet.`
+    : "";
+
   const userMsg = `Profil:
-- Tagesziele: ${profile.kcalTarget} kcal · ${profile.proteinG} g E · ${profile.carbG} g K · ${profile.fatG} g F
+- Tagesziele GESAMT (inkl. Snacks): ${profile.kcalTarget} kcal · ${profile.proteinG} g E · ${profile.carbG} g K · ${profile.fatG} g F
+${snackBlock ? `- ${snackBlock}\n` : ""}- Mahlzeiten-Tagesziele (Summe deiner 3 Mahlzeiten, ±10 %): ${mealTargets.kcal} kcal · ${mealTargets.protein} g E · ${mealTargets.carb} g K · ${mealTargets.fat} g F
 - Pro Mahlzeit Zielwerte: ~${perMeal.kcal} kcal · ~${perMeal.protein} g E · ~${perMeal.carb} g K · ~${perMeal.fat} g F
-- Eiweiß-Minimum pro Mahlzeit: Hauptmahlzeiten ≥ ${perMeal.protein} g, Frühstück ≥ ${Math.round(perMeal.protein * 0.7)} g (Untergrenzen — Zielwert bleibt ~${perMeal.protein} g pro Mahlzeit, Tagessumme muss ±10 % von ${profile.proteinG} g treffen)
+- Eiweiß-Minimum pro Mahlzeit: Hauptmahlzeiten ≥ ${perMeal.protein} g, Frühstück ≥ ${Math.round(perMeal.protein * 0.7)} g (Untergrenzen — Zielwert bleibt ~${perMeal.protein} g pro Mahlzeit, Mahlzeiten-Tagessumme muss ±10 % von ${mealTargets.protein} g treffen)
 - Ziel: ${profile.goal}
+${vegetarian ? "- Ernährung: VEGETARISCH (kein Fleisch, kein Fisch — siehe VEGETARISCH-Abschnitt im System-Prompt)." : ""}
 ${budgetLine}
 ${compositionBlock ? `\n${compositionBlock}\n` : ""}
 ${memoryBlock ? `\n${memoryBlock}\n` : ""}
 ${rangeBlock}
 
-Fleisch-Budget (DGE, VERBINDLICH für diesen Tagesbereich von ${dayCount} Tag(en)): max. ${meatCapG} g Fleisch + Wurst INSGESAMT über alle Mahlzeiten (davon höchstens ~${processedCapG} g verarbeitet/Wurst). Weißes Fleisch (Geflügel) vor rotem Fleisch bevorzugen, rotes Fleisch minimieren. Fisch: ${fishPortions} Portion(en) einplanen (zählt NICHT zum Fleisch-Budget). Übrige Hauptmahlzeiten pflanzlich (Hülsenfrüchte, Eier, Tofu).
+${
+    vegetarian
+      ? `Ernährung: VEGETARISCH — ALLE Rezepte ohne Fleisch, Wurst und Fisch (auch ohne Fischsauce, Speck, Gelatine). Das Fleisch-Budget entfällt. Rotiere die Protein-Anker über die Tage (Eier, Paneer/Halloumi, Tofu/Tempeh, Hülsenfrüchte, Linsen-/Kichererbsenpasta, Seitan) — nicht jeden Tag derselbe Anker, und Milchprodukte nicht als Hauptanker jeder Mahlzeit.`
+      : `Fleisch-Budget (DGE, VERBINDLICH für diesen Tagesbereich von ${dayCount} Tag(en)): max. ${meatCapG} g Fleisch + Wurst INSGESAMT über alle Mahlzeiten (davon höchstens ~${processedCapG} g verarbeitet/Wurst). Weißes Fleisch (Geflügel) vor rotem Fleisch bevorzugen, rotes Fleisch minimieren. Fisch: ${fishPortions} Portion(en) einplanen (zählt NICHT zum Fleisch-Budget). Übrige Hauptmahlzeiten pflanzlich (Hülsenfrüchte, Eier, Tofu).`
+  }
 
 ${knownBlock}
 ${useUpBlock ? `\n${useUpBlock}\n` : ""}
@@ -468,6 +553,7 @@ Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day $
       knownMainRecipes,
       kcalTarget: profile.kcalTarget,
       proteinTarget: profile.proteinG,
+      snackMacrosByDay: snackPlan?.macrosByDay,
     });
     if (!macroProblem) return result.data;
     if (attempt >= MAX_ATTEMPTS) {
@@ -479,11 +565,11 @@ Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day $
       { role: "assistant", content: rawText },
       {
         role: "user",
-        content: `Dein Plan verfehlt die Tagesziele:
+        content: `Dein Plan verfehlt die Tagesziele (Tagessummen jeweils INKLUSIVE der festen Snacks gerechnet):
 ${macroProblem}
 
 Erstelle den KOMPLETTEN Plan neu (gleiches JSON-Format, gleiche Slot- und Index-Vorgaben).
-Jeder Tag muss ${profile.kcalTarget} kcal ±10 % und mindestens ${Math.round(profile.proteinG * 0.9)} g Eiweiß erreichen. Erhöhe gezielt die Eiweiß-Anteile der Rezepte (mehr Magerquark/Skyr, Hülsenfrüchte, Geflügel, Thunfisch) oder passe Portionsgrößen an, statt nur Beilagen zu vergrößern. Rechne für jeden Tag nach, BEVOR du antwortest.`,
+Deine 3 Mahlzeiten müssen pro Tag zusammen ${mealTargets.kcal} kcal ±10 % und mindestens ${Math.round(mealTargets.protein * 0.9)} g Eiweiß liefern. Fehlendes Eiweiß nach PROTEIN-ARCHITEKTUR beheben: Anker vergrößern oder eine zweite passende Quelle einbauen (${vegetarian ? "Eier, Paneer, Tofu, Hülsenfrüchte, Linsenpasta" : "Hülsenfrüchte, Eier, Geflügel, Thunfisch, Tofu"}) — NICHT einfach Milchprodukt-Beilagen vergrößern (Deckel: 150 g pro Portion). Rechne für jeden Tag nach, BEVOR du antwortest.`,
       },
     );
   }

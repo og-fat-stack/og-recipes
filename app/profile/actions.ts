@@ -127,6 +127,26 @@ export async function toggleActivityEnabled(): Promise<void> {
 }
 
 /**
+ * Schaltet um, ob Plan- und Rezeptgenerierung vegetarisch arbeiten (kein
+ * Fleisch, kein Fisch; Eier + Milchprodukte bleiben). Wirkt erst bei der
+ * nächsten Generierung — keine gespeicherten Werte neu zu berechnen.
+ */
+export async function toggleVegetarian(): Promise<void> {
+  const userId = await requireUserId();
+  const profile = await db.profile.findUnique({
+    where: { userId },
+    select: { vegetarian: true },
+  });
+  if (!profile) return;
+  await db.profile.update({
+    where: { userId },
+    data: { vegetarian: !profile.vegetarian },
+  });
+  revalidatePath("/profile");
+  revalidatePath("/plan");
+}
+
+/**
  * Schaltet um, ob Plan- und Rezeptgenerierung günstig einkaufen oder ohne
  * Budget-Einschränkung planen. Wirkt erst bei der nächsten Generierung — keine
  * gespeicherten Werte neu zu berechnen.

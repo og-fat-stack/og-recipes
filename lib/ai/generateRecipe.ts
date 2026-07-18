@@ -138,8 +138,11 @@ export async function generateRecipeDraft({
   const budgetClause = budgetHint
     ? " Achte auf günstige Zutaten (Linsen, Eier, Quark, Hähnchenschenkel, Haferflocken) — der Nutzer achtet aufs Budget."
     : " Keine Budget-Einschränkung: Zutaten frei nach Geschmack und Qualität wählen, Kosten sind kein Kriterium.";
+  const vegetarianClause = profile?.vegetarian
+    ? " ERNÄHRUNG: VEGETARISCH — kein Fleisch, keine Wurst, kein Fisch, keine Gelatine, keine Fischsauce, auch nicht in Spuren; Fleisch-/Fisch-Beispiele aus anderen Hinweisen gelten nicht. Protein-Anker stattdessen: Eier, Paneer/Halloumi, Tofu/Tempeh, Seitan, Hülsenfrüchte, Linsen-/Kichererbsenpasta. Milchprodukte als Beilage/Dip (Quark, Skyr, Joghurt) maximal 150 g pro Portion — fehlendes Eiweiß über eine zweite passende Quelle im Gericht lösen, nicht über einen überdimensionierten Dip."
+    : "";
   const profileContext = profile
-    ? `Nutzerprofil: Tagesziel ${profile.kcalTarget} kcal, ${profile.proteinG} g Eiweiß, ${profile.carbG} g KH, ${profile.fatG} g Fett. Ziel: ${profile.goal}. Plane jede Portion so, dass sie ca. 1/3 eines Tages-Makros deckt (er isst 3 Mahlzeiten pro Tag).${budgetClause}`
+    ? `Nutzerprofil: Tagesziel ${profile.kcalTarget} kcal, ${profile.proteinG} g Eiweiß, ${profile.carbG} g KH, ${profile.fatG} g Fett. Ziel: ${profile.goal}. Plane jede Portion so, dass sie ca. 1/3 eines Tages-Makros deckt (er isst 3 Mahlzeiten pro Tag).${budgetClause}${vegetarianClause}`
     : `Nutzerprofil: nicht gesetzt. Plane eine eiweißreiche, moderat kalorische Portion (~400–550 kcal, 30+ g Eiweiß) mit günstigen Zutaten.`;
 
   const memory = claudeMemory?.trim();

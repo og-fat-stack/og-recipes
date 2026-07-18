@@ -56,6 +56,9 @@ model Profile {
   /// Beim Generieren günstig einkaufen (true) oder ohne Budget-Einschränkung
   /// (false)? Steuert die Zutatenauswahl in Plan- und Rezeptgenerierung.
   budgetConscious Boolean @default(true)
+  /// Vegetarisch essen? Plan- und Rezeptgenerierung verwenden dann kein
+  /// Fleisch und keinen Fisch (Eier + Milchprodukte bleiben erlaubt).
+  vegetarian     Boolean  @default(false)
   goal           String   @default("cut")
   kcalTarget     Int
   proteinG       Int

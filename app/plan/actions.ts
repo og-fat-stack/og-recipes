@@ -14,6 +14,7 @@ import {
 } from "../../lib/plan";
 import { berlinWeekdayIndex } from "../../lib/time";
 import { generatePlanDraft } from "../../lib/ai/generatePlan";
+import { buildSnackPlan, upsertSnackRecipes } from "../../lib/snacks";
 import { PLAN_PROMPT_VERSION } from "../../lib/ai/promptVersions";
 import { getClaudeMemoryText } from "../../lib/claudeMemory";
 import { logGenerationFailure } from "../../lib/generationLog";
@@ -99,6 +100,15 @@ export async function generateWeeklyPlan(
         batchStorageDays: r.batchStorageDays,
       }));
 
+      // Feste Snack-Slots: deterministisch aus der Bibliothek belegt; ihre
+      // Makros werden im Generator von den Tageszielen abgezogen, damit die
+      // 3 Mahlzeiten kulinarisch realistische Eiweißmengen tragen.
+      const snackPlan = buildSnackPlan({
+        proteinTargetG: profile.proteinG,
+        startDay,
+        endDay,
+      });
+
       const draft = await generatePlanDraft({
         profile,
         recentMealTitles: recentTitles,
@@ -107,6 +117,7 @@ export async function generateWeeklyPlan(
         useUpIngredients,
         claudeMemory,
         budgetConscious: profile.budgetConscious,
+        snackPlan,
       });
 
       // Abbruch-Check: Wurde die Generierung inzwischen abgebrochen (Zeile
@@ -153,6 +164,20 @@ export async function generateWeeklyPlan(
         (a) => a.day >= startDay && a.day <= endDay,
       );
 
+      // Snack-Rezepte anlegen/aktualisieren und die festen Snack-Slots füllen.
+      const plannedSnacks = [...snackPlan.byDay.entries()];
+      const snackIds = await upsertSnackRecipes(
+        userId,
+        plannedSnacks.flatMap(([, list]) => list.map((p) => p.snack)),
+      );
+      const snackMeals = plannedSnacks.flatMap(([day, list]) =>
+        list.map((p) => ({
+          day,
+          slot: p.slot,
+          recipeId: snackIds.get(p.snack.title)!,
+        })),
+      );
+
       await db.mealPlan.create({
         data: {
           userId,
@@ -161,11 +186,14 @@ export async function generateWeeklyPlan(
           // wird auf der Plan-Seite angezeigt.
           notes: draft.weekNotes,
           meals: {
-            create: assignments.map((a) => ({
-              day: a.day,
-              slot: a.slot,
-              recipeId: allIds[a.recipeIndex],
-            })),
+            create: [
+              ...assignments.map((a) => ({
+                day: a.day,
+                slot: a.slot,
+                recipeId: allIds[a.recipeIndex],
+              })),
+              ...snackMeals,
+            ],
           },
         },
       });

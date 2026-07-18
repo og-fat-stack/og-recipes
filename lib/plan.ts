@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { SNACK_CUISINE } from "./snacks";
 import { addDays, startOfDay, weekStart } from "./time";
 
 export { addDays, weekStart };
@@ -26,14 +27,34 @@ export const DAYS = [
   "Sa",
   "So",
 ] as const;
+/** Von Claude geplante Mahlzeiten-Slots. */
 export const SLOTS = ["breakfast", "lunch", "dinner"] as const;
-export type Slot = (typeof SLOTS)[number];
+/**
+ * Feste Snack-Slots (lib/snacks.ts) — von der App deterministisch belegt,
+ * nicht von Claude. snack1 = vormittags, snack2 = nachmittags.
+ */
+export const SNACK_SLOTS = ["snack1", "snack2"] as const;
+/** Alle Slots in Tagesreihenfolge (für die Anzeige). */
+export const DISPLAY_SLOTS = [
+  "breakfast",
+  "snack1",
+  "lunch",
+  "snack2",
+  "dinner",
+] as const;
+export type Slot = (typeof DISPLAY_SLOTS)[number];
 
 export const SLOT_LABELS: Record<Slot, string> = {
   breakfast: "Frühstück",
+  snack1: "Snack",
   lunch: "Mittag",
+  snack2: "Snack",
   dinner: "Abend",
 };
+
+export function isSnackSlot(slot: string): boolean {
+  return (SNACK_SLOTS as readonly string[]).includes(slot);
+}
 
 export async function getPlanForWeek(userId: number, ws: Date) {
   return db.mealPlan.findUnique({
@@ -93,7 +114,7 @@ export async function pickKnownMainMealRecipes(
   const pool = await db.recipe.findMany({
     where: {
       userId,
-      NOT: { cuisine: "Frühstück" },
+      cuisine: { notIn: ["Frühstück", SNACK_CUISINE] },
       liked: true,
     },
     orderBy: { updatedAt: "asc" },
@@ -111,10 +132,14 @@ export async function getRecentMealTitles(
   const since = addDays(startOfDay(), -daysBack);
   const plans = await db.mealPlan.findMany({
     where: { userId, weekStart: { gte: since } },
-    include: { meals: { include: { recipe: { select: { title: true } } } } },
+    include: {
+      meals: { include: { recipe: { select: { title: true, cuisine: true } } } },
+    },
   });
   const titles = new Set<string>();
   for (const p of plans)
-    for (const m of p.meals) titles.add(m.recipe.title);
+    for (const m of p.meals)
+      // Feste Snacks sind keine "kürzlich gegessenen Gerichte" für den Prompt.
+      if (m.recipe.cuisine !== SNACK_CUISINE) titles.add(m.recipe.title);
   return Array.from(titles);
 }

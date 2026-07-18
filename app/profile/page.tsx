@@ -11,6 +11,7 @@ import {
 import { planActivityKcalPerDay } from "../../lib/training";
 import { ActivityToggle } from "../../components/ActivityToggle";
 import { BudgetToggle } from "../../components/BudgetToggle";
+import { VegetarianToggle } from "../../components/VegetarianToggle";
 import { ProfileForm } from "./ProfileForm";
 
 export default async function ProfilePage() {
@@ -84,6 +85,7 @@ export default async function ProfilePage() {
               extraKcal={planActivityKcalPerDay(profile.weightKg)}
             />
             <BudgetToggle budgetConscious={profile.budgetConscious} />
+            <VegetarianToggle vegetarian={profile.vegetarian} />
           </div>
           <p className="mt-3 text-xs text-ink-subtle">
             Berechnung:{" "}
