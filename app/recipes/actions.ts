@@ -19,7 +19,6 @@ const RecipeSchema = z.object({
   ingredients: z.string().min(1),
   steps: z.string().min(1),
   techniques: z.string().optional().default(""),
-  notes: z.string().max(2000).optional().default(""),
 });
 
 export type SaveRecipeState = { error?: string };
@@ -48,7 +47,6 @@ export async function createRecipe(
       ingredients: parseIngredients(d.ingredients),
       steps: parseLines(d.steps),
       techniques: parseTags(d.techniques),
-      notes: d.notes || null,
     },
   });
   revalidatePath("/recipes");

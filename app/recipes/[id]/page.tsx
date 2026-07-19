@@ -129,13 +129,6 @@ export default async function RecipePage({
         </ol>
       </section>
 
-      {recipe.notes && (
-        <section>
-          <h2 className="mb-2 text-sm font-medium text-ink-subtle">Notizen</h2>
-          <p className="text-sm whitespace-pre-wrap">{recipe.notes}</p>
-        </section>
-      )}
-
       <section className="rounded-card border border-line bg-surface p-4">
         <h2 className="mb-2 text-sm font-medium text-ink-subtle">
           Notiz nach dem Kochen

@@ -13,7 +13,6 @@ export type RecipeInput = {
   ingredients: Ingredient[];
   steps: string[];
   techniques: string[];
-  notes?: string | null;
 };
 
 /** Parse "name | 200 | g" or "name, 200g" or just "name" per line. */

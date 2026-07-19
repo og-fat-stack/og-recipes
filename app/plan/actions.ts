@@ -149,7 +149,6 @@ export async function generateWeeklyPlan(
             ingredients: r.ingredients,
             steps: r.steps,
             techniques: r.techniques,
-            notes: null,
             promptVersion: PLAN_PROMPT_VERSION,
           },
         });
@@ -182,9 +181,6 @@ export async function generateWeeklyPlan(
         data: {
           userId,
           weekStart: ws,
-          // Claudes Koch-Rhythmus-Empfehlung (wann kochen, wo Reste, warum) —
-          // wird auf der Plan-Seite angezeigt.
-          notes: draft.weekNotes,
           meals: {
             create: [
               ...assignments.map((a) => ({

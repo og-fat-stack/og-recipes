@@ -77,7 +77,9 @@ export async function estimateFood(text: string): Promise<FoodEstimate> {
     // weil Schätzen ein Konsistenz-, kein Kreativitätsproblem ist.
     model: "smart",
     system: SYSTEM_PROMPT,
-    maxTokens: 1500,
+    // Großzügiges Limit statt knapper Schätzung — abgerechnet wird nur, was
+    // tatsächlich generiert wird; ein zu knappes Limit schneidet das JSON ab.
+    maxTokens: 64000,
     temperature: 0.2,
     messages: [{ role: "user", content: `Gegessen: ${text}` }],
   });

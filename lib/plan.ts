@@ -108,7 +108,7 @@ export async function pickKnownMainMealRecipes(
   userId: number,
   desired: number,
   recentDays = 14,
-): Promise<{ id: number; title: string; portions: number; kcalPerPortion: number; proteinG: number; carbG: number; fatG: number; ingredients: unknown; steps: unknown; techniques: unknown; batchStorageDays: number; cuisine: string; notes: string | null }[]> {
+): Promise<{ id: number; title: string; portions: number; kcalPerPortion: number; proteinG: number; carbG: number; fatG: number; ingredients: unknown; steps: unknown; techniques: unknown; batchStorageDays: number; cuisine: string }[]> {
   const recentTitles = new Set(await getRecentMealTitles(userId, recentDays));
 
   const pool = await db.recipe.findMany({

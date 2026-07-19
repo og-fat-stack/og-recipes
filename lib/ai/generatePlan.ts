@@ -16,8 +16,6 @@ export const PlanAssignmentSchema = z.object({
 export const PlanDraftSchema = z.object({
   newRecipes: z.array(RecipeDraftSchema).min(1).max(8),
   assignments: z.array(PlanAssignmentSchema).min(3).max(21),
-  /** Claudes Koch-Empfehlung: wann kochen, wo Reste, warum diese Abwechslung. */
-  weekNotes: z.string().min(10).max(2000),
 });
 
 export type PlanDraft = z.infer<typeof PlanDraftSchema>;
@@ -153,8 +151,6 @@ KOCH-RHYTHMUS — DU empfiehlst ihn (der Nutzer macht KEIN Meal-Prep):
   Frühstücke sinnvoll sind (typisch 2–3 pro voller Woche, abwechselnd verteilt, nicht jeden
   Tag dasselbe). Die Frühstücke sollen sich klar unterscheiden (anderes Hauptgetreide/
   Eiweiß/Geschmack, süß vs. herzhaft).
-- ERKLÄRE deine Empfehlung im Pflichtfeld "weekNotes" (2–5 Sätze, Deutsch, informell "du"):
-  an welchen Tagen wird gekocht, wo werden Reste gegessen, wie viel Abwechslung und warum.
 
 ECHTE GERICHTE STATT ERFINDUNGEN — Pflicht für jedes neue Rezept:
 - Real existierende, benannte Gerichte mit klarer Herkunft (z. B. Mujadara, Shakshuka,
@@ -212,7 +208,6 @@ Vorgaben für JEDES neue Rezept:
 - Techniken als deutsche Tags (max 5).
 - batchStorageDays = ehrliche Schätzung, wie viele Tage sich Reste im Kühlschrank halten.
 - KEINE Rezept-Notizen erzeugen: Lass das Feld "notes" bei jedem Rezept komplett weg.
-  Das Top-Level-Feld "weekNotes" ist dagegen PFLICHT (siehe KOCH-RHYTHMUS).
 - MENGEN IN DEN SCHRITTEN WIEDERHOLEN: Jeder Zubereitungsschritt nennt die konkreten Mengen
   inline ("die 2 gehackten Zwiebeln und 4 gepressten Knoblauchzehen anbraten"), inkl. Salz, Fett,
   Säure ("1 TL grobes Meersalz", "Saft einer halben Zitrone", "1 EL Olivenöl"). Aus den Schritten
@@ -283,8 +278,7 @@ Konkretes Beispiel-Antwort-Skelett:
     { "day": 0, "slot": "lunch", "recipeIndex": 0 },
     { "day": 0, "slot": "dinner", "recipeIndex": 0 }
     // ... insgesamt 21 Einträge
-  ],
-  "weekNotes": "Koch am Mo, Mi, Do und Sa frisch; Di und Fr isst du Reste vom Vortag. ..."
+  ]
 }
 
 Pflicht:
@@ -460,7 +454,7 @@ recentMeals (nicht für NEUE Rezepte verwenden): ${
       : "keine"
   }
 
-Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day ${startDay}..${endDay} + weekNotes mit deiner Koch-Rhythmus-Empfehlung).`;
+Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day ${startDay}..${endDay}).`;
 
   const messages: { role: "user" | "assistant"; content: string }[] = [
     { role: "user", content: userMsg },
@@ -474,10 +468,11 @@ Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day $
     const msg = await callClaude({
       model: "planner",
       system: SYSTEM_PROMPT,
-      // Läuft im Hintergrund (kein Nutzer wartet) — großzügig bemessen, damit ein
-      // voller Wochenplan mit mehreren neuen Rezepten (bis zu 8, da der Koch-
-      // Rhythmus jetzt frei gewählt wird) nicht mitten im JSON abgeschnitten wird.
-      maxTokens: 20000,
+      // Läuft im Hintergrund (kein Nutzer wartet) — Modell-Maximum von Sonnet 5,
+      // damit auch die Denk-Tokens (zählen mit ins maxTokens-Budget) einen vollen
+      // Wochenplan nie mitten im JSON abschneiden. Kostet nur, was tatsächlich
+      // generiert wird.
+      maxTokens: 128000,
       // Claude Sonnet 5 lehnt nicht-default temperature ab — effort statt dessen
       // als Dreh für Denktiefe/Tempo (medium: guter Kompromiss aus Tempo und
       // Qualität für die Wochenplanung).

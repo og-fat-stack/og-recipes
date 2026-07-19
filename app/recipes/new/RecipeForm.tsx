@@ -75,8 +75,6 @@ export function RecipeForm() {
         hint="Kommagetrennt. Werden zu klickbaren Tags."
       />
 
-      <TextArea label="Notizen" name="notes" rows={3} />
-
       {state.error && (
         <p className="text-sm text-danger-ink">{state.error}</p>
       )}

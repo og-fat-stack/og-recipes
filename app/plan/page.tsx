@@ -201,13 +201,6 @@ export default async function PlanPage({
         </div>
       )}
 
-      {plan?.notes && (
-        <div className="rounded-card border border-line bg-surface p-4 text-sm">
-          <p className="font-medium">💡 Koch-Empfehlung für diese Woche</p>
-          <p className="mt-1 whitespace-pre-wrap text-ink-muted">{plan.notes}</p>
-        </div>
-      )}
-
       {plan && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {DAYS.map((_, day) => (

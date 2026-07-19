@@ -153,14 +153,6 @@ export function GeneratePanel() {
             </ol>
           </div>
 
-          {state.draft.notes && (
-            <div>
-              <h3 className="mb-1 text-sm font-medium text-ink-subtle">
-                Notizen
-              </h3>
-              <p className="whitespace-pre-wrap text-sm">{state.draft.notes}</p>
-            </div>
-          )}
         </div>
       )}
     </div>

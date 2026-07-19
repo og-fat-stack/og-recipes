@@ -23,7 +23,6 @@ export const RecipeDraftSchema = z.object({
     .min(2),
   steps: z.array(z.string().min(3)).min(2),
   techniques: z.array(z.string().min(2)).max(12),
-  notes: z.string().max(4000).optional().nullable(),
 });
 
 export type RecipeDraft = z.infer<typeof RecipeDraftSchema>;
@@ -41,8 +40,7 @@ ECHTE GERICHTE STATT ERFINDUNGEN — Pflicht:
   überlebt; sie schmecken bewiesenermaßen.
 - Anpassungen für Makros/Budget sind erlaubt und erwünscht (magereres Protein, mehr Gemüse,
   weniger Öl) — solange der Charakter und die Aromen-Basis des Gerichts erhalten bleiben.
-- Der Titel nennt das Ursprungsgericht (z. B. "Mujadara mit Joghurt-Gurken-Salat"), und in
-  den notes steht ein Satz zur Herkunft des Gerichts.
+- Der Titel nennt das Ursprungsgericht (z. B. "Mujadara mit Joghurt-Gurken-Salat").
 
 Wichtige Vorgaben für die Rezepte:
 - DER NUTZER HAT KEINE KÜCHENWAAGE. Mengen ausschließlich in: Stück, Tassen (1 Tasse ≈ 200 ml),
@@ -55,8 +53,6 @@ Wichtige Vorgaben für die Rezepte:
 - Anfängerfreundliche Schritte mit optischen Garchecks (keine Kerntemperaturen, da kein Thermometer).
 - Techniken sind kurze Tags auf Deutsch (z. B. "scharf anbraten", "karamellisieren", "emulgieren",
   "Gewürze anrösten", "Reispilaw"). Maximal 5 pro Rezept.
-- In den Notizen: immer eine kurze "Maße ohne Waage"-Sektion mit Umrechnungen für die wichtigsten
-  Zutaten dieses Rezepts.
 - Makros müssen plausibel zu den Zutaten passen; rechne Portionen ehrlich aus.
 - MENGEN IN DEN SCHRITTEN WIEDERHOLEN: Jeder Zubereitungsschritt nennt die konkreten Mengen inline
   ("die 2 gehackten Zwiebeln und 4 gepressten Knoblauchzehen anbraten", NICHT "die Zwiebeln und
@@ -111,8 +107,7 @@ kein Markdown, keine Code-Fences):
   "batchStorageDays": integer (1-14),
   "ingredients": [{ "name": string, "qty"?: number, "unit"?: string }],
   "steps": [string],
-  "techniques": [string],
-  "notes": string
+  "techniques": [string]
 }`;
 
 export type GenerateArgs = {
@@ -160,7 +155,9 @@ Liste und ersetze Verstöße durch eine passende Alternative, bevor du antwortes
   const msg = await callClaude({
     model: "smart",
     system: SYSTEM_PROMPT,
-    maxTokens: 3000,
+    // Großzügiges Limit statt knapper Schätzung — abgerechnet wird nur, was
+    // tatsächlich generiert wird; ein zu knappes Limit schneidet das JSON ab.
+    maxTokens: 64000,
     temperature: 0.8,
     messages: [
       {

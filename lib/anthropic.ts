@@ -41,6 +41,9 @@ export type CallClaudeInput = {
 /**
  * Shared Claude call wrapper. The system prompt is sent as a cache-control
  * block so repeated calls with the same system text hit the prompt cache.
+ * Läuft als Streaming-Request: erst damit sind maxTokens-Werte über ~16k
+ * erlaubt, ohne in SDK-HTTP-Timeouts zu laufen (das Ergebnis bleibt dieselbe
+ * vollständige Message via finalMessage()).
  */
 export async function callClaude({
   model = "smart",
@@ -50,20 +53,22 @@ export async function callClaude({
   temperature,
   effort,
 }: CallClaudeInput): Promise<Anthropic.Message> {
-  return anthropic().messages.create({
-    model: MODELS[model],
-    max_tokens: maxTokens,
-    ...(temperature !== undefined ? { temperature } : {}),
-    ...(effort ? { output_config: { effort } } : {}),
-    system: [
-      {
-        type: "text",
-        text: system,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages,
-  });
+  return anthropic().messages
+    .stream({
+      model: MODELS[model],
+      max_tokens: maxTokens,
+      ...(temperature !== undefined ? { temperature } : {}),
+      ...(effort ? { output_config: { effort } } : {}),
+      system: [
+        {
+          type: "text",
+          text: system,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages,
+    })
+    .finalMessage();
 }
 
 export function extractText(msg: Anthropic.Message): string {

@@ -69,7 +69,6 @@ export async function saveGeneratedRecipe(
       ingredients: draft.ingredients,
       steps: draft.steps,
       techniques: draft.techniques,
-      notes: draft.notes ?? null,
       // Server-seitig gesetzt (nicht aus dem Client-JSON), damit die
       // Like-Quote pro Prompt-Version nicht manipulierbar ist.
       promptVersion: RECIPE_PROMPT_VERSION,
