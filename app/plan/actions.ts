@@ -14,6 +14,7 @@ import {
 } from "../../lib/plan";
 import { berlinWeekdayIndex } from "../../lib/time";
 import { generatePlanDraft } from "../../lib/ai/generatePlan";
+import { getLastFishGroups } from "../../lib/fish";
 import { buildSnackPlan, upsertSnackRecipes } from "../../lib/snacks";
 import { PLAN_PROMPT_VERSION } from "../../lib/ai/promptVersions";
 import { getClaudeMemoryText } from "../../lib/claudeMemory";
@@ -83,11 +84,13 @@ export async function generateWeeklyPlan(
   // bis der neue fertig ist (Löschen/Ersetzen passiert erst danach).
   after(async () => {
     try {
-      const [recentTitles, knownMainPool, claudeMemory] = await Promise.all([
-        getRecentMealTitles(userId, 14),
-        pickKnownMainMealRecipes(userId, 2),
-        getClaudeMemoryText(userId),
-      ]);
+      const [recentTitles, knownMainPool, claudeMemory, lastFishGroups] =
+        await Promise.all([
+          getRecentMealTitles(userId, 14),
+          pickKnownMainMealRecipes(userId, 2),
+          getClaudeMemoryText(userId),
+          getLastFishGroups(userId, ws),
+        ]);
 
       const knownSummaries = knownMainPool.map((r) => ({
         title: r.title,
@@ -118,6 +121,7 @@ export async function generateWeeklyPlan(
         claudeMemory,
         budgetConscious: profile.budgetConscious,
         snackPlan,
+        lastFishGroups,
       });
 
       // Abbruch-Check: Wurde die Generierung inzwischen abgebrochen (Zeile

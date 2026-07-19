@@ -7,5 +7,5 @@
  * messbare Like-Quote pro Version (scripts/promptStats.ts).
  */
 export const RECIPE_PROMPT_VERSION = "recipe-3";
-export const PLAN_PROMPT_VERSION = "plan-4";
+export const PLAN_PROMPT_VERSION = "plan-5";
 export const FOOD_PROMPT_VERSION = "food-1";

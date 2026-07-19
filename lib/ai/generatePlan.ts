@@ -6,6 +6,7 @@ import { RecipeDraftSchema } from "./generateRecipe";
 import { getLatestMeasurement } from "../measurements";
 import { compositionSummaryForPrompt } from "../bodyComp";
 import type { SnackPlan } from "../snacks";
+import type { FishGroup } from "../fish";
 
 export const PlanAssignmentSchema = z.object({
   day: z.number().int().min(0).max(6),
@@ -126,7 +127,7 @@ eines Makro-Rechners):
 VEGETARISCH: Steht im User-Input "Ernährung: VEGETARISCH", gilt zwingend: kein Fleisch,
 kein Fisch, keine Gelatine, kein Fischsauce-/Speck-Aroma — auch nicht in Spuren. Der
 Abschnitt FLEISCH-GRENZEN entfällt dann komplett, und Fleisch-/Fisch-Beispiele aus dem
-BUDGET-Abschnitt (Hähnchenschenkel, Thunfisch, Sardinen) gelten nicht. Rotiere die Anker über die Woche:
+BUDGET-Abschnitt (Hähnchenschenkel, Sardinen, Makrele) gelten nicht. Rotiere die Anker über die Woche:
 Eier, Paneer/Halloumi, Tofu/Tempeh, Hülsenfrüchte, Linsen-/Kichererbsenpasta, Seitan.
 Milchprodukte sind erlaubt, dürfen aber nicht der Hauptanker JEDER Mahlzeit sein.
 Bevorzugt Küchen, die vegetarisches Eiweiß nativ können (indisch, levantinisch,
@@ -167,7 +168,7 @@ Reihenfolge in "newRecipes":
 
 BUDGET — SEHR WICHTIG:
 - Günstige Grundzutaten bevorzugen: Linsen, Kichererbsen, Bohnen, Eier, Haferflocken, Reis,
-  Bulgur, Kartoffeln, Hähnchenschenkel, Thunfisch/Sardinen aus der Dose, Quark, Hüttenkäse,
+  Bulgur, Kartoffeln, Hähnchenschenkel, Sardinen/Makrele aus der Dose, Quark, Hüttenkäse,
   saisonales Gemüse (Kohl, Karotten, Zwiebeln, Zucchini).
 - Teure Zutaten meiden: Lachs, Rindfleisch, Garnelen, Feta sparsam, Pinienkerne, Avocado,
   Halloumi.
@@ -181,8 +182,13 @@ alle Mahlzeiten zusammen):
 - Weißes Fleisch (Geflügel: Huhn, Pute) klar bevorzugen. Rotes Fleisch (Rind, Schwein, Lamm)
   stark reduzieren. Verarbeitetes Fleisch/Wurst (Salami, Schinken, Speck, Würstchen) am
   stärksten minimieren (höchstens ~30 g/Woche) — es ist gesundheitlich am problematischsten.
-- Fisch 1–2 Portionen pro Woche einplanen (zählt NICHT zu den 300 g Fleisch), bevorzugt
-  günstig: Thunfisch/Sardinen/Makrele aus der Dose.
+- Fisch 1–2 Portionen pro Woche einplanen (zählt NICHT zu den 300 g Fleisch). Es gibt
+  zwei Fisch-Gruppen, die sich von Woche zu Woche ABWECHSELN (welche Gruppe diese Woche
+  dran ist, steht im User-Input unter "Fisch-Rotation"):
+  • Omega-3-Gruppe: Sardinen, Hering, Matjes, Makrele (gern aus der Dose — günstig und gut).
+  • Weißfisch-Gruppe (Jod): Seelachs, Kabeljau, Schellfisch, Scholle.
+  Thunfisch höchstens gelegentlich als Ausnahme (jodarm, quecksilberreicher) — nie als
+  Standard-Fisch einplanen.
 - Praktische Umsetzung: HÖCHSTENS EIN Hauptgericht der Woche darf auf rotem Fleisch
   aufbauen; die übrigen Hauptgerichte pflanzlich (Hülsenfrüchte, Eier, Tofu) oder mit
   Geflügel bzw. Fisch. So bleibt die 300-g-Grenze automatisch eingehalten.
@@ -310,6 +316,11 @@ export type GeneratePlanArgs = {
    * den Tageszielen abgezogen, bevor Claude die 3 Mahlzeiten plant.
    */
   snackPlan?: SnackPlan;
+  /**
+   * Fisch-Gruppen des jüngsten fischhaltigen Vorwochen-Plans
+   * (lib/fish.ts, getLastFishGroups) — steuert die Omega-3/Weißfisch-Rotation.
+   */
+  lastFishGroups?: FishGroup[];
 };
 
 const DAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
@@ -323,6 +334,7 @@ export async function generatePlanDraft({
   claudeMemory,
   budgetConscious = true,
   snackPlan,
+  lastFishGroups = [],
 }: GeneratePlanArgs): Promise<PlanDraft> {
   const { start: startDay, end: endDay } = dayRange;
   const dayCount = endDay - startDay + 1;
@@ -365,6 +377,23 @@ export async function generatePlanDraft({
   const meatCapG = Math.round((MEAT_CAP_PER_WEEK_G * dayCount) / 7);
   const processedCapG = Math.round((PROCESSED_CAP_PER_WEEK_G * dayCount) / 7);
   const fishPortions = dayCount >= 4 ? "1–2" : "1";
+
+  // Omega-3/Weißfisch-Rotation: die zuletzt verwendete Gruppe bestimmt die
+  // Vorgabe für diese Woche. Beide oder keine Gruppe gefunden → freie Wahl.
+  let fishRotationLine: string;
+  if (lastFishGroups.length === 1) {
+    const [last] = lastFishGroups;
+    fishRotationLine =
+      last === "omega3"
+        ? "Zuletzt war die Omega-3-Gruppe dran (Sardine/Hering/Makrele) → plane diese Woche die WEISSFISCH-Gruppe (Seelachs, Kabeljau, Schellfisch, Scholle)."
+        : "Zuletzt war die Weißfisch-Gruppe dran (Seelachs/Kabeljau/Schellfisch) → plane diese Woche die OMEGA-3-Gruppe (Sardinen, Hering, Matjes, Makrele).";
+  } else if (lastFishGroups.length > 1) {
+    fishRotationLine =
+      "Zuletzt kamen beide Fisch-Gruppen vor — freie Wahl der Gruppe diese Woche.";
+  } else {
+    fishRotationLine =
+      "Keine Fisch-Historie vorhanden — freie Wahl, starte mit einer der beiden Gruppen.";
+  }
 
   const rangeBlock = isFullWeek
     ? `Tagesbereich: Mo–So (volle Woche, day 0..6, 21 Slots).`
@@ -443,7 +472,7 @@ ${rangeBlock}
 ${
     vegetarian
       ? `Ernährung: VEGETARISCH — ALLE Rezepte ohne Fleisch, Wurst und Fisch (auch ohne Fischsauce, Speck, Gelatine). Das Fleisch-Budget entfällt. Rotiere die Protein-Anker über die Tage (Eier, Paneer/Halloumi, Tofu/Tempeh, Hülsenfrüchte, Linsen-/Kichererbsenpasta, Seitan) — nicht jeden Tag derselbe Anker, und Milchprodukte nicht als Hauptanker jeder Mahlzeit.`
-      : `Fleisch-Budget (DGE, VERBINDLICH für diesen Tagesbereich von ${dayCount} Tag(en)): max. ${meatCapG} g Fleisch + Wurst INSGESAMT über alle Mahlzeiten (davon höchstens ~${processedCapG} g verarbeitet/Wurst). Weißes Fleisch (Geflügel) vor rotem Fleisch bevorzugen, rotes Fleisch minimieren. Fisch: ${fishPortions} Portion(en) einplanen (zählt NICHT zum Fleisch-Budget). Übrige Hauptmahlzeiten pflanzlich (Hülsenfrüchte, Eier, Tofu).`
+      : `Fleisch-Budget (DGE, VERBINDLICH für diesen Tagesbereich von ${dayCount} Tag(en)): max. ${meatCapG} g Fleisch + Wurst INSGESAMT über alle Mahlzeiten (davon höchstens ~${processedCapG} g verarbeitet/Wurst). Weißes Fleisch (Geflügel) vor rotem Fleisch bevorzugen, rotes Fleisch minimieren. Fisch: ${fishPortions} Portion(en) einplanen (zählt NICHT zum Fleisch-Budget). Fisch-Rotation: ${fishRotationLine} Übrige Hauptmahlzeiten pflanzlich (Hülsenfrüchte, Eier, Tofu).`
   }
 
 ${knownBlock}
@@ -564,7 +593,7 @@ Erstelle die Planung (newRecipes + EXAKT ${expectedSlots} assignments für day $
 ${macroProblem}
 
 Erstelle den KOMPLETTEN Plan neu (gleiches JSON-Format, gleiche Slot- und Index-Vorgaben).
-Deine 3 Mahlzeiten müssen pro Tag zusammen ${mealTargets.kcal} kcal ±10 % und mindestens ${Math.round(mealTargets.protein * 0.9)} g Eiweiß liefern. Fehlendes Eiweiß nach PROTEIN-ARCHITEKTUR beheben: Anker vergrößern oder eine zweite passende Quelle einbauen (${vegetarian ? "Eier, Paneer, Tofu, Hülsenfrüchte, Linsenpasta" : "Hülsenfrüchte, Eier, Geflügel, Thunfisch, Tofu"}) — NICHT einfach Milchprodukt-Beilagen vergrößern (Deckel: 150 g pro Portion). Rechne für jeden Tag nach, BEVOR du antwortest.`,
+Deine 3 Mahlzeiten müssen pro Tag zusammen ${mealTargets.kcal} kcal ±10 % und mindestens ${Math.round(mealTargets.protein * 0.9)} g Eiweiß liefern. Fehlendes Eiweiß nach PROTEIN-ARCHITEKTUR beheben: Anker vergrößern oder eine zweite passende Quelle einbauen (${vegetarian ? "Eier, Paneer, Tofu, Hülsenfrüchte, Linsenpasta" : "Hülsenfrüchte, Eier, Geflügel, Fisch, Tofu"}) — NICHT einfach Milchprodukt-Beilagen vergrößern (Deckel: 150 g pro Portion). Rechne für jeden Tag nach, BEVOR du antwortest.`,
       },
     );
   }
