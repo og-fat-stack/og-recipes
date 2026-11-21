@@ -13,7 +13,7 @@ export const PLAN_PROMPT_VERSION = "plan-6";
 /** lib/ai/estimateFood.ts */
 export const FOOD_PROMPT_VERSION = "food-1";
 /** lib/ai/importRecipe.ts — Übertragung eines bestehenden Rezepts ins App-Format. */
-export const IMPORT_PROMPT_VERSION = "import-3";
+export const IMPORT_PROMPT_VERSION = "import-4";
 /** lib/ai/findRecipes.ts — Web-Suche; an so gefundenen Rezepten gespeichert. */
 export const FIND_PROMPT_VERSION = "find-1";
 /** lib/ai/analyzeNutrition.ts — wird als Recipe.macroSource gespeichert. */

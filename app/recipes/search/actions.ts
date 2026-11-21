@@ -36,6 +36,12 @@ function duration(iso?: string): string | undefined {
   return [m[1] && `${m[1]} Std.`, m[2] && `${m[2]} Min.`].filter(Boolean).join(" ");
 }
 
+/** Manche Seiten liefern nur Zahlen ("772") — dann die Einheit ergänzen. */
+function withUnit(v: string | undefined, unit: string): string | undefined {
+  if (!v) return undefined;
+  return /^\s*[\d.,]+\s*$/.test(v) ? `${v.trim()} ${unit}` : v;
+}
+
 export async function searchRecipes(
   _prev: SearchState,
   formData: FormData,
@@ -71,8 +77,8 @@ export async function searchRecipes(
       yield: recipe.yield,
       totalTime: duration(recipe.totalTime),
       ingredients: recipe.ingredients.slice(0, 14),
-      kcal: recipe.nutrition?.calories,
-      protein: recipe.nutrition?.proteinContent,
+      kcal: withUnit(recipe.nutrition?.calories, "kcal"),
+      protein: withUnit(recipe.nutrition?.proteinContent, "g"),
     }));
     return { status: "ok", wish, mealType, results };
   } catch (e) {

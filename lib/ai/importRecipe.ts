@@ -41,17 +41,20 @@ MENGEN EXAKT — genau die Werte des Originals:
 - Ungenaue oder fremde Maße in g/ml umrechnen: Tasse/cup (z. B. Reis ≈ 170 g, Mehl ≈ 120 g,
   Flüssigkeit 240 ml), oz (28 g), lb (454 g), Dose (Inhalt, z. B. 400 g), Packung/Becher
   (Inhalt laut Original oder Standardgröße), Handvoll Blattgemüse (≈ 30 g), Bund Kräuter
-  (≈ 30 g). Stückzahlen bei Zählbarem bleiben Stück.
+  (≈ 30 g), Bund Frühlingszwiebeln/Radieschen/Möhren in g (z. B. Frühlingszwiebeln ≈ 100 g).
+  Stückzahlen bei Zählbarem bleiben Stück — "1 Bund" wird NIE zu "1 Stück".
 - Bruchteile sind ok ("qty": 0.5). "Salz, Pfeffer" ohne Menge ist ok.
 - Beispiel: {"name": "Rinderhackfleisch", "qty": 500, "unit": "g"},
   {"name": "stückige Tomaten (Dose)", "qty": 400, "unit": "g"}, {"name": "Eier", "qty": 3, "unit": "Stück"}.
 
 SCHRITTE:
-- Die Schritte des Originals in klaren, anfängerfreundlichen Sätzen; Reihenfolge und Technik
-  beibehalten. Lange Schritte dürfen geteilt werden.
-- MENGEN IN DEN SCHRITTEN WIEDERHOLEN ("die 2 gehackten Zwiebeln in 1 EL Olivenöl anbraten",
-  NICHT "die Zwiebeln anbraten"), damit man allein aus den Schritten kochen kann.
-- Wo das Original vage ist, optische Garchecks ergänzen ("bis die Zwiebeln glasig sind").
+- Die Schritte des Originals mit seinem Inhalt, seiner Reihenfolge und Technik. Lange Schritte
+  dürfen geteilt werden.
+- KEINE eigenen Ergänzungen: keine zusätzlichen Tipps, Hinweise, Garchecks, Zeiten oder
+  Arbeitsschritte, die nicht im Original stehen.
+- Einzige Ergänzung: MENGEN IN DEN SCHRITTEN WIEDERHOLEN ("die 2 gehackten Zwiebeln in 1 EL
+  Olivenöl anbraten", NICHT "die Zwiebeln anbraten"), damit man allein aus den Schritten kochen
+  kann.
 
 WEITERE FELDER:
 - mealType: "breakfast" für Frühstücksgerichte (Porridge, Overnight Oats, Müsli-/Quark-Bowls,
