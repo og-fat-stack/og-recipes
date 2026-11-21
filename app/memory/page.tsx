@@ -16,7 +16,7 @@ export default async function MemoryPage() {
         <p className="mt-1 text-ink-muted">
           Was Claude beim Erstellen von Rezepten und Wochenplänen über dich
           wissen soll — Vorlieben, Abneigungen, Allergien, Küchen-Ausstattung.
-          Wird in jeden Generierungs-Prompt eingespeist.
+          Fließt in jede Rezeptsuche und Wochenplanung ein.
         </p>
       </header>
 

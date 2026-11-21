@@ -19,6 +19,17 @@ profile, targets, recipes, plans, and tracking data.
   age-adjusted (Gallagher 2000, `bfTarget(sex, age)`) — always pass the age.
   BMR is reduced 10% when `profile.thyroidReduced` is set (thyroidectomy /
   treated hypothyroidism) — pass `thyroidReduced` to every `computeMacros` call.
+- Claude never invents or changes recipes. Recipes come from the user (manual,
+  link import `/recipes/import`) or from real recipe sites via web search
+  (`/recipes/search`, `lib/ai/findRecipes.ts`). The weekly plan
+  (`lib/planner.ts`) lets Claude only *select* from the collection + web finds;
+  portion factors (`PlannedMeal.portionsFromBatch`) and fixed sides
+  (`lib/sides.ts`) are computed by the app (`lib/planScaling.ts`). Recipes
+  found for the plan are stored verbatim (`lib/recipeImport/parseIngredient.ts`).
+- Recipe macros come from the BLS 4.0 nutrient database (`lib/bls`, CC BY 4.0 —
+  keep the Max Rubner-Institut attribution via `MacroSourceNote`); every recipe
+  path runs the BLS analysis (`lib/nutrition.ts`, `lib/ai/analyzeNutrition.ts`)
+  before saving. Regenerate `lib/bls/foods.json` with `scripts/buildBls.py`.
 - UI text is German (informal "du").
 - Auth is username + password only: scrypt hashes (`lib/password.ts`), HMAC
   session cookie (`lib/auth-core.ts`). Do not add email, OAuth, magic links,
@@ -68,10 +79,11 @@ thing. Follow it, not your priors.
 
 ## Prompt versioning
 
-When changing a system prompt in `lib/ai/generateRecipe.ts`,
-`lib/ai/generatePlan.ts` or `lib/ai/estimateFood.ts`, bump the matching
-constant in `lib/ai/promptVersions.ts` (e.g. "plan-1" → "plan-2") in the same
-change. The version is stored on every generated recipe, food-log entry and
+When changing a system prompt in `lib/ai/selectPlan.ts`,
+`lib/ai/findRecipes.ts`, `lib/ai/importRecipe.ts`, `lib/ai/analyzeNutrition.ts`
+or `lib/ai/estimateFood.ts`, bump the matching constant in
+`lib/ai/promptVersions.ts` (e.g. "plan-6" → "plan-7") in the same change.
+The version is stored on every imported/found recipe, food-log entry and
 failure log so prompt changes become measurable experiments
 (`npm run stats:prompts`).
 

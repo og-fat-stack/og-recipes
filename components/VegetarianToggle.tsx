@@ -6,7 +6,7 @@ import { Toggle } from "./Toggle";
 
 /**
  * Schalter: vegetarisch essen (an) oder mit Fleisch/Fisch (aus). Wirkt auf
- * die nächste Plan- und Rezeptgenerierung; Eier und Milchprodukte bleiben.
+ * die nächste Wochenplanung und Rezeptsuche; Eier und Milchprodukte bleiben.
  */
 export function VegetarianToggle({ vegetarian }: { vegetarian: boolean }) {
   const [pending, start] = useTransition();

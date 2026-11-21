@@ -106,6 +106,16 @@ model Recipe {
   /// oder vor Einführung der Versionierung. Ermöglicht Like-Quote pro
   /// Prompt-Version (scripts/promptStats.ts).
   promptVersion    String?
+  /// Originalseite bei per Link importierten Rezepten (/recipes/import).
+  sourceUrl        String?
+  /// Herkunft der Makros: null = Claude-/Handschätzung, sonst die Version der
+  /// BLS-Nährwertanalyse (z. B. "bls-1", siehe lib/ai/analyzeNutrition.ts).
+  macroSource      String?
+  /// Anteil der Kalorien in Prozent, der aus BLS-Daten stammt (Rest geschätzt).
+  macroCoverage    Int?
+  /// "breakfast" | "main" | "snack" | "side" — steuert, für welche Plan-Slots
+  /// ein Rezept infrage kommt. null = ältere Zeile, wird wie "main" behandelt.
+  mealType         String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   plannedMeals     PlannedMeal[]
@@ -153,7 +163,7 @@ model GenerationLog {
   id            Int      @id @default(autoincrement())
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        Int
-  kind          String // "plan" | "recipe" | "food"
+  kind          String // "plan" | "recipe" | "food" | "import" | "nutrition"
   promptVersion String?
   stopReason    String?
   error         String

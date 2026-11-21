@@ -8,15 +8,18 @@ import { getProfile } from "../../lib/profile";
 import {
   getRecentMealTitles,
   parseWeekSel,
-  pickKnownMainMealRecipes,
   weekStart,
   weekStartFor,
 } from "../../lib/plan";
 import { berlinWeekdayIndex } from "../../lib/time";
-import { generatePlanDraft } from "../../lib/ai/generatePlan";
+import { buildPlan } from "../../lib/planner";
 import { getLastFishGroups } from "../../lib/fish";
 import { buildSnackPlan, upsertSnackRecipes } from "../../lib/snacks";
-import { PLAN_PROMPT_VERSION } from "../../lib/ai/promptVersions";
+import { sideSlotFor, upsertSideRecipes } from "../../lib/sides";
+import {
+  FIND_PROMPT_VERSION,
+  PLAN_PROMPT_VERSION,
+} from "../../lib/ai/promptVersions";
 import { getClaudeMemoryText } from "../../lib/claudeMemory";
 import { logGenerationFailure } from "../../lib/generationLog";
 
@@ -84,43 +87,30 @@ export async function generateWeeklyPlan(
   // bis der neue fertig ist (Löschen/Ersetzen passiert erst danach).
   after(async () => {
     try {
-      const [recentTitles, knownMainPool, claudeMemory, lastFishGroups] =
-        await Promise.all([
-          getRecentMealTitles(userId, 14),
-          pickKnownMainMealRecipes(userId, 2),
-          getClaudeMemoryText(userId),
-          getLastFishGroups(userId, ws),
-        ]);
-
-      const knownSummaries = knownMainPool.map((r) => ({
-        title: r.title,
-        cuisine: r.cuisine,
-        portions: r.portions,
-        kcalPerPortion: r.kcalPerPortion,
-        proteinG: r.proteinG,
-        carbG: r.carbG,
-        fatG: r.fatG,
-        batchStorageDays: r.batchStorageDays,
-      }));
+      const [recentTitles, claudeMemory, lastFishGroups] = await Promise.all([
+        getRecentMealTitles(userId, 14),
+        getClaudeMemoryText(userId),
+        getLastFishGroups(userId, ws),
+      ]);
 
       // Feste Snack-Slots: deterministisch aus der Bibliothek belegt; ihre
-      // Makros werden im Generator von den Tageszielen abgezogen, damit die
-      // 3 Mahlzeiten kulinarisch realistische Eiweißmengen tragen.
+      // Makros werden von den Tageszielen der 3 Mahlzeiten abgezogen.
       const snackPlan = buildSnackPlan({
         proteinTargetG: profile.proteinG,
         startDay,
         endDay,
       });
 
-      const draft = await generatePlanDraft({
+      // Sammlung + Web-Suche → Claude wählt aus → App skaliert Portionen und
+      // ergänzt Beilagen (lib/planner.ts). Claude erfindet keine Rezepte.
+      const { candidates, selection } = await buildPlan({
+        userId,
         profile,
-        recentMealTitles: recentTitles,
-        knownMainRecipes: knownSummaries,
         dayRange: { start: startDay, end: endDay },
+        snackPlan,
+        recentTitles,
         useUpIngredients,
         claudeMemory,
-        budgetConscious: profile.budgetConscious,
-        snackPlan,
         lastFishGroups,
       });
 
@@ -137,34 +127,66 @@ export async function generateWeeklyPlan(
 
       await db.mealPlan.deleteMany({ where: { userId, weekStart: ws } });
 
-      const newRecipeIds: number[] = [];
-      for (const r of draft.newRecipes) {
+      // Sicherheitsnetz: nie etwas außerhalb des erlaubten Bereichs anlegen —
+      // insbesondere keine vergangenen Tage der laufenden Woche.
+      const assignments = selection.assignments.filter(
+        (a) => a.day >= startDay && a.day <= endDay,
+      );
+
+      // Neu gefundene Rezepte nur speichern, wenn sie im Plan landen — die
+      // übrigen Web-Treffer verschwinden wieder.
+      const recipeIdByIndex = new Map<number, number>();
+      for (const a of assignments) {
+        if (recipeIdByIndex.has(a.recipeIndex)) continue;
+        const c = candidates[a.recipeIndex];
+        if (c.id != null) {
+          recipeIdByIndex.set(a.recipeIndex, c.id);
+          continue;
+        }
+        const d = c.draft!;
         const created = await db.recipe.create({
           data: {
             userId,
-            title: r.title,
-            cuisine: r.cuisine,
-            portions: r.portions,
-            kcalPerPortion: r.kcalPerPortion,
-            proteinG: r.proteinG,
-            carbG: r.carbG,
-            fatG: r.fatG,
-            batchStorageDays: r.batchStorageDays,
-            ingredients: r.ingredients,
-            steps: r.steps,
-            techniques: r.techniques,
-            promptVersion: PLAN_PROMPT_VERSION,
+            title: d.title,
+            cuisine: d.cuisine,
+            mealType: d.mealType,
+            portions: d.portions,
+            kcalPerPortion: d.kcalPerPortion,
+            proteinG: d.proteinG,
+            carbG: d.carbG,
+            fatG: d.fatG,
+            batchStorageDays: d.batchStorageDays,
+            ingredients: d.ingredients,
+            steps: d.steps,
+            techniques: d.techniques,
+            sourceUrl: c.url ?? null,
+            promptVersion: FIND_PROMPT_VERSION,
+            macroSource: d.macroSource ?? null,
+            macroCoverage: d.macroCoverage ?? null,
           },
         });
-        newRecipeIds.push(created.id);
+        recipeIdByIndex.set(a.recipeIndex, created.id);
       }
 
-      const allIds = [...knownMainPool.map((r) => r.id), ...newRecipeIds];
-
-      // Sicherheitsnetz: nie etwas außerhalb des erlaubten Bereichs anlegen —
-      // insbesondere keine vergangenen Tage der laufenden Woche.
-      const assignments = draft.assignments.filter(
-        (a) => a.day >= startDay && a.day <= endDay,
+      // Portionsfaktor + Beilage je Mahlzeit (von der App berechnet).
+      const scaledBySlot = new Map(
+        selection.scaled.map((m) => [`${m.day}-${m.slot}`, m]),
+      );
+      const sideIds = await upsertSideRecipes(
+        userId,
+        selection.scaled.flatMap((m) => (m.side ? [m.side.key] : [])),
+      );
+      const sideMeals = selection.scaled.flatMap((m) =>
+        m.side && m.day >= startDay && m.day <= endDay
+          ? [
+              {
+                day: m.day,
+                slot: sideSlotFor(m.slot),
+                recipeId: sideIds.get(m.side.key)!,
+                portionsFromBatch: m.side.units,
+              },
+            ]
+          : [],
       );
 
       // Snack-Rezepte anlegen/aktualisieren und die festen Snack-Slots füllen.
@@ -190,8 +212,11 @@ export async function generateWeeklyPlan(
               ...assignments.map((a) => ({
                 day: a.day,
                 slot: a.slot,
-                recipeId: allIds[a.recipeIndex],
+                recipeId: recipeIdByIndex.get(a.recipeIndex)!,
+                portionsFromBatch:
+                  scaledBySlot.get(`${a.day}-${a.slot}`)?.factor ?? 1,
               })),
+              ...sideMeals,
               ...snackMeals,
             ],
           },

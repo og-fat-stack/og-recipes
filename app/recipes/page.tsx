@@ -20,10 +20,16 @@ export default async function RecipesPage() {
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <Link
-            href="/recipes/generate"
+            href="/recipes/search"
             className="flex items-center justify-center gap-1 whitespace-nowrap rounded-full bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-hover"
           >
-            ✨ Mit KI
+            🔎 Rezept suchen
+          </Link>
+          <Link
+            href="/recipes/import"
+            className="flex items-center justify-center gap-1 whitespace-nowrap rounded-full bg-contrast px-4 py-2 text-sm font-medium text-on-contrast hover:bg-contrast-hover"
+          >
+            🔗 Aus Link
           </Link>
           <Link
             href="/recipes/new"

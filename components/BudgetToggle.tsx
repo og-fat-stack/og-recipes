@@ -6,7 +6,7 @@ import { Toggle } from "./Toggle";
 
 /**
  * Schalter: günstig einkaufen (an) oder ohne Budget-Einschränkung (aus). Wirkt
- * auf die nächste Plan- und Rezeptgenerierung.
+ * auf die nächste Wochenplanung und Rezeptsuche.
  */
 export function BudgetToggle({ budgetConscious }: { budgetConscious: boolean }) {
   const [pending, start] = useTransition();

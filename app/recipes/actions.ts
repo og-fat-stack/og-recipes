@@ -5,7 +5,13 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "../../lib/db";
 import { requireUserId } from "../../lib/auth";
-import { parseIngredients, parseLines, parseTags } from "../../lib/recipe";
+import {
+  parseIngredients,
+  parseLines,
+  parseTags,
+  type Ingredient,
+} from "../../lib/recipe";
+import { applyBlsNutrition, type MacroRecipe } from "../../lib/nutrition";
 
 const RecipeSchema = z.object({
   title: z.string().min(2).max(120),
@@ -93,4 +99,51 @@ export async function setRecipeLiked(
   await db.recipe.updateMany({ where: { id, userId }, data: { liked } });
   revalidatePath("/recipes");
   revalidatePath(`/recipes/${id}`);
+}
+
+export type RecomputeState = { error?: string };
+
+/** Makros eines bestehenden Rezepts mit dem BLS nachrechnen. */
+export async function recomputeRecipeNutrition(
+  id: number,
+): Promise<RecomputeState> {
+  const userId = await requireUserId();
+  const recipe = await db.recipe.findFirst({ where: { id, userId } });
+  if (!recipe) return { error: "Rezept nicht gefunden." };
+  const ingredients = (recipe.ingredients as unknown as Ingredient[]) ?? [];
+  if (ingredients.length === 0) return { error: "Das Rezept hat keine Zutaten." };
+
+  const input: MacroRecipe = {
+    title: recipe.title,
+    portions: recipe.portions,
+    ingredients,
+    kcalPerPortion: recipe.kcalPerPortion,
+    proteinG: recipe.proteinG,
+    carbG: recipe.carbG,
+    fatG: recipe.fatG,
+  };
+  const [result] = await applyBlsNutrition(userId, [input]);
+  if (!result.macroSource) {
+    return {
+      error:
+        "Die Nährwerte ließen sich nicht zuverlässig aus dem BLS berechnen — die bisherigen Werte bleiben.",
+    };
+  }
+  await db.recipe.updateMany({
+    where: { id, userId },
+    data: {
+      kcalPerPortion: result.kcalPerPortion,
+      proteinG: result.proteinG,
+      carbG: result.carbG,
+      fatG: result.fatG,
+      ingredients: result.ingredients,
+      macroSource: result.macroSource,
+      macroCoverage: result.macroCoverage ?? null,
+    },
+  });
+  revalidatePath("/recipes");
+  revalidatePath(`/recipes/${id}`);
+  revalidatePath("/plan");
+  revalidatePath("/");
+  return {};
 }

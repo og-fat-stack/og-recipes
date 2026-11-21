@@ -178,6 +178,7 @@ export async function upsertSnackRecipes(
     if (ids.has(s.title)) continue;
     const data = {
       cuisine: SNACK_CUISINE,
+      mealType: "snack",
       portions: 1,
       kcalPerPortion: s.kcalPerPortion,
       proteinG: s.proteinG,

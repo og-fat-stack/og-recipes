@@ -16,7 +16,12 @@ import { berlinWeekdayIndex } from "../../lib/time";
 import { requireUserId } from "../../lib/auth";
 import { getProfile } from "../../lib/profile";
 import { ProgressBar } from "../../components/ProgressBar";
+import { isSideSlot } from "../../lib/sides";
 import { GeneratePlanButton } from "./GeneratePlanButton";
+
+// "Woche generieren" läuft als Server-Action dieser Seite im Hintergrund
+// weiter (after()): Web-Suche, Seitenabruf, Übertragung, BLS, Auswahl.
+export const maxDuration = 300;
 
 const WEEK_TABS = [
   { sel: "this" as const, label: "Diese Woche", href: "/plan" },
@@ -44,11 +49,21 @@ const SLOT_ICON: Record<Slot, string> = {
 type Cell = {
   recipeId: number;
   title: string;
+  /** Portionen für diese Mahlzeit (die App passt sie an die Tagesziele an). */
+  factor: number;
+  /** Portionen dieses Rezepts im ganzen Plan — fürs Kochen/Einkaufen. */
+  planPortions: number;
+  /** Makros dieser Mahlzeit (Portion × Faktor). */
   kcal: number;
   protein: number;
   carb: number;
   fat: number;
+  side?: { title: string; kcal: number; protein: number; carb: number; fat: number };
 };
+
+function fmtPortions(n: number): string {
+  return n.toLocaleString("de-DE", { maximumFractionDigits: 2 });
+}
 
 function fmtDate(d: Date) {
   return d.toLocaleDateString("de-DE", {
@@ -78,15 +93,35 @@ export default async function PlanPage({
   // Belegung je (Tag, Slot).
   const grid = new Map<string, Cell>();
   if (plan) {
+    const portionsByRecipe = new Map<number, number>();
+    for (const m of plan.meals)
+      portionsByRecipe.set(m.recipeId, (portionsByRecipe.get(m.recipeId) ?? 0) + m.portionsFromBatch);
+    const scaled = (m: (typeof plan.meals)[number]) => ({
+      kcal: Math.round(m.recipe.kcalPerPortion * m.portionsFromBatch),
+      protein: Math.round(m.recipe.proteinG * m.portionsFromBatch),
+      carb: Math.round(m.recipe.carbG * m.portionsFromBatch),
+      fat: Math.round(m.recipe.fatG * m.portionsFromBatch),
+    });
     for (const m of plan.meals) {
+      if (isSideSlot(m.slot)) continue;
       grid.set(`${m.day}-${m.slot}`, {
         recipeId: m.recipeId,
         title: m.recipe.title,
-        kcal: m.recipe.kcalPerPortion,
-        protein: m.recipe.proteinG,
-        carb: m.recipe.carbG,
-        fat: m.recipe.fatG,
+        factor: m.portionsFromBatch,
+        planPortions: portionsByRecipe.get(m.recipeId) ?? 1,
+        ...scaled(m),
       });
+    }
+    // Beilagen hängen an ihrer Mahlzeit ("lunch_side" → "lunch").
+    for (const m of plan.meals) {
+      if (!isSideSlot(m.slot)) continue;
+      const cell = grid.get(`${m.day}-${m.slot.replace(/_side$/, "")}`);
+      if (!cell) continue;
+      const units = m.portionsFromBatch;
+      cell.side = {
+        title: units === 1 ? m.recipe.title : `${fmtPortions(units)} × ${m.recipe.title}`,
+        ...scaled(m),
+      };
     }
   }
 
@@ -164,7 +199,7 @@ export default async function PlanPage({
           <Link href="/profile" className="underline">
             Profil
           </Link>{" "}
-          ausfüllen, damit Claude die Makros pro Mahlzeit berechnen kann.
+          ausfüllen, damit die App die Portionen an deine Ziele anpassen kann.
         </div>
       )}
 
@@ -175,8 +210,8 @@ export default async function PlanPage({
             className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-surface-inset border-t-accent-surface-ink"
           />
           <p>
-            Claude plant im Hintergrund weiter — du kannst die App in der
-            Zwischenzeit ganz normal nutzen. Diese Seite aktualisiert sich von
+            Claude sucht passende Rezepte und plant im Hintergrund — du kannst
+            die App in der Zwischenzeit ganz normal nutzen. Diese Seite aktualisiert sich von
             selbst, sobald der Plan fertig ist.
           </p>
         </div>
@@ -245,10 +280,12 @@ function DayCard({
   isPast: boolean;
   isCookDay: boolean;
 }) {
-  const kcal = meals.reduce((s, m) => s + (m.cell?.kcal ?? 0), 0);
-  const protein = meals.reduce((s, m) => s + (m.cell?.protein ?? 0), 0);
-  const carb = meals.reduce((s, m) => s + (m.cell?.carb ?? 0), 0);
-  const fat = meals.reduce((s, m) => s + (m.cell?.fat ?? 0), 0);
+  const sum = (k: "kcal" | "protein" | "carb" | "fat") =>
+    meals.reduce((s, m) => s + (m.cell?.[k] ?? 0) + (m.cell?.side?.[k] ?? 0), 0);
+  const kcal = sum("kcal");
+  const protein = sum("protein");
+  const carb = sum("carb");
+  const fat = sum("fat");
   const hasAny = meals.some((m) => m.cell);
 
   return (
@@ -312,29 +349,42 @@ function DayCard({
         <div className="mt-3 space-y-1">
           {meals.map(({ slot, cell }) =>
             cell ? (
-              <Link
-                key={slot}
-                href={`/recipes/${cell.recipeId}`}
-                className="flex items-center gap-3 rounded-control px-2 py-2 transition-colors hover:bg-surface-hover"
-              >
-                <span aria-hidden className="text-lg leading-none">
-                  {SLOT_ICON[slot]}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
-                    {SLOT_LABELS[slot]}
+              <div key={slot}>
+                <Link
+                  href={`/recipes/${cell.recipeId}?portionen=${cell.planPortions}`}
+                  className="flex items-center gap-3 rounded-control px-2 py-2 transition-colors hover:bg-surface-hover"
+                >
+                  <span aria-hidden className="text-lg leading-none">
+                    {SLOT_ICON[slot]}
                   </span>
-                  <span className="block truncate text-sm font-medium">
-                    {cell.title}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
+                      {SLOT_LABELS[slot]}
+                      {cell.factor !== 1 && ` · ${fmtPortions(cell.factor)} Portionen`}
+                    </span>
+                    <span className="block truncate text-sm font-medium">
+                      {cell.title}
+                    </span>
                   </span>
-                </span>
-                <span className="shrink-0 text-right text-xs text-ink-subtle">
-                  <span className="block font-medium text-ink-muted">
-                    {cell.kcal} kcal
+                  <span className="shrink-0 text-right text-xs text-ink-subtle">
+                    <span className="block font-medium text-ink-muted">
+                      {cell.kcal} kcal
+                    </span>
+                    <span className="block">{cell.protein} g E</span>
                   </span>
-                  <span className="block">{cell.protein} g E</span>
-                </span>
-              </Link>
+                </Link>
+                {cell.side && (
+                  <div className="flex items-center gap-3 px-2 pb-2 text-xs text-ink-subtle">
+                    <span aria-hidden className="w-[1.125rem] text-center">+</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      Beilage: {cell.side.title}
+                    </span>
+                    <span className="shrink-0 text-right">
+                      {cell.side.kcal} kcal · {cell.side.protein} g E
+                    </span>
+                  </div>
+                )}
+              </div>
             ) : (
               <div
                 key={slot}

@@ -284,7 +284,9 @@ export function buildShoppingList(plan: PlanWithMeals): ShoppingItem[] {
 
   for (const recipe of uniqueRecipes.values()) {
     const needed = neededPortionsByRecipe.get(recipe.id) ?? 0;
-    const batches = Math.ceil(needed / Math.max(1, recipe.portions));
+    // Exakt so viel, wie der Plan braucht: Rezepte bleiben unverändert, die
+    // App skaliert die Portionen je Mahlzeit (PlannedMeal.portionsFromBatch).
+    const batches = needed / Math.max(1, recipe.portions);
     const ingredients = (recipe.ingredients as unknown as Ingredient[]) ?? [];
     for (const ing of ingredients) {
       const metric = toMetric(ing.name, ing.qty, ing.unit);

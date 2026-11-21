@@ -8,11 +8,26 @@ import { DeleteRecipeButton } from "./DeleteRecipeButton";
 import { CookedButton } from "./CookedButton";
 import { LikeButtons } from "./LikeButtons";
 import { FeedbackNote } from "./FeedbackNote";
+import { RecomputeNutritionButton } from "./RecomputeNutritionButton";
+import { MacroSourceNote } from "../../../components/MacroSourceNote";
+import { getBlsFood } from "../../../lib/bls";
+
+// "Mit BLS nachrechnen" ruft Claude zweimal auf.
+export const maxDuration = 300;
+
+/** Umgerechnete Menge lesbar runden (Viertel unter 1, halbe bis 10, sonst ganz). */
+function scaleQty(qty: number, f: number): string {
+  const x = qty * f;
+  const r = x < 1 ? Math.round(x * 4) / 4 : x < 10 ? Math.round(x * 2) / 2 : Math.round(x);
+  return (r || x).toLocaleString("de-DE", { maximumFractionDigits: 2 });
+}
 
 export default async function RecipePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ portionen?: string }>;
 }) {
   await connection();
   const userId = await requireUserId();
@@ -23,9 +38,22 @@ export default async function RecipePage({
   if (!recipe) notFound();
 
   const ingredients = (recipe.ingredients as unknown as Ingredient[]) ?? [];
+  // Aus dem Wochenplan verlinkt: Mengen auf die geplanten Portionen umrechnen.
+  const wanted = Number((await searchParams).portionen);
+  const scale =
+    Number.isFinite(wanted) && wanted > 0 && Math.abs(wanted - recipe.portions) > 0.01
+      ? wanted / recipe.portions
+      : null;
   const steps = (recipe.steps as unknown as string[]) ?? [];
   const techniques = (recipe.techniques as unknown as string[]) ?? [];
   const cookPlan = planCookSessions({ portions: recipe.portions, ingredients });
+  const nutritionRows = ingredients
+    .filter((ing) => ing.grams != null && ing.grams > 0)
+    .map((ing) => ({
+      name: ing.name,
+      grams: ing.grams,
+      blsName: ing.bls ? getBlsFood(ing.bls)?.name : undefined,
+    }));
 
   return (
     <div className="space-y-8">
@@ -45,6 +73,19 @@ export default async function RecipePage({
               {recipe.cuisine} · {recipe.portions} Portionen · hält{" "}
               {recipe.batchStorageDays} Tage
             </p>
+            {recipe.sourceUrl && (
+              <p className="mt-1 text-sm text-ink-subtle">
+                Quelle:{" "}
+                <a
+                  href={recipe.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  {hostname(recipe.sourceUrl)}
+                </a>
+              </p>
+            )}
           </div>
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <LikeButtons recipeId={recipe.id} liked={recipe.liked} />
@@ -94,10 +135,50 @@ export default async function RecipePage({
           <Stat label="Kohlenhydrate" value={`${recipe.carbG} g`} />
           <Stat label="Fett" value={`${recipe.fatG} g`} />
         </div>
+        <div className="mt-3 space-y-2">
+          <MacroSourceNote
+            macroSource={recipe.macroSource}
+            macroCoverage={recipe.macroCoverage}
+          />
+          {!recipe.macroSource && (
+            <RecomputeNutritionButton recipeId={recipe.id} />
+          )}
+          {recipe.macroSource && nutritionRows.length > 0 && (
+            <details className="text-sm">
+              <summary className="cursor-pointer text-ink-muted">
+                Rechenweg je Zutat
+              </summary>
+              <ul className="mt-2 divide-y divide-line">
+                {nutritionRows.map((row, i) => (
+                  <li key={i} className="flex justify-between gap-3 py-1.5">
+                    <span>
+                      {row.name}
+                      <span className="block text-xs text-ink-subtle">
+                        {row.blsName ?? "nicht im BLS, geschätzt"}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-ink-subtle">
+                      ≈ {row.grams} g
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
       </section>
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-ink-subtle">Zutaten</h2>
+        {scale && (
+          <p className="mb-2 rounded-card border border-warn-line bg-warn-surface p-3 text-sm text-warn-surface-ink">
+            Für deinen Wochenplan umgerechnet auf{" "}
+            {wanted.toLocaleString("de-DE", { maximumFractionDigits: 2 })}{" "}
+            Portionen (das Originalrezept ist für {recipe.portions}). Die Mengen
+            in den Schritten gelten für das Original — nimm jeweils das{" "}
+            {scale.toLocaleString("de-DE", { maximumFractionDigits: 2 })}-Fache.
+          </p>
+        )}
         <ul className="divide-y divide-line rounded-card border border-line">
           {ingredients.map((ing, i) => (
             <li
@@ -107,7 +188,8 @@ export default async function RecipePage({
               <span>{ing.name}</span>
               {(ing.qty != null || ing.unit) && (
                 <span className="text-ink-subtle">
-                  {ing.qty ?? ""} {ing.unit ?? ""}
+                  {ing.qty != null && scale ? scaleQty(ing.qty, scale) : (ing.qty ?? "")}{" "}
+                  {ing.unit ?? ""}
                 </span>
               )}
             </li>
@@ -146,4 +228,12 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div className="text-lg font-semibold">{value}</div>
     </div>
   );
+}
+
+function hostname(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
 }

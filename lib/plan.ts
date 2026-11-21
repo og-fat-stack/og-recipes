@@ -96,35 +96,6 @@ export async function getPlanGeneration(
   };
 }
 
-/**
- * Pick known main-meal recipes to reuse in next week's plan.
- * "Main-meal" = cuisine != "Frühstück".
- * Only liked recipes are eligible for reuse — disliked/unrated recipes are
- * never picked, so a recipe must be explicitly liked before it comes back.
- * Preference: recipes NOT used in the recent window (to rotate), oldest-updated first.
- * Falls back to least-recently-updated if not enough candidates.
- */
-export async function pickKnownMainMealRecipes(
-  userId: number,
-  desired: number,
-  recentDays = 14,
-): Promise<{ id: number; title: string; portions: number; kcalPerPortion: number; proteinG: number; carbG: number; fatG: number; ingredients: unknown; steps: unknown; techniques: unknown; batchStorageDays: number; cuisine: string }[]> {
-  const recentTitles = new Set(await getRecentMealTitles(userId, recentDays));
-
-  const pool = await db.recipe.findMany({
-    where: {
-      userId,
-      cuisine: { notIn: ["Frühstück", SNACK_CUISINE] },
-      liked: true,
-    },
-    orderBy: { updatedAt: "asc" },
-  });
-
-  const fresh = pool.filter((r) => !recentTitles.has(r.title));
-  const picked = (fresh.length >= desired ? fresh : pool).slice(0, desired);
-  return picked;
-}
-
 export async function getRecentMealTitles(
   userId: number,
   daysBack = 14,
@@ -140,6 +111,7 @@ export async function getRecentMealTitles(
   for (const p of plans)
     for (const m of p.meals)
       // Feste Snacks sind keine "kürzlich gegessenen Gerichte" für den Prompt.
-      if (m.recipe.cuisine !== SNACK_CUISINE) titles.add(m.recipe.title);
+      if (m.recipe.cuisine !== SNACK_CUISINE && m.recipe.cuisine !== "Beilage")
+        titles.add(m.recipe.title);
   return Array.from(titles);
 }
