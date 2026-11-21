@@ -77,13 +77,16 @@ export async function toPlanCandidates(
   }));
   if (base.length === 0) return [];
 
-  let results: Awaited<ReturnType<typeof analyzeNutrition>>;
-  try {
-    results = await analyzeNutrition(base);
-  } catch (e) {
-    await logGenerationFailure(userId, "nutrition", e, NUTRITION_PROMPT_VERSION);
-    return [];
-  }
+  // Pro Rezept parallel statt alle in einem großen Aufruf: die Wartezeit ist
+  // dann die des langsamsten Rezepts, nicht die Summe.
+  const results = await mapLimit(base, 10, async (b) => {
+    try {
+      return (await analyzeNutrition([b]))[0];
+    } catch (e) {
+      await logGenerationFailure(userId, "nutrition", e, NUTRITION_PROMPT_VERSION);
+      return null;
+    }
+  });
   const out: Candidate[] = [];
   base.forEach((b, i) => {
     const r = results[i];

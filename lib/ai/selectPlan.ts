@@ -104,8 +104,10 @@ const DAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
 
 function candidateLine(c: PlanCandidate, i: number): string {
   const density = c.kcalPerPortion > 0 ? Math.round((c.proteinG / c.kcalPerPortion) * 1000) / 10 : 0;
+  const fish = classifyFishRecipe(`${c.title} ${c.ingredients.map((x) => x.name).join(" ")}`);
   const tags = [
     c.mealType === "breakfast" ? "Frühstück" : "Hauptgericht",
+    fish ? `🐟 FISCH (${fish === "omega3" ? "Omega-3" : "Weißfisch"})` : "",
     c.origin === "liked" ? "👍 gemocht" : c.origin === "found" ? "neu gefunden" : "Sammlung",
     c.recent ? "kürzlich gegessen" : "",
   ]
@@ -228,15 +230,20 @@ ${candidates.map(candidateLine).join("\n")}`;
     // Feste Regeln, die die App selbst nachprüft.
     const uses = new Map<number, number>();
     for (const a of result.data.assignments) uses.set(a.recipeIndex, (uses.get(a.recipeIndex) ?? 0) + 1);
+    // Weiche Regeln: werden zurückgemeldet, verwerfen den Plan aber nach dem
+    // Korrekturversuch nicht (anders als Strukturfehler oben).
+    const softProblems: string[] = [];
     for (const [i, n] of uses)
-      if (n > 3 && candidates[i]) problems.push(`"${candidates[i].title}" belegt ${n} Mahlzeiten (max. 3)`);
+      if (n > 3 && candidates[i]) softProblems.push(`"${candidates[i].title}" belegt ${n} Mahlzeiten (max. 3)`);
     const fishMeals = result.data.assignments.filter((a) => {
       const c = candidates[a.recipeIndex];
       return c && classifyFishRecipe(`${c.title} ${c.ingredients.map((i) => i.name).join(" ")}`);
     }).length;
-    if (fishMeals > maxFish) problems.push(`${fishMeals} Fisch-Mahlzeiten (max. ${maxFish})`);
+    if (fishMeals > maxFish)
+      softProblems.push(`${fishMeals} Fisch-Mahlzeiten (max. ${maxFish}, Fischgerichte sind mit 🐟 markiert)`);
 
     let scaled: ScaledMeal[] = [];
+    let macroProblem: string | null = null;
     if (problems.length === 0) {
       const allowed = new Set(result.data.allowedSides);
       const sideOptions = sides.filter((s) => allowed.has(s.key));
@@ -255,15 +262,19 @@ ${candidates.map(candidateLine).join("\n")}`;
         sides: sideOptions,
         snackMacrosByDay: snackPlan.macrosByDay,
       });
-      const macroProblem = validateTotals(totals, profile.kcalTarget, profile.proteinG);
-      if (macroProblem) problems.push(macroProblem);
+      macroProblem = validateTotals(totals, profile.kcalTarget, profile.proteinG);
     }
 
-    if (problems.length === 0) {
+    const soft = [...softProblems, ...(macroProblem ? [macroProblem] : [])];
+    if (problems.length === 0 && (soft.length === 0 || attempt >= 2)) {
+      // Knapp verfehlte Tagesziele oder eine Fischmahlzeit zu viel nach dem
+      // Korrekturversuch sind kein Grund, den ganzen Plan zu verwerfen.
+      if (soft.length) console.warn(`[plan] Plan mit Abweichungen übernommen: ${soft.join("; ")}`);
       return { assignments: result.data.assignments, scaled };
     }
+    problems.push(...soft);
     if (attempt >= 2) {
-      throw fail(`Kein passender Plan aus den vorhandenen Rezepten: ${problems.join("; ")}`);
+      throw fail(`Kein gültiger Plan aus den vorhandenen Rezepten: ${problems.join("; ")}`);
     }
     messages.push(
       { role: "assistant", content: rawText },

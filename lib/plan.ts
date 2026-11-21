@@ -72,6 +72,17 @@ export async function getCurrentPlan(userId: number) {
   return getPlanForWeek(userId, weekStart());
 }
 
+/**
+ * Länger als das kann der Hintergrund-Job nicht laufen (Vercel bricht nach
+ * maxDuration = 300 s ab). Eine ältere "generating"-Zeile ist ein
+ * abgebrochener Job und darf weder "läuft noch" anzeigen noch blockieren.
+ */
+const STALE_AFTER_MS = 10 * 60 * 1000;
+
+export function isStaleGeneration(row: { status: string; updatedAt: Date }): boolean {
+  return row.status === "generating" && Date.now() - row.updatedAt.getTime() > STALE_AFTER_MS;
+}
+
 export type PlanGenerationStatus = {
   status: "generating" | "error";
   error: string | null;
@@ -90,6 +101,12 @@ export async function getPlanGeneration(
     where: { userId_weekStart: { userId, weekStart: ws } },
   });
   if (!row) return null;
+  if (isStaleGeneration(row)) {
+    return {
+      status: "error",
+      error: "Die Generierung wurde wegen Zeitüberschreitung abgebrochen.",
+    };
+  }
   return {
     status: row.status === "error" ? "error" : "generating",
     error: row.error,
@@ -99,10 +116,15 @@ export async function getPlanGeneration(
 export async function getRecentMealTitles(
   userId: number,
   daysBack = 14,
+  /** Woche, die gerade neu geplant (also ersetzt) wird — zählt nicht mit. */
+  excludeWeekStart?: Date,
 ): Promise<string[]> {
   const since = addDays(startOfDay(), -daysBack);
   const plans = await db.mealPlan.findMany({
-    where: { userId, weekStart: { gte: since } },
+    where: {
+      userId,
+      weekStart: excludeWeekStart ? { gte: since, not: excludeWeekStart } : { gte: since },
+    },
     include: {
       meals: { include: { recipe: { select: { title: true, cuisine: true } } } },
     },

@@ -29,6 +29,8 @@ export type FindArgs = {
   perMeal: { kcal: number; protein: number };
   /** Titel, die schon in der Sammlung oder kürzlich im Plan sind. */
   avoidTitles: string[];
+  /** Harte Obergrenze für die ganze Suche (Standard 60 s). */
+  timeoutMs?: number;
 };
 
 // Seiten, die den automatischen Abruf blockieren oder keine Rezeptseiten sind.
@@ -124,9 +126,13 @@ Vermeiden (schon vorhanden): ${args.avoidTitles.length ? args.avoidTitles.map((t
   const totalCount = args.requests.reduce((n, r) => n + r.count, 0);
   const tools: Anthropic.ToolUnion[] = [
     {
-      type: "web_search_20260209",
+      // Bewusst die einfache Variante ohne "dynamic filtering": die führt im
+      // Hintergrund Code aus und war im Test doppelt so langsam und deutlich
+      // unberechenbarer — für reine Links reicht die einfache Suche.
+      type: "web_search_20250305",
       name: "web_search",
-      max_uses: Math.min(10, 2 + args.requests.length + Math.ceil(totalCount / 2)),
+      // Wenige Suchanfragen: jede kostet Zeit, und die App braucht nur Links.
+      max_uses: Math.min(6, 2 + Math.ceil(totalCount / 2)),
       blocked_domains: BLOCKED_DOMAINS,
       user_location: { type: "approximate", country: "DE", timezone: "Europe/Berlin" },
     },
@@ -136,15 +142,25 @@ Vermeiden (schon vorhanden): ${args.avoidTitles.length ? args.avoidTitles.map((t
   let msg: Anthropic.Message | null = null;
   // Server-Tools laufen in einer Schleife auf Anthropics Seite; bei
   // "pause_turn" die bisherige Antwort zurückschicken, dann geht es weiter.
+  // Harte Frist über alle Fortsetzungen hinweg — eine festhängende Suche darf
+  // den Wochenplan nicht über das Zeitlimit des Hintergrund-Jobs ziehen.
+  const deadline = Date.now() + (args.timeoutMs ?? 60_000);
   for (let i = 0; i < 5; i++) {
+    const remaining = deadline - Date.now();
+    if (remaining < 5_000) break;
     msg = await anthropic()
-      .messages.stream({
-        model: MODELS.smart,
-        max_tokens: 32000,
-        system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-        tools,
-        messages,
-      })
+      .messages.stream(
+        {
+          model: MODELS.smart,
+          max_tokens: 32000,
+          system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+          tools,
+          messages,
+        },
+        // Hartes Abbrechen per Signal: das SDK-"timeout" greift bei einem
+        // Stream nicht, solange der Server noch Lebenszeichen schickt.
+        { timeout: remaining, maxRetries: 0, signal: AbortSignal.timeout(remaining) },
+      )
       .finalMessage();
     if (msg.stop_reason !== "pause_turn") break;
     messages.push({ role: "assistant", content: msg.content });

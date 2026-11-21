@@ -8,7 +8,8 @@ import { findRecipeUrls, type SearchRequest } from "./ai/findRecipes";
 import { selectPlan, type PlanCandidate, type PlanSelection } from "./ai/selectPlan";
 import { fetchRecipes, toPlanCandidates, type Candidate } from "./recipeImport/candidates";
 import { logGenerationFailure } from "./generationLog";
-import { FIND_PROMPT_VERSION } from "./ai/promptVersions";
+import { FIND_PROMPT_VERSION, PLAN_PROMPT_VERSION } from "./ai/promptVersions";
+import { findConstraintViolations } from "./ai/checkConstraints";
 
 /**
  * Wochenplan-Ablauf ohne von Claude erfundene Rezepte:
@@ -103,6 +104,10 @@ export async function buildPlan(args: {
   lastFishGroups: FishGroup[];
 }): Promise<PlanResult> {
   const { userId, profile } = args;
+  // Zeitmessung pro Phase ins Server-Log (Vercel-Limit: 300 s).
+  const t0 = Date.now();
+  const lap = (what: string) =>
+    console.info(`[plan ${userId}] ${what}: ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   const dayCount = args.dayRange.end - args.dayRange.start + 1;
   const recent = new Set(args.recentTitles);
   const pool = await getRecipePool(userId, recent);
@@ -164,7 +169,7 @@ export async function buildPlan(args: {
       id: "fruehstueck",
       mealType: "breakfast",
       count: Math.min(3, breakfastsMissing),
-      wish: "einfache, eiweißreiche Frühstücke mit 5–10 Minuten Aufwand (z. B. Overnight Oats, Quark- oder Skyr-Bowl, Rührei, Porridge), deutlich verschieden voneinander",
+      wish: "einfache, eiweißreiche Frühstücke mit 5–10 Minuten Aufwand (z. B. Quark- oder Skyr-Bowl, Rührei, Porridge, Omelett), deutlich verschieden voneinander",
     });
 
   // --- Web-Suche ----------------------------------------------------------
@@ -172,14 +177,25 @@ export async function buildPlan(args: {
   if (requests.length > 0) {
     const perMeal = perMealTarget(profile);
     try {
-      const urlsById = await findRecipeUrls({
-        requests,
-        vegetarian: profile.vegetarian,
-        claudeMemory: args.claudeMemory,
-        budgetConscious: profile.budgetConscious,
-        perMeal,
-        avoidTitles: pool.map((c) => c.title),
-      });
+      // Eine Web-Suche pro Auftrag, alle parallel — sonst summieren sich die
+      // Suchen in einem einzigen langen Claude-Aufruf.
+      const parts = await Promise.all(
+        requests.map((r) =>
+          findRecipeUrls({
+            requests: [r],
+            vegetarian: profile.vegetarian,
+            claudeMemory: args.claudeMemory,
+            budgetConscious: profile.budgetConscious,
+            perMeal,
+            avoidTitles: pool.map((c) => c.title),
+          }).catch(async (e) => {
+            await logGenerationFailure(userId, "plan", e, FIND_PROMPT_VERSION);
+            return new Map<string, string[]>();
+          }),
+        ),
+      );
+      const urlsById = new Map(parts.flatMap((m) => [...m.entries()]));
+      lap("Web-Suche");
       // Pro Suchauftrag laden (der Auftrag bestimmt Frühstück vs. Hauptgericht)
       // und höchstens count + 1 Treffer weiterverarbeiten.
       const perRequest = await Promise.all(
@@ -191,6 +207,7 @@ export async function buildPlan(args: {
       const seenUrls = new Set<string>();
       const items = perRequest.flat().filter((f) => !seenUrls.has(f.url) && seenUrls.add(f.url));
       found = await toPlanCandidates(userId, items);
+      lap(`${items.length} Seiten geladen, ${found.length} mit BLS-Werten`);
       const poolTitles = new Set(pool.map((c) => c.title.toLowerCase()));
       found = found.filter((f) => !poolTitles.has(f.draft.title.toLowerCase()));
     } catch (e) {
@@ -199,7 +216,7 @@ export async function buildPlan(args: {
     }
   }
 
-  const candidates: PlanResult["candidates"] = [
+  const allCandidates: PlanResult["candidates"] = [
     ...pool,
     ...found.map((f) => ({
       title: f.draft.title,
@@ -219,6 +236,21 @@ export async function buildPlan(args: {
     })),
   ];
 
+  // Einschränkungen (Memory, vegetarisch) in einem eigenen Schritt prüfen —
+  // bei der Auswahl selbst rutschen Verstöße sonst durch.
+  let candidates = allCandidates;
+  try {
+    const violations = await findConstraintViolations({
+      recipes: allCandidates,
+      vegetarian: profile.vegetarian,
+      claudeMemory: args.claudeMemory,
+    });
+    candidates = allCandidates.filter((_, i) => !violations.has(i));
+    lap(`Einschränkungen geprüft, ${violations.size} aussortiert`);
+  } catch (e) {
+    await logGenerationFailure(userId, "plan", e, PLAN_PROMPT_VERSION);
+  }
+
   const mains = candidates.filter((c) => c.mealType === "main").length;
   const breakfasts = candidates.filter((c) => c.mealType === "breakfast").length;
   if (mains === 0 || breakfasts === 0) {
@@ -237,5 +269,6 @@ export async function buildPlan(args: {
     lastFishGroups: args.lastFishGroups,
     useUpIngredients: args.useUpIngredients,
   });
+  lap("Auswahl + Portionen");
   return { candidates, selection };
 }

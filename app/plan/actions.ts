@@ -7,6 +7,7 @@ import { requireUserId } from "../../lib/auth";
 import { getProfile } from "../../lib/profile";
 import {
   getRecentMealTitles,
+  isStaleGeneration,
   parseWeekSel,
   weekStart,
   weekStartFor,
@@ -66,7 +67,7 @@ export async function generateWeeklyPlan(
   const existingJob = await db.planGeneration.findUnique({
     where: { userId_weekStart: { userId, weekStart: ws } },
   });
-  if (existingJob?.status === "generating") {
+  if (existingJob?.status === "generating" && !isStaleGeneration(existingJob)) {
     return {
       status: "error",
       error: "Für diese Woche läuft bereits eine Generierung — bitte kurz warten.",
@@ -88,7 +89,7 @@ export async function generateWeeklyPlan(
   after(async () => {
     try {
       const [recentTitles, claudeMemory, lastFishGroups] = await Promise.all([
-        getRecentMealTitles(userId, 14),
+        getRecentMealTitles(userId, 14, ws),
         getClaudeMemoryText(userId),
         getLastFishGroups(userId, ws),
       ]);
