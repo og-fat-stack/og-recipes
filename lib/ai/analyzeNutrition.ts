@@ -8,9 +8,9 @@ import { GenerationError } from "./generationError";
  * Nährwerte eines Rezepts aus dem Bundeslebensmittelschlüssel (BLS 4.0)
  * nachrechnen, statt Claudes Pauschalschätzung zu übernehmen:
  *
- *   1. Claude schätzt pro Zutat das Rohgewicht in Gramm (die App arbeitet ohne
- *      Waage, Mengen stehen in Tassen/EL/Stück) und nennt BLS-taugliche
- *      Suchbegriffe.
+ *   1. Claude schätzt pro Zutat das Rohgewicht in Gramm (bei g/ml direkt, bei
+ *      Stück, EL/TL oder älteren Haushaltsmaßen umgerechnet) und nennt
+ *      BLS-taugliche Suchbegriffe.
  *   2. Die App sucht dazu Kandidaten im BLS (lib/bls).
  *   3. Claude wählt pro Zutat den passenden BLS-Eintrag. Passt keiner, liefert
  *      es eine eigene Schätzung pro 100 g — dieser Anteil wird als

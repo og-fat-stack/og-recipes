@@ -20,8 +20,9 @@ export default function ImportRecipePage() {
         </h1>
         <p className="mt-1 text-ink-muted">
           Füge den Link zu einem Rezept ein, z. B. von EatSmarter, Lecker oder
-          einem Food-Blog. Claude rechnet die Mengen in Tassen, Löffel und Stück um,
-          die Nährwerte kommen aus dem Bundeslebensmittelschlüssel.
+          einem Food-Blog. Das Rezept bleibt unverändert, mit exakten Mengen in
+          Gramm und Milliliter. Die Nährwerte kommen aus dem
+          Bundeslebensmittelschlüssel.
         </p>
       </header>
 

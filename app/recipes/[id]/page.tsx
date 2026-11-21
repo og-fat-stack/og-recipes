@@ -15,10 +15,22 @@ import { getBlsFood } from "../../../lib/bls";
 // "Mit BLS nachrechnen" ruft Claude zweimal auf.
 export const maxDuration = 300;
 
-/** Umgerechnete Menge lesbar runden (Viertel unter 1, halbe bis 10, sonst ganz). */
-function scaleQty(qty: number, f: number): string {
+/**
+ * Umgerechnete Menge lesbar runden: g/ml auf ganze bzw. ab 100 auf 5er-Schritte,
+ * sonst (Stück, EL, TL) Viertel unter 1, halbe bis 10, darüber ganz.
+ */
+function scaleQty(qty: number, f: number, unit?: string): string {
   const x = qty * f;
-  const r = x < 1 ? Math.round(x * 4) / 4 : x < 10 ? Math.round(x * 2) / 2 : Math.round(x);
+  const metric = unit === "g" || unit === "ml";
+  const r = metric
+    ? x >= 100
+      ? Math.round(x / 5) * 5
+      : Math.round(x)
+    : x < 1
+      ? Math.round(x * 4) / 4
+      : x < 10
+        ? Math.round(x * 2) / 2
+        : Math.round(x);
   return (r || x).toLocaleString("de-DE", { maximumFractionDigits: 2 });
 }
 
@@ -188,7 +200,7 @@ export default async function RecipePage({
               <span>{ing.name}</span>
               {(ing.qty != null || ing.unit) && (
                 <span className="text-ink-subtle">
-                  {ing.qty != null && scale ? scaleQty(ing.qty, scale) : (ing.qty ?? "")}{" "}
+                  {ing.qty != null && scale ? scaleQty(ing.qty, scale, ing.unit) : (ing.qty ?? "")}{" "}
                   {ing.unit ?? ""}
                 </span>
               )}

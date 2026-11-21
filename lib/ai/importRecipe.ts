@@ -34,15 +34,17 @@ TREUE ZUM ORIGINAL — Pflicht:
   übernimm sie trotzdem unverändert und nenne den Verstoß kurz in "violations"
   (z. B. "Speck — nicht vegetarisch"). Sonst ist "violations" leer.
 
-MENGEN OHNE WAAGE — der Nutzer hat KEINE Küchenwaage:
-- Rechne Gramm-/ml-Angaben in Haushaltsmaße um: Stück, Tassen (1 Tasse ≈ 200 ml), EL, TL,
-  Handvoll (≈ 30 g Blattgemüse), Becher (Joghurtbecher = 500 g), Packung (Standardgrößen, z. B.
-  Nudeln 500 g, Feta 200 g), Schale (Cherrytomaten 250 g), Dose (400 g), Glas, mittel, faustgroß,
-  handtellergroß. Die Menge des Originals als Referenz in Klammern in den Zutatennamen
-  schreiben, immer als GESAMTMENGE dieser Zeile mit "insgesamt", z. B.
-  {"name": "Rinderhackfleisch (insgesamt 500 g)", "qty": 1, "unit": "Packung"},
-  {"name": "stückige Tomaten (insgesamt 600 g)", "qty": 1.5, "unit": "Dose"}.
+MENGEN EXAKT — genau die Werte des Originals:
+- Einheiten nur: "g" und "ml" für Gewicht/Flüssigkeit, "Stück" für Zählbares (Eier, Zwiebeln,
+  Zitronen), "EL"/"TL"/"Prise" für kleine Mengen (Gewürze, Öl, Säure).
+- Gramm- und ml-Angaben des Originals unverändert übernehmen (kg → g, l → ml umrechnen).
+- Ungenaue oder fremde Maße in g/ml umrechnen: Tasse/cup (z. B. Reis ≈ 170 g, Mehl ≈ 120 g,
+  Flüssigkeit 240 ml), oz (28 g), lb (454 g), Dose (Inhalt, z. B. 400 g), Packung/Becher
+  (Inhalt laut Original oder Standardgröße), Handvoll Blattgemüse (≈ 30 g), Bund Kräuter
+  (≈ 30 g). Stückzahlen bei Zählbarem bleiben Stück.
 - Bruchteile sind ok ("qty": 0.5). "Salz, Pfeffer" ohne Menge ist ok.
+- Beispiel: {"name": "Rinderhackfleisch", "qty": 500, "unit": "g"},
+  {"name": "stückige Tomaten (Dose)", "qty": 400, "unit": "g"}, {"name": "Eier", "qty": 3, "unit": "Stück"}.
 
 SCHRITTE:
 - Die Schritte des Originals in klaren, anfängerfreundlichen Sätzen; Reihenfolge und Technik
