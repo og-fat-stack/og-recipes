@@ -1,6 +1,14 @@
 import { db } from "./db";
 
-export type Ingredient = { name: string; qty?: number; unit?: string };
+export type Ingredient = {
+  name: string;
+  qty?: number;
+  unit?: string;
+  /** Geschätztes Rohgewicht der Zutat im ganzen Rezept (Nährwertanalyse). */
+  grams?: number;
+  /** Zugeordneter BLS-Code (lib/bls), Basis der Nährwertberechnung. */
+  bls?: string;
+};
 export type RecipeInput = {
   title: string;
   cuisine: string;
