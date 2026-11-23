@@ -5,6 +5,7 @@ import { NUTRITION_PROMPT_VERSION } from "../ai/promptVersions";
 import { extractRecipeFromHtml, type ExtractedRecipe } from "./extract";
 import { fetchRecipePage } from "./fetchPage";
 import { parseIngredientLine, parseYield } from "./parseIngredient";
+import type { Rating } from "./rating";
 
 /**
  * Von Link zu Rezept-Kandidat: Seite laden → schema.org-Rezept auslesen →
@@ -13,7 +14,7 @@ import { parseIngredientLine, parseYield } from "./parseIngredient";
  */
 
 export type FetchedRecipe = { url: string; recipe: ExtractedRecipe };
-export type Candidate = { url: string; draft: ImportDraft };
+export type Candidate = { url: string; draft: ImportDraft; rating?: Rating };
 
 /** Kleine Parallelitäts-Bremse, damit nicht Dutzende Requests gleichzeitig laufen. */
 export async function mapLimit<T, R>(
@@ -93,6 +94,7 @@ export async function toPlanCandidates(
     if (!r || b.title.length < 2 || b.ingredients.length < 2) return;
     out.push({
       url: usable[i].url,
+      rating: usable[i].recipe.rating,
       draft: {
         ...b,
         kcalPerPortion: Math.min(3000, r.perPortion.kcal),

@@ -23,6 +23,7 @@ import {
 } from "../../lib/ai/promptVersions";
 import { getClaudeMemoryText } from "../../lib/claudeMemory";
 import { logGenerationFailure } from "../../lib/generationLog";
+import { planMonth } from "../../lib/season";
 
 export type GeneratePlanState =
   | { status: "idle" }
@@ -96,10 +97,12 @@ export async function generateWeeklyPlan(
 
       // Feste Snack-Slots: deterministisch aus der Bibliothek belegt; ihre
       // Makros werden von den Tageszielen der 3 Mahlzeiten abgezogen.
+      const month = planMonth(ws);
       const snackPlan = buildSnackPlan({
         proteinTargetG: profile.proteinG,
         startDay,
         endDay,
+        month,
       });
 
       // Sammlung + Web-Suche → Claude wählt aus → App skaliert Portionen und
@@ -113,6 +116,7 @@ export async function generateWeeklyPlan(
         useUpIngredients,
         claudeMemory,
         lastFishGroups,
+        month,
       });
 
       // Abbruch-Check: Wurde die Generierung inzwischen abgebrochen (Zeile
@@ -164,6 +168,8 @@ export async function generateWeeklyPlan(
             promptVersion: FIND_PROMPT_VERSION,
             macroSource: d.macroSource ?? null,
             macroCoverage: d.macroCoverage ?? null,
+            ratingValue: c.rating?.value ?? null,
+            ratingCount: c.rating?.count ?? null,
           },
         });
         recipeIdByIndex.set(a.recipeIndex, created.id);

@@ -1,3 +1,5 @@
+import { parseAggregateRating, type Rating } from "./rating";
+
 /**
  * Liest ein schema.org-`Recipe` aus dem JSON-LD einer Rezeptseite. Fast alle
  * großen Rezeptseiten (Chefkoch, Lecker, EatSmarter, BBC Good Food, …) liefern
@@ -15,6 +17,8 @@ export type ExtractedRecipe = {
   instructions: string[];
   /** Nährwertangaben der Seite, falls vorhanden (nur als Info für Claude). */
   nutrition?: Record<string, string>;
+  /** Bewertung auf der Seite (aggregateRating), falls vorhanden. */
+  rating?: Rating;
 };
 
 type Json = unknown;
@@ -154,6 +158,7 @@ export function parseRecipeNode(node: Record<string, Json>): ExtractedRecipe | n
     ingredients: ingredients.slice(0, 80),
     instructions: instructions.slice(0, 60).map((s) => s.slice(0, 1500)),
     nutrition,
+    rating: parseAggregateRating(node.aggregateRating) ?? undefined,
   };
 }
 

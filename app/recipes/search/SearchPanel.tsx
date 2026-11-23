@@ -134,6 +134,7 @@ export function SearchPanel() {
                   </a>
                   {r.yield && ` · ${r.yield}`}
                   {r.totalTime && ` · ${r.totalTime}`}
+                  {r.rating && ` · ${r.rating}`}
                 </p>
                 {(r.kcal || r.protein) && (
                   <p className="mt-1 text-xs text-ink-muted">

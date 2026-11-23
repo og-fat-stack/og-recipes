@@ -2,6 +2,8 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { anthropic, MODELS } from "../anthropic";
 import { GenerationError } from "./generationError";
+import { monthName, seasonOverview } from "../season";
+import { MIN_RATING, MIN_RATING_COUNT } from "../recipeImport/rating";
 
 /**
  * Sucht mit der Web-Suche der Claude-API nach ECHTEN, veröffentlichten
@@ -29,6 +31,8 @@ export type FindArgs = {
   perMeal: { kcal: number; protein: number };
   /** Titel, die schon in der Sammlung oder kürzlich im Plan sind. */
   avoidTitles: string[];
+  /** Monat (1–12), für den gekocht wird — bestimmt die Saison. */
+  month: number;
   /** Harte Obergrenze für die ganze Suche (Standard 60 s). */
   timeoutMs?: number;
 };
@@ -49,7 +53,7 @@ const ResultSchema = z.object({
   results: z.array(
     z.object({
       id: z.string(),
-      urls: z.array(z.string().url()).max(12),
+      urls: z.array(z.string().url()).max(24),
     }),
   ),
 });
@@ -60,13 +64,22 @@ in den Suchergebnissen tatsächlich gesehen hast.
 
 So suchst du:
 - Für jeden Suchauftrag (id) brauchst du "count" verschiedene Rezepte. Liefere pro Auftrag etwa
-  DOPPELT so viele Kandidaten-Links (manche Seiten lassen sich nicht abrufen).
+  DREIMAL so viele Kandidaten-Links (manche Seiten lassen sich nicht abrufen, und die App
+  sortiert schwach oder selten bewertete Rezepte aus).
 - Nur Links auf EINZELNE Rezeptseiten — keine Übersichten, Kategorien, Suchergebnisse, Videos.
 - NUR deutschsprachige Rezeptseiten (z. B. eatsmarter.de, lecker.de, essen-und-trinken.de,
   kitchenstories.com, springlane.de, gutekueche.de, kuechengoetter.de, rewe.de/rezepte,
   edeka.de/rezepte, hellofresh.de/recipes, einfachkochen.de, oder gute Food-Blogs).
   chefkoch.de NICHT verwenden — die Seite blockiert den Abruf.
 - Echte, bewährte Gerichte; keine Fantasie-Kombinationen.
+- BEWERTUNGEN: Nur Rezepte, die auf ihrer Seite GUT und OFT bewertet sind (Schwellen siehe
+  Auftrag). Die App liest die Bewertung von der Seite und verwirft alle anderen — auch Rezepte
+  ganz ohne Bewertung. Bevorzuge darum Seiten und Rezepte mit vielen Bewertungen.
+- SAISON: Frisches Obst und Gemüse NUR aus der aktuellen Saison in Deutschland (Liste siehe
+  Auftrag). Rezepte, die frisches Obst oder Gemüse außerhalb der Saison als nennenswerte Zutat
+  brauchen (z. B. frische Tomaten, Paprika, Zucchini oder Beeren im Winter), NICHT vorschlagen —
+  auch nicht "mit Abwandlung". TK-Gemüse, TK-Beeren, Dosentomaten, Hülsenfrüchte und Trockenware
+  sind immer ok. Die App prüft das an den Zutaten nach.
 - Die App passt die Portionsgröße an die Kalorien an. Entscheidend ist darum die EIWEISSDICHTE:
   bevorzuge Rezepte mit viel Eiweiß im Verhältnis zu den Kalorien (Richtwert siehe Auftrag).
 - Kein Rezept doppelt, keine der Titel aus "Vermeiden".
@@ -113,7 +126,15 @@ export async function findRecipeUrls(args: FindArgs): Promise<Map<string, string
     )
     .join("\n");
 
+  const season = seasonOverview(args.month);
   const user = `${constraints}
+
+Saison (Deutschland, ${monthName(args.month)}):
+- Gemüse in Saison: ${season.vegetables.join(", ")}
+- Obst in Saison: ${season.fruits.join(", ")}
+- NICHT in Saison (frisch vermeiden): ${season.outOfSeason.join(", ")}
+
+Bewertung: mindestens ${MIN_RATING.toLocaleString("de-DE")} von 5 Sternen UND mindestens ${MIN_RATING_COUNT} Bewertungen auf der Rezeptseite.
 
 Richtwert pro Mahlzeit: ~${args.perMeal.kcal} kcal und ~${args.perMeal.protein} g Eiweiß
 (≈ ${ratio} g Eiweiß pro 100 kcal — je näher, desto besser).

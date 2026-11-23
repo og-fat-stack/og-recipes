@@ -15,6 +15,6 @@ export const FOOD_PROMPT_VERSION = "food-1";
 /** lib/ai/importRecipe.ts — Übertragung eines bestehenden Rezepts ins App-Format. */
 export const IMPORT_PROMPT_VERSION = "import-4";
 /** lib/ai/findRecipes.ts — Web-Suche; an so gefundenen Rezepten gespeichert. */
-export const FIND_PROMPT_VERSION = "find-1";
+export const FIND_PROMPT_VERSION = "find-2";
 /** lib/ai/analyzeNutrition.ts — wird als Recipe.macroSource gespeichert. */
 export const NUTRITION_PROMPT_VERSION = "bls-1";

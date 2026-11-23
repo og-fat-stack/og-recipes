@@ -26,6 +26,10 @@ profile, targets, recipes, plans, and tracking data.
   portion factors (`PlannedMeal.portionsFromBatch`) and fixed sides
   (`lib/sides.ts`) are computed by the app (`lib/planScaling.ts`). Recipes
   found for the plan are stored verbatim (`lib/recipeImport/parseIngredient.ts`).
+- The plan only uses in-season fresh produce (`lib/season.ts`, German
+  calendar; frozen/canned is fine) and only web recipes rated ≥ 4 ★ from
+  ≥ 10 votes (`lib/recipeImport/rating.ts`). Both are hard app-side filters
+  in `lib/planner.ts`, not just prompt wishes — keep them that way.
 - Recipe macros come from the BLS 4.0 nutrient database (`lib/bls`, CC BY 4.0 —
   keep the Max Rubner-Institut attribution via `MacroSourceNote`); every recipe
   path runs the BLS analysis (`lib/nutrition.ts`, `lib/ai/analyzeNutrition.ts`)

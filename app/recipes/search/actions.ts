@@ -9,6 +9,8 @@ import { FIND_PROMPT_VERSION } from "../../../lib/ai/promptVersions";
 import { findRecipeUrls } from "../../../lib/ai/findRecipes";
 import { fetchRecipes } from "../../../lib/recipeImport/candidates";
 import { perMealTarget } from "../../../lib/planner";
+import { berlinMonth } from "../../../lib/season";
+import { formatRating, ratingOk } from "../../../lib/recipeImport/rating";
 
 export type FoundRecipe = {
   url: string;
@@ -20,6 +22,8 @@ export type FoundRecipe = {
   /** Nährwertangaben der Seite (nicht nachgerechnet). */
   kcal?: string;
   protein?: string;
+  /** Bewertung der Seite, z. B. "4,8 ★ (26 Bewertungen)". */
+  rating?: string;
 };
 
 export type SearchState =
@@ -64,11 +68,17 @@ export async function searchRecipes(
       claudeMemory,
       budgetConscious: profile?.budgetConscious ?? true,
       perMeal: profile ? perMealTarget(profile) : { kcal: 550, protein: 35 },
+      month: berlinMonth(new Date()),
       avoidTitles: own.map((r) => r.title),
     });
-    const fetched = await fetchRecipes([...urls.values()].flat());
+    // Nur gut UND oft bewertete Rezepte (wie im Wochenplan).
+    const fetched = (await fetchRecipes([...urls.values()].flat())).filter((f) =>
+      ratingOk(f.recipe.rating),
+    );
     if (fetched.length === 0) {
-      return fail("Keine abrufbaren Rezepte gefunden — formuliere die Suche etwas anders.");
+      return fail(
+        "Keine gut und oft bewerteten Rezepte gefunden — formuliere die Suche etwas anders.",
+      );
     }
     const results = fetched.slice(0, MAX_RESULTS).map(({ url, recipe }) => ({
       url,
@@ -79,6 +89,7 @@ export async function searchRecipes(
       ingredients: recipe.ingredients.slice(0, 14),
       kcal: withUnit(recipe.nutrition?.calories, "kcal"),
       protein: withUnit(recipe.nutrition?.proteinContent, "g"),
+      rating: recipe.rating ? formatRating(recipe.rating) : undefined,
     }));
     return { status: "ok", wish, mealType, results };
   } catch (e) {

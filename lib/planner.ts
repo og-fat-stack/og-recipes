@@ -10,6 +10,8 @@ import { fetchRecipes, toPlanCandidates, type Candidate } from "./recipeImport/c
 import { logGenerationFailure } from "./generationLog";
 import { FIND_PROMPT_VERSION, PLAN_PROMPT_VERSION } from "./ai/promptVersions";
 import { findConstraintViolations } from "./ai/checkConstraints";
+import { outOfSeason } from "./season";
+import { ratingOk, type Rating } from "./recipeImport/rating";
 
 /**
  * Wochenplan-Ablauf ohne von Claude erfundene Rezepte:
@@ -18,12 +20,23 @@ import { findConstraintViolations } from "./ai/checkConstraints";
  *      Fisch, Zutat zum Aufbrauchen), per Web-Suche echte Rezepte finden,
  *      laden und mit dem BLS nachrechnen.
  *   3. Claude wählt aus, die App skaliert Portionen und ergänzt Beilagen.
+ *
+ * Harte Filter der App (nicht nur Bitte an Claude):
+ *   - Saison: kein Rezept mit frischem Obst/Gemüse außerhalb der Saison
+ *     (lib/season.ts) — weder aus der Sammlung noch aus dem Web.
+ *   - Bewertung: Web-Rezepte nur mit ≥ 4 ★ aus ≥ 10 Stimmen
+ *     (lib/recipeImport/rating.ts). Gemochte Rezepte (👍) bleiben immer drin.
  */
 
 type PoolRecipe = PlanCandidate & { id: number };
 
 export type PlanResult = {
-  candidates: (PlanCandidate & { id?: number; url?: string; draft?: Candidate["draft"] })[];
+  candidates: (PlanCandidate & {
+    id?: number;
+    url?: string;
+    draft?: Candidate["draft"];
+    rating?: Rating;
+  })[];
   selection: PlanSelection;
 };
 
@@ -31,8 +44,14 @@ export type PlanResult = {
  * Rezepte, die für die Planung infrage kommen: nie abgelehnte, keine Snacks
  * oder Beilagen. Von Claude früher selbst erfundene Rezepte nur, wenn sie
  * gemocht wurden — alles andere (importiert, gefunden, von Hand) immer.
+ * Dazu: nur saisonale Rezepte, und gefundene (nicht gemochte) Rezepte nicht,
+ * wenn ihre gespeicherte Bewertung zu schwach oder zu selten ist.
  */
-export async function getRecipePool(userId: number, recentTitles: Set<string>): Promise<PoolRecipe[]> {
+export async function getRecipePool(
+  userId: number,
+  recentTitles: Set<string>,
+  month: number,
+): Promise<PoolRecipe[]> {
   const rows = await db.recipe.findMany({
     where: {
       userId,
@@ -54,6 +73,18 @@ export async function getRecipePool(userId: number, recentTitles: Set<string>): 
   });
   return rows
     .filter((r) => r.mealType !== "snack" && r.mealType !== "side")
+    .filter(
+      (r) =>
+        r.liked ||
+        !r.promptVersion?.startsWith("find") ||
+        // Vor der Bewertungs-Speicherung gefunden: keine Daten, nicht raten.
+        r.ratingCount == null ||
+        ratingOk({ value: r.ratingValue ?? 0, count: r.ratingCount }),
+    )
+    .filter(
+      (r) =>
+        outOfSeason((r.ingredients as unknown as Ingredient[]) ?? [], r.portions, month).length === 0,
+    )
     .map((r) => ({
       id: r.id,
       title: r.title,
@@ -102,6 +133,8 @@ export async function buildPlan(args: {
   useUpIngredients: string[];
   claudeMemory: string | null;
   lastFishGroups: FishGroup[];
+  /** Monat des Plans (1–12) für die Saison. */
+  month: number;
 }): Promise<PlanResult> {
   const { userId, profile } = args;
   // Zeitmessung pro Phase ins Server-Log (Vercel-Limit: 300 s).
@@ -110,7 +143,7 @@ export async function buildPlan(args: {
     console.info(`[plan ${userId}] ${what}: ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   const dayCount = args.dayRange.end - args.dayRange.start + 1;
   const recent = new Set(args.recentTitles);
-  const pool = await getRecipePool(userId, recent);
+  const pool = await getRecipePool(userId, recent, args.month);
   const fresh = pool.filter((c) => !c.recent);
   const need = neededCounts(dayCount);
 
@@ -153,8 +186,10 @@ export async function buildPlan(args: {
       });
   }
 
-  // Etwas Auswahl über das Minimum hinaus, damit Claude abwechseln kann.
-  const mainsMissing = need.mains + 1 - freshMains.length - requests.length;
+  // Etwas Auswahl über das Minimum hinaus, damit Claude abwechseln kann —
+  // und Puffer, weil Saison- und Bewertungsfilter einen Teil der Treffer
+  // verwerfen.
+  const mainsMissing = need.mains + 2 - freshMains.length - requests.length;
   if (mainsMissing > 0)
     requests.push({
       id: "haupt",
@@ -163,7 +198,7 @@ export async function buildPlan(args: {
       wish:
         "abwechslungsreiche, eiweißreiche Hauptgerichte aus verschiedenen Küchen (z. B. levantinisch, mediterran, indisch, ostasiatisch, mexikanisch) mit wechselnden Protein-Ankern (Hülsenfrüchte, Eier, Geflügel, Tofu); höchstens eins mit rotem Fleisch",
     });
-  const breakfastsMissing = need.breakfasts - freshBreakfasts.length;
+  const breakfastsMissing = need.breakfasts + 1 - freshBreakfasts.length;
   if (breakfastsMissing > 0)
     requests.push({
       id: "fruehstueck",
@@ -173,21 +208,26 @@ export async function buildPlan(args: {
     });
 
   // --- Web-Suche ----------------------------------------------------------
-  let found: Candidate[] = [];
-  if (requests.length > 0) {
-    const perMeal = perMealTarget(profile);
+  const perMeal = perMealTarget(profile);
+  // Titel, die schon in der Sammlung sind oder in einer Runde verworfen wurden.
+  const avoidTitles = new Set(pool.map((c) => c.title));
+  const poolTitles = new Set(pool.map((c) => c.title.toLowerCase()));
+
+  /** Eine Suchrunde: Links suchen, laden, Bewertung + BLS + Saison prüfen. */
+  const searchRound = async (reqs: SearchRequest[], round: number): Promise<Candidate[]> => {
     try {
       // Eine Web-Suche pro Auftrag, alle parallel — sonst summieren sich die
       // Suchen in einem einzigen langen Claude-Aufruf.
       const parts = await Promise.all(
-        requests.map((r) =>
+        reqs.map((r) =>
           findRecipeUrls({
             requests: [r],
             vegetarian: profile.vegetarian,
             claudeMemory: args.claudeMemory,
             budgetConscious: profile.budgetConscious,
             perMeal,
-            avoidTitles: pool.map((c) => c.title),
+            month: args.month,
+            avoidTitles: [...avoidTitles],
           }).catch(async (e) => {
             await logGenerationFailure(userId, "plan", e, FIND_PROMPT_VERSION);
             return new Map<string, string[]>();
@@ -195,26 +235,73 @@ export async function buildPlan(args: {
         ),
       );
       const urlsById = new Map(parts.flatMap((m) => [...m.entries()]));
-      lap("Web-Suche");
-      // Pro Suchauftrag laden (der Auftrag bestimmt Frühstück vs. Hauptgericht)
-      // und höchstens count + 1 Treffer weiterverarbeiten.
+      lap(`Web-Suche (Runde ${round})`);
+      // Pro Suchauftrag laden (der Auftrag bestimmt Frühstück vs. Hauptgericht),
+      // schwach oder selten bewertete verwerfen und höchstens count + 2
+      // Treffer weiterverarbeiten (der Saison-Check danach siebt noch aus).
+      let fetchedCount = 0;
       const perRequest = await Promise.all(
-        requests.map(async (r) => {
+        reqs.map(async (r) => {
           const fetched = await fetchRecipes(urlsById.get(r.id) ?? []);
-          return fetched.slice(0, r.count + 1).map((f) => ({ ...f, mealType: r.mealType }));
+          fetchedCount += fetched.length;
+          for (const f of fetched) {
+            avoidTitles.add(f.recipe.name);
+            if (!ratingOk(f.recipe.rating))
+              console.info(
+                `[plan ${userId}] Bewertung zu schwach/selten: "${f.recipe.name}" (${f.recipe.rating ? `${f.recipe.rating.value} ★, ${f.recipe.rating.count}` : "keine"})`,
+              );
+          }
+          return fetched
+            .filter((f) => ratingOk(f.recipe.rating))
+            .slice(0, r.count + 2)
+            .map((f) => ({ ...f, mealType: r.mealType }));
         }),
       );
       const seenUrls = new Set<string>();
       const items = perRequest.flat().filter((f) => !seenUrls.has(f.url) && seenUrls.add(f.url));
-      found = await toPlanCandidates(userId, items);
-      lap(`${items.length} Seiten geladen, ${found.length} mit BLS-Werten`);
-      const poolTitles = new Set(pool.map((c) => c.title.toLowerCase()));
-      found = found.filter((f) => !poolTitles.has(f.draft.title.toLowerCase()));
+      const analyzed = await toPlanCandidates(userId, items);
+      const seasonal = analyzed.filter((f) => {
+        const off = outOfSeason(f.draft.ingredients, f.draft.portions, args.month);
+        if (off.length)
+          console.info(`[plan ${userId}] nicht saisonal: "${f.draft.title}" (${off.join(", ")})`);
+        return off.length === 0;
+      });
+      lap(
+        `Runde ${round}: ${fetchedCount} Seiten geladen, ${items.length} gut bewertet, ${analyzed.length} mit BLS-Werten, ${seasonal.length} saisonal`,
+      );
+      return seasonal.filter((f) => !poolTitles.has(f.draft.title.toLowerCase()));
     } catch (e) {
       // Ohne Web-Treffer trotzdem versuchen, aus der Sammlung zu planen.
       await logGenerationFailure(userId, "plan", e, FIND_PROMPT_VERSION);
+      return [];
     }
-  }
+  };
+
+  let found: Candidate[] = requests.length > 0 ? await searchRound(requests, 1) : [];
+
+  // Saison- und Bewertungsfilter werfen viel weg — reicht es nicht für den
+  // Bereich (ein Rezept belegt höchstens 3 Mahlzeiten), gezielt nachsuchen.
+  const minMains = Math.max(need.mains + 1, Math.ceil((dayCount * 2) / 3));
+  const haveMains = freshMains.length + found.filter((f) => f.draft.mealType === "main").length;
+  const haveBreakfasts =
+    freshBreakfasts.length + found.filter((f) => f.draft.mealType === "breakfast").length;
+  const retry: SearchRequest[] = [];
+  if (haveMains < minMains)
+    retry.push({
+      id: "haupt2",
+      mealType: "main",
+      count: Math.min(6, minMains - haveMains + 1),
+      wish:
+        "eiweißreiche Hauptgerichte mit Wintergemüse der Saison (Kohl, Kürbis, Lauch, Wurzelgemüse, Linsen, Kichererbsen) und Protein-Anker wie Hähnchen, Eier, Tofu oder Hülsenfrüchte",
+    });
+  if (haveBreakfasts < need.breakfasts)
+    retry.push({
+      id: "fruehstueck2",
+      mealType: "breakfast",
+      count: Math.min(3, need.breakfasts - haveBreakfasts + 1),
+      wish: "einfache, eiweißreiche Frühstücke mit 5–10 Minuten Aufwand, ohne frisches Sommerobst (z. B. Quark mit Apfel oder Birne, Rührei, Porridge, Omelett)",
+    });
+  if (retry.length > 0) found = [...found, ...(await searchRound(retry, 2))];
 
   const allCandidates: PlanResult["candidates"] = [
     ...pool,
@@ -233,6 +320,7 @@ export async function buildPlan(args: {
       recent: false,
       url: f.url,
       draft: f.draft,
+      rating: f.rating,
     })),
   ];
 
@@ -246,7 +334,9 @@ export async function buildPlan(args: {
       claudeMemory: args.claudeMemory,
     });
     candidates = allCandidates.filter((_, i) => !violations.has(i));
-    lap(`Einschränkungen geprüft, ${violations.size} aussortiert`);
+    lap(
+      `Einschränkungen geprüft, ${violations.size} aussortiert${violations.size ? `: ${[...violations.keys()].map((i) => `"${allCandidates[i].title}"`).join(", ")}` : ""}`,
+    );
   } catch (e) {
     await logGenerationFailure(userId, "plan", e, PLAN_PROMPT_VERSION);
   }
@@ -255,7 +345,7 @@ export async function buildPlan(args: {
   const breakfasts = candidates.filter((c) => c.mealType === "breakfast").length;
   if (mains === 0 || breakfasts === 0) {
     throw new Error(
-      `Zu wenige Rezepte für einen Plan (${mains} Hauptgerichte, ${breakfasts} Frühstücke) — die Web-Suche hat nichts Passendes geliefert. Importiere ein paar Rezepte per Link oder versuch es nochmal.`,
+      `Zu wenige Rezepte für einen Plan (${mains} Hauptgerichte, ${breakfasts} Frühstücke) — die Web-Suche hat nichts Passendes (saisonal, gut und oft bewertet) geliefert. Importiere ein paar Rezepte per Link oder versuch es nochmal.`,
     );
   }
 

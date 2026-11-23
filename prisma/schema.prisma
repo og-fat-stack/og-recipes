@@ -113,6 +113,11 @@ model Recipe {
   macroSource      String?
   /// Anteil der Kalorien in Prozent, der aus BLS-Daten stammt (Rest geschätzt).
   macroCoverage    Int?
+  /// Bewertung auf der Quellseite (schema.org aggregateRating, 5er-Skala) und
+  /// Anzahl der Stimmen. Gefundene Rezepte mit schwacher oder zu seltener
+  /// Bewertung plant die App nicht ein (lib/recipeImport/rating.ts).
+  ratingValue      Float?
+  ratingCount      Int?
   /// "breakfast" | "main" | "snack" | "side" — steuert, für welche Plan-Slots
   /// ein Rezept infrage kommt. null = ältere Zeile, wird wie "main" behandelt.
   mealType         String?

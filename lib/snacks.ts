@@ -1,5 +1,6 @@
 import { db } from "./db";
 import type { Ingredient } from "./recipe";
+import { outOfSeason } from "./season";
 
 /**
  * Feste Snack-Bibliothek für die Zwischenmahlzeit-Slots des Wochenplans.
@@ -94,7 +95,42 @@ export const SNACKS: SnackDef[] = [
     ],
     techniques: ["anrichten"],
   },
+  {
+    // Ganzjährige Variante: Gurke und Tomate haben nur im Sommer Saison
+    // (lib/season.ts) — außerhalb nimmt die Rotation diesen Teller.
+    title: "Hüttenkäse mit Möhrensticks",
+    kcalPerPortion: 258,
+    proteinG: 27,
+    carbG: 14,
+    fatG: 9,
+    ingredients: [
+      { name: "Körniger Frischkäse (Hüttenkäse)", qty: 200, unit: "g" },
+      { name: "Möhren", qty: 100, unit: "g" },
+      { name: "Schwarzer Pfeffer", qty: 1, unit: "Prise" },
+    ],
+    steps: [
+      "100 g Möhren schälen und in fingerdicke Sticks schneiden.",
+      "200 g körnigen Frischkäse in eine Schale geben, mit frisch gemahlenem schwarzem Pfeffer bestreuen und die Möhrensticks zum Dippen dazulegen.",
+    ],
+    techniques: ["anrichten"],
+  },
 ];
+
+/**
+ * Snacks, deren frisches Obst/Gemüse im Monat Saison hat. Ohne Monat alle.
+ * Die Mengen der Bibliothek sind pro Portion in Gramm angegeben.
+ */
+export function snacksForMonth(month?: number): SnackDef[] {
+  if (month == null) return SNACKS;
+  return SNACKS.filter(
+    (s) =>
+      outOfSeason(
+        s.ingredients.map((i) => ({ ...i, grams: i.unit === "g" ? i.qty : undefined })),
+        1,
+        month,
+      ).length === 0,
+  );
+}
 
 /**
  * Wie viele Snack-Slots pro Tag? So gewählt, dass die 3 Hauptmahlzeiten bei
@@ -131,8 +167,11 @@ export function buildSnackPlan(args: {
   proteinTargetG: number;
   startDay: number;
   endDay: number;
+  /** Monat des Plans (1–12) — nur Snacks mit Obst/Gemüse aus der Saison. */
+  month?: number;
 }): SnackPlan {
   const snacksPerDay = snacksPerDayFor(args.proteinTargetG);
+  const library = snacksForMonth(args.month);
   const byDay = new Map<number, PlannedSnack[]>();
   const macrosByDay = new Map<
     number,
@@ -144,7 +183,7 @@ export function buildSnackPlan(args: {
       snacksPerDay === 2 ? ["snack1", "snack2"] : snacksPerDay === 1 ? ["snack2"] : [];
     const planned = slots.map((slot, i) => ({
       slot,
-      snack: SNACKS[(day + i * 2) % SNACKS.length],
+      snack: library[(day + i * 2) % library.length],
     }));
     byDay.set(day, planned);
     macrosByDay.set(
